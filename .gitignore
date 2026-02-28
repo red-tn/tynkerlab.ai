@@ -46,3 +46,7 @@ next-env.d.ts
 # secrets & scratch
 New Text Document.txt
 media/
+
+# markdown docs (keep README)
+*.md
+!README.md
