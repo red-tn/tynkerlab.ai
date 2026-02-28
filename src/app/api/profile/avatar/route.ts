@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
-import Together from 'together-ai'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { Query, ID } from 'node-appwrite'
-
-const together = new Together({ apiKey: process.env.TOGETHER_API_KEY })
+import { getTogetherClient } from '@/lib/together/client'
 
 export async function POST(request: Request) {
   try {
@@ -13,6 +11,7 @@ export async function POST(request: Request) {
     }
 
     // Generate avatar using Together.ai
+    const together = getTogetherClient()
     const response = await together.images.generate({
       model: 'black-forest-labs/FLUX.1-schnell',
       prompt: `Professional portrait avatar: ${prompt}. High quality, centered face, clean background.`,
