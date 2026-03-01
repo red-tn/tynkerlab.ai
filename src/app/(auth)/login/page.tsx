@@ -46,8 +46,8 @@ export default function LoginPage() {
   const handleOAuth = (provider: OAuthProvider) => {
     account.createOAuth2Session(
       provider,
-      `${window.location.origin}/dashboard`,
-      `${window.location.origin}/login`
+      `${window.location.origin}/callback?redirect=/dashboard`,
+      `${window.location.origin}/login?error=oauth_failed`
     )
   }
 

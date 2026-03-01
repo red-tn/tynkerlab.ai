@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server'
 const protectedPaths = ['/studio', '/dashboard']
 const adminPaths = ['/admin']
 const authPaths = ['/login', '/signup', '/reset-password']
+const publicPaths = ['/callback']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -12,6 +13,11 @@ export function middleware(request: NextRequest) {
   const hasSession = request.cookies.getAll().some(cookie =>
     cookie.name.startsWith('a_session_')
   )
+
+  // Let callback page through without any redirects
+  if (publicPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.next()
+  }
 
   // Redirect authenticated users away from auth pages
   if (hasSession && authPaths.some(path => pathname.startsWith(path))) {

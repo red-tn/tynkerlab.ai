@@ -63,8 +63,8 @@ export default function SignupPage() {
   const handleOAuth = (provider: OAuthProvider) => {
     account.createOAuth2Session(
       provider,
-      `${window.location.origin}/dashboard`,
-      `${window.location.origin}/signup`
+      `${window.location.origin}/callback?redirect=/dashboard`,
+      `${window.location.origin}/signup?error=oauth_failed`
     )
   }
 
