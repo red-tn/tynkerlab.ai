@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { account } from '@/lib/appwrite/client'
 import { OAuthProvider } from 'appwrite'
@@ -16,7 +16,8 @@ const loginSchema = z.object({
 })
 
 export default function LoginPage() {
-  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get('redirect') || '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -35,7 +36,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await account.createEmailPasswordSession(email, password)
-      router.push('/dashboard')
+      window.location.href = redirect
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
     } finally {
@@ -46,7 +47,7 @@ export default function LoginPage() {
   const handleOAuth = (provider: OAuthProvider) => {
     account.createOAuth2Session(
       provider,
-      `${window.location.origin}/callback?redirect=/dashboard`,
+      `${window.location.origin}/callback?redirect=${encodeURIComponent(redirect)}`,
       `${window.location.origin}/login?error=oauth_failed`
     )
   }
