@@ -5,6 +5,9 @@ import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
 
+// Allow up to 5 minutes for video download + re-upload (Vercel)
+export const maxDuration = 300
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -88,12 +91,32 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'jobId is required' }, { status: 400 })
     }
 
+    const { databases, storage } = createAdminClient()
+
+    // Check if we already processed this job (avoid re-downloading on every poll)
+    const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
+      Query.equal('togetherJobId', jobId), Query.limit(1),
+    ])
+    if (existing.documents[0]) {
+      const gen = existing.documents[0]
+      if (gen.status === 'completed' && gen.outputUrl) {
+        return NextResponse.json({ status: 'completed', url: gen.outputUrl })
+      }
+      if (gen.status === 'failed') {
+        return NextResponse.json({ status: 'failed', error: gen.errorMessage || 'Video generation failed' })
+      }
+    }
+
+    // Poll Together.ai for current status
     const status = await checkVideoStatus(jobId)
 
     if (status.status === 'completed' && status.output?.video_url) {
-      const { databases, storage } = createAdminClient()
+      const videoUrl = status.output.video_url
+
+      // Try to download and store in Appwrite (best effort)
+      let outputUrl = videoUrl // fallback: use Together.ai URL directly
       try {
-        const videoResponse = await fetch(status.output.video_url)
+        const videoResponse = await fetch(videoUrl)
         const videoBuffer = await videoResponse.arrayBuffer()
 
         const bucketId = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
@@ -103,42 +126,38 @@ export async function GET(request: Request) {
           new File([Buffer.from(videoBuffer)], `video-${jobId}.mp4`, { type: 'video/mp4' })
         )
 
-        const outputUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${bucketId}/files/${file.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
-
-        const generations = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-          Query.equal('togetherJobId', jobId), Query.limit(1),
-        ])
-        if (generations.documents[0]) {
-          const gen = generations.documents[0]
-          await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
-            status: 'completed', outputUrl, completedAt: new Date().toISOString(),
-          })
-          const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-            Query.equal('userId', gen.userId), Query.limit(1),
-          ])
-          if (profiles.documents[0]) {
-            const p = profiles.documents[0]
-            await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, p.$id, {
-              totalGenerations: (p.totalGenerations || 0) + 1,
-              totalVideos: (p.totalVideos || 0) + 1,
-              lastActiveAt: new Date().toISOString(),
-            })
-          }
-        }
-
-        return NextResponse.json({ status: 'completed', url: outputUrl })
+        outputUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${bucketId}/files/${file.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
       } catch {
-        return NextResponse.json({ status: 'completed', url: status.output.video_url })
+        // Storage upload failed — use Together.ai URL directly (still works)
+        console.log(`[video] Storage upload failed for ${jobId}, using direct URL`)
       }
+
+      // Update generation record
+      if (existing.documents[0]) {
+        const gen = existing.documents[0]
+        await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
+          status: 'completed', outputUrl, completedAt: new Date().toISOString(),
+        })
+        // Update user stats
+        const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
+          Query.equal('userId', gen.userId), Query.limit(1),
+        ])
+        if (profiles.documents[0]) {
+          const p = profiles.documents[0]
+          await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, p.$id, {
+            totalGenerations: (p.totalGenerations || 0) + 1,
+            totalVideos: (p.totalVideos || 0) + 1,
+            lastActiveAt: new Date().toISOString(),
+          })
+        }
+      }
+
+      return NextResponse.json({ status: 'completed', url: outputUrl })
     }
 
     if (status.status === 'failed') {
-      const { databases } = createAdminClient()
-      const generations = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('togetherJobId', jobId), Query.limit(1),
-      ])
-      if (generations.documents[0]) {
-        const gen = generations.documents[0]
+      if (existing.documents[0]) {
+        const gen = existing.documents[0]
         await refundCredits(gen.userId, gen.creditsUsed, 'Refund: video generation failed', gen.$id)
         await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
           status: 'failed', errorMessage: status.error || 'Video generation failed',
@@ -153,7 +172,7 @@ export async function GET(request: Request) {
   }
 }
 
-// PUT — client reports a timeout, refund credits
+// PUT — client reports a timeout or cancellation, refund credits
 export async function PUT(request: Request) {
   try {
     const { jobId } = await request.json()
@@ -172,7 +191,7 @@ export async function PUT(request: Request) {
 
     const gen = generations.documents[0]
 
-    // Only refund if not already completed or failed (covers processing, queued, etc.)
+    // Only refund if not already completed or failed
     if (gen.status !== 'completed' && gen.status !== 'failed') {
       await refundCredits(gen.userId, gen.creditsUsed, 'Refund: video generation cancelled', gen.$id)
       await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {

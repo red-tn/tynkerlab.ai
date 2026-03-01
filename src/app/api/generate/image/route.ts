@@ -5,6 +5,9 @@ import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
 
+// Allow up to 2 minutes for image generation + storage upload (Vercel)
+export const maxDuration = 120
+
 export async function POST(request: Request) {
   const startTime = Date.now()
 
