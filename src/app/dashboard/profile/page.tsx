@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { account, storage, BUCKET_AVATARS } from '@/lib/appwrite/client'
 import { ID } from 'appwrite'
@@ -17,11 +17,23 @@ export default function ProfilePage() {
   const { user, profile, signOut, refreshProfile } = useAuth()
   const { addToast } = useToast()
   const { balance } = useCredits(user?.$id)
-  const [fullName, setFullName] = useState(profile?.fullName || '')
-  const [bio, setBio] = useState(profile?.bio || '')
-  const [location, setLocation] = useState(profile?.location || '')
-  const [website, setWebsite] = useState(profile?.website || '')
+  const [fullName, setFullName] = useState('')
+  const [bio, setBio] = useState('')
+  const [location, setLocation] = useState('')
+  const [website, setWebsite] = useState('')
   const [avatarPrompt, setAvatarPrompt] = useState('')
+  const [profileLoaded, setProfileLoaded] = useState(false)
+
+  // Sync form state when profile loads (profile is null on first render)
+  useEffect(() => {
+    if (profile && !profileLoaded) {
+      setFullName(profile.fullName || '')
+      setBio(profile.bio || '')
+      setLocation(profile.location || '')
+      setWebsite(profile.website || '')
+      setProfileLoaded(true)
+    }
+  }, [profile, profileLoaded])
   const [saving, setSaving] = useState(false)
   const [generatingAvatar, setGeneratingAvatar] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
