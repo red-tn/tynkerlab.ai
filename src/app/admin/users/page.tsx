@@ -189,8 +189,8 @@ export default function AdminUsersPage() {
                   className="w-full rounded-lg bg-nyx-bg border border-nyx-border px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                 >
                   <option value="free">Free</option>
-                  <option value="pro">Pro</option>
-                  <option value="enterprise">Enterprise</option>
+                  <option value="pro">Creator</option>
+                  <option value="enterprise">Pro Creator</option>
                 </select>
               </div>
             </div>

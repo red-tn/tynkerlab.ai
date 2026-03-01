@@ -73,7 +73,7 @@ export default function DashboardPage() {
     { href: '/studio/text-to-speech', label: 'Text to Speech', desc: 'AI voice generation', icon: Volume2, gradient: 'from-primary-500 to-accent-400' },
   ]
 
-  const tierLabel = profile?.subscriptionTier === 'enterprise' ? 'Enterprise' : profile?.subscriptionTier === 'pro' ? 'Pro' : 'Free'
+  const tierLabel = profile?.subscriptionTier === 'enterprise' ? 'Pro Creator' : profile?.subscriptionTier === 'pro' ? 'Creator' : 'Free'
   const creditsPercent = profile ? Math.min(100, Math.round((profile.creditsBalance / Math.max(profile.creditsMonthly || 50, 1)) * 100)) : 0
 
   return (

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
 import { useToast } from '@/components/ui/toast'
-import { Camera, Wand2, Trash2, LogOut, Upload, MapPin, Globe, Coins, Calendar, Crown, ImageIcon } from 'lucide-react'
+import { Camera, Wand2, Trash2, LogOut, Upload, MapPin, Globe, Coins, Calendar, Crown, ImageIcon, KeyRound } from 'lucide-react'
 import { useCredits } from '@/hooks/use-credits'
 import Link from 'next/link'
 import { storage, BUCKET_AVATARS } from '@/lib/appwrite/client'
@@ -27,6 +27,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [generatingAvatar, setGeneratingAvatar] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [savingPassword, setSavingPassword] = useState(false)
+  const isOAuthUser = user?.passwordUpdate === ''
 
   const handleSaveProfile = async () => {
     if (!profile) return
@@ -193,6 +197,58 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Password */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            {isOAuthUser ? 'Set Password' : 'Change Password'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isOAuthUser && (
+            <p className="text-xs text-gray-400 mb-4 p-2 rounded-lg bg-primary-500/5 border border-primary-500/10">
+              You signed in with Google/GitHub. Set a password to also sign in with email.
+            </p>
+          )}
+          <div className="space-y-3">
+            <Input
+              label="New Password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Min 8 characters"
+            />
+            <Input
+              label="Confirm Password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter password"
+            />
+            <Button
+              disabled={!newPassword || newPassword.length < 8 || newPassword !== confirmPassword}
+              loading={savingPassword}
+              onClick={async () => {
+                setSavingPassword(true)
+                try {
+                  await account.updatePassword(newPassword)
+                  setNewPassword('')
+                  setConfirmPassword('')
+                  addToast('Password updated successfully', 'success')
+                } catch (err: any) {
+                  addToast(err.message || 'Failed to update password', 'error')
+                } finally {
+                  setSavingPassword(false)
+                }
+              }}
+            >
+              {isOAuthUser ? 'Set Password' : 'Update Password'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Account Stats */}
       <Card>
         <CardHeader>
@@ -215,7 +271,7 @@ export default function ProfilePage() {
               <Crown className="h-5 w-5 text-primary-400" />
               <div>
                 <p className="text-xs text-gray-500">Tier</p>
-                <p className="text-sm text-white capitalize">{profile?.subscriptionTier || 'Free'}</p>
+                <p className="text-sm text-white">{profile?.subscriptionTier === 'enterprise' ? 'Pro Creator' : profile?.subscriptionTier === 'pro' ? 'Creator' : 'Free'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg bg-nyx-bg">

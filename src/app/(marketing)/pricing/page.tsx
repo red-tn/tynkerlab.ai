@@ -9,13 +9,19 @@ import { PricingCard } from '@/components/pricing/pricing-card'
 import { CreditPackCard } from '@/components/pricing/credit-pack-card'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
+import { useCredits } from '@/hooks/use-credits'
+import { getTierDisplayName } from '@/lib/stripe/products'
+import { Coins, Crown } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import type { TierConfig, CreditPack } from '@/types/stripe'
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false)
   const [loading, setLoading] = useState(false)
   const { user, profile } = useAuth()
+  const { balance } = useCredits(user?.$id)
   const router = useRouter()
+  const tierName = getTierDisplayName(profile?.subscriptionTier)
 
   const handleTierSelect = async (tier: TierConfig) => {
     if (tier.monthlyPrice === 0) {
@@ -87,6 +93,24 @@ export default function PricingPage() {
     <div className="min-h-screen relative z-[1]">
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 py-20">
+        {/* User credits bar */}
+        {user && (
+          <div className="mb-8 flex items-center justify-center gap-4 p-3 rounded-xl bg-nyx-surface/80 border border-nyx-border max-w-lg mx-auto">
+            <div className="flex items-center gap-2">
+              <Crown className="h-4 w-4 text-primary-400" />
+              <span className="text-sm text-gray-300">
+                <span className="font-semibold text-white">{tierName}</span> Plan
+              </span>
+            </div>
+            <div className="h-4 w-px bg-nyx-border" />
+            <div className="flex items-center gap-2">
+              <Coins className="h-4 w-4 text-primary-400" />
+              <span className="text-sm font-mono text-white">{balance.toLocaleString()}</span>
+              <span className="text-sm text-gray-500">credits</span>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">

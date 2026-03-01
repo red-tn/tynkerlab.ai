@@ -21,8 +21,8 @@ export const TIERS: TierConfig[] = [
   },
   {
     id: 'pro',
-    name: 'Pro',
-    description: 'For creators and professionals',
+    name: 'Creator',
+    description: 'For serious creators who want more',
     monthlyPrice: 20,
     annualPrice: 120,
     monthlyPriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PRICE_ID || '',
@@ -43,8 +43,8 @@ export const TIERS: TierConfig[] = [
   },
   {
     id: 'enterprise',
-    name: 'Enterprise',
-    description: 'For teams and businesses',
+    name: 'Pro Creator',
+    description: 'For high-volume creators who never want to stop',
     monthlyPrice: 99,
     annualPrice: 588,
     monthlyPriceId: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_MONTHLY_PRICE_ID || '',
@@ -60,8 +60,8 @@ export const TIERS: TierConfig[] = [
       'No watermark',
       'API access',
       'Custom voice catalog',
+      'Unlimited downloads',
       'Dedicated support',
-      'Custom integrations',
     ],
   },
 ]
@@ -106,4 +106,9 @@ export function getTierByPriceId(priceId: string): TierConfig | undefined {
 
 export function getPackByPriceId(priceId: string): CreditPack | undefined {
   return CREDIT_PACKS.find(p => p.priceId === priceId)
+}
+
+export function getTierDisplayName(tierId?: string): string {
+  const tier = TIERS.find(t => t.id === tierId)
+  return tier?.name || 'Free'
 }

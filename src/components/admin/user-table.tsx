@@ -55,7 +55,7 @@ export function UserTable({ users, onSelect, onDelete, selectedId }: UserTablePr
               <td className="px-4 py-3 text-white font-mono cursor-pointer" onClick={() => onSelect(user)}>{(user.creditsBalance || 0).toLocaleString()}</td>
               <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(user)}>
                 <Badge variant={user.subscriptionTier === 'pro' ? 'success' : user.subscriptionTier === 'enterprise' ? 'info' : 'outline'}>
-                  {user.subscriptionTier || 'free'}
+                  {user.subscriptionTier === 'enterprise' ? 'Pro Creator' : user.subscriptionTier === 'pro' ? 'Creator' : 'Free'}
                 </Badge>
               </td>
               <td className="px-4 py-3 text-gray-400 cursor-pointer" onClick={() => onSelect(user)}>{(user.totalGenerations || 0).toLocaleString()}</td>

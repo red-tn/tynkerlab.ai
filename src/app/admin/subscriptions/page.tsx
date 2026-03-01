@@ -46,7 +46,7 @@ export default function AdminSubscriptionsPage() {
         <StatsCard title="Active Subs" value={active.length} icon={CreditCard} />
         <StatsCard title="MRR" value={formatCurrency(mrr)} icon={DollarSign} iconColor="text-green-400" />
         <StatsCard title="Churn Rate" value={`${subscriptions.length > 0 ? (canceled.length / subscriptions.length * 100).toFixed(1) : 0}%`} icon={TrendingUp} iconColor="text-orange-400" />
-        <StatsCard title="Pro / Enterprise" value={`${proCount} / ${enterpriseCount}`} icon={Users} iconColor="text-accent-400" />
+        <StatsCard title="Creator / Pro Creator" value={`${proCount} / ${enterpriseCount}`} icon={Users} iconColor="text-accent-400" />
       </div>
 
       <div className="rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
@@ -70,7 +70,7 @@ export default function AdminSubscriptionsPage() {
                 <td className="px-4 py-3 text-white">{sub.userId}</td>
                 <td className="px-4 py-3">
                   <Badge variant={sub.tier === 'pro' ? 'success' : sub.tier === 'enterprise' ? 'info' : 'default'}>
-                    {sub.tier}
+                    {sub.tier === 'enterprise' ? 'Pro Creator' : sub.tier === 'pro' ? 'Creator' : sub.tier}
                   </Badge>
                 </td>
                 <td className="px-4 py-3">
