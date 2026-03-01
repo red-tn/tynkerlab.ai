@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createVideoJob, checkVideoStatus } from '@/lib/together/video'
-import { getModelById } from '@/lib/together/models'
+import { getModelById, getModelResolution } from '@/lib/together/models'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
@@ -8,7 +8,7 @@ import { ID, Query } from 'node-appwrite'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { model, prompt, width, height, imageUrl, type, userId } = body
+    const { model, prompt, imageUrl, type, userId, aspectRatio, duration } = body
 
     if (!model || !prompt || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -27,6 +27,10 @@ export async function POST(request: Request) {
       )
     }
 
+    // Compute valid resolution for this model + aspect ratio
+    const ar = aspectRatio || '16:9'
+    const validRes = getModelResolution(model, ar)
+
     const hasCredits = await checkCredits(userId, modelData.credits)
     if (!hasCredits) {
       return NextResponse.json({ error: 'Insufficient credits', required: modelData.credits }, { status: 402 })
@@ -41,10 +45,11 @@ export async function POST(request: Request) {
       model,
       prompt,
       inputImageUrl: imageUrl || null,
-      width: width || null,
-      height: height || null,
+      width: validRes.w,
+      height: validRes.h,
       creditsUsed: modelData.credits,
       status: 'processing',
+      aspectRatio: ar,
     })
 
     const deducted = await deductCredits(userId, modelData.credits, `${type || 'text-to-video'}: ${model}`, generationId)
@@ -55,7 +60,7 @@ export async function POST(request: Request) {
 
     try {
       const frameImages = imageUrl ? [imageUrl] : undefined
-      const job = await createVideoJob({ model, prompt, width, height, frameImages })
+      const job = await createVideoJob({ model, prompt, width: validRes.w, height: validRes.h, aspectRatio: ar, frameImages })
 
       await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
         togetherJobId: job.id,

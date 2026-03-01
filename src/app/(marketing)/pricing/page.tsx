@@ -127,7 +127,7 @@ export default function PricingPage() {
         </div>
 
         {/* Tier Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20 pt-4 overflow-visible">
           {TIERS.map((tier) => (
             <PricingCard
               key={tier.id}

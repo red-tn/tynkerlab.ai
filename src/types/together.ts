@@ -23,6 +23,7 @@ export interface VideoGenerationParams {
   prompt: string
   width?: number
   height?: number
+  aspectRatio?: string
   frameImages?: string[] // For image-to-video
 }
 

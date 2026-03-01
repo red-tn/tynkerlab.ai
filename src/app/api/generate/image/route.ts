@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { generateImage, generateImageFromImage } from '@/lib/together/image'
-import { getModelById } from '@/lib/together/models'
+import { getModelById, getModelResolution } from '@/lib/together/models'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { model, prompt, negativePrompt, width, height, steps, seed, imageUrl, type, userId } = body
+    const { model, prompt, negativePrompt, width, height, steps, seed, imageUrl, type, userId, aspectRatio } = body
 
     if (!model || !prompt || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -20,6 +20,11 @@ export async function POST(request: Request) {
     if (!modelData) {
       return NextResponse.json({ error: 'Invalid model' }, { status: 400 })
     }
+
+    // Server-side resolution validation: snap to model's supported resolution
+    const validRes = getModelResolution(model, aspectRatio || '1:1')
+    const safeWidth = validRes.w
+    const safeHeight = validRes.h
 
     // Validate model supports image-to-image if an image URL is provided
     if (imageUrl && !modelData.supportsImageUrl) {
@@ -44,13 +49,13 @@ export async function POST(request: Request) {
       prompt,
       negativePrompt: negativePrompt || null,
       inputImageUrl: imageUrl || null,
-      width: width || 1024,
-      height: height || 1024,
+      width: safeWidth,
+      height: safeHeight,
       steps: steps || modelData.defaultSteps || null,
       seed: seed || null,
       creditsUsed: modelData.credits,
       status: 'processing',
-      aspectRatio: body.aspectRatio || '1:1',
+      aspectRatio: aspectRatio || '1:1',
     })
 
     const deducted = await deductCredits(userId, modelData.credits, `${type || 'text-to-image'}: ${model}`, generationId)
@@ -61,8 +66,8 @@ export async function POST(request: Request) {
 
     try {
       const result = imageUrl
-        ? await generateImageFromImage({ model, prompt, negativePrompt, width, height, steps, seed, imageUrl })
-        : await generateImage({ model, prompt, negativePrompt, width, height, steps, seed })
+        ? await generateImageFromImage({ model, prompt, negativePrompt, width: safeWidth, height: safeHeight, steps, seed, imageUrl })
+        : await generateImage({ model, prompt, negativePrompt, width: safeWidth, height: safeHeight, steps, seed })
 
       // Store in Appwrite Storage
       const { storage } = createAdminClient()

@@ -11,6 +11,7 @@ export async function createVideoJob(params: VideoGenerationParams): Promise<Vid
 
   if (params.width) requestParams.width = params.width
   if (params.height) requestParams.height = params.height
+  if (params.aspectRatio) requestParams.aspect_ratio = params.aspectRatio
 
   if (params.frameImages && params.frameImages.length > 0) {
     requestParams.frame_images = params.frameImages.map(url => ({

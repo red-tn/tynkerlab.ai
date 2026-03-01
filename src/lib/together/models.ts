@@ -911,6 +911,144 @@ const VIDEO_MODELS: AIModel[] = [
 export const ALL_MODELS: AIModel[] = [...IMAGE_MODELS, ...VIDEO_MODELS]
 
 // ---------------------------------------------------------------------------
+// Model-specific resolution mappings
+// ---------------------------------------------------------------------------
+
+type ResolutionMap = Record<string, { w: number; h: number }>
+
+// Google Imagen 4.0 family — fixed set from Together.ai API
+const IMAGEN_RESOLUTIONS: ResolutionMap = {
+  '1:1':  { w: 1024, h: 1024 },
+  '16:9': { w: 1408, h: 768 },
+  '9:16': { w: 768, h: 1408 },
+  '3:2':  { w: 1280, h: 896 },
+  '2:3':  { w: 896, h: 1280 },
+  '4:3':  { w: 1280, h: 896 },
+  '3:4':  { w: 896, h: 1280 },
+  '5:4':  { w: 1280, h: 896 },
+  '4:5':  { w: 896, h: 1280 },
+  '21:9': { w: 1408, h: 768 },
+}
+
+// FLUX family — flexible, multiples of 16, ≤1 megapixel
+const FLUX_RESOLUTIONS: ResolutionMap = {
+  '1:1':  { w: 1024, h: 1024 },
+  '16:9': { w: 1344, h: 768 },
+  '9:16': { w: 768, h: 1344 },
+  '3:2':  { w: 1152, h: 768 },
+  '2:3':  { w: 768, h: 1152 },
+  '4:3':  { w: 1024, h: 768 },
+  '3:4':  { w: 768, h: 1024 },
+  '5:4':  { w: 1024, h: 832 },
+  '4:5':  { w: 832, h: 1024 },
+  '21:9': { w: 1536, h: 640 },
+}
+
+// Stable Diffusion XL / SD3
+const SDXL_RESOLUTIONS: ResolutionMap = {
+  '1:1':  { w: 1024, h: 1024 },
+  '16:9': { w: 1344, h: 768 },
+  '9:16': { w: 768, h: 1344 },
+  '3:2':  { w: 1216, h: 832 },
+  '2:3':  { w: 832, h: 1216 },
+  '4:3':  { w: 1152, h: 896 },
+  '3:4':  { w: 896, h: 1152 },
+  '5:4':  { w: 1088, h: 896 },
+  '4:5':  { w: 896, h: 1088 },
+  '21:9': { w: 1344, h: 576 },
+}
+
+// Stable Diffusion 1.5 / older (smaller resolutions)
+const SD15_RESOLUTIONS: ResolutionMap = {
+  '1:1':  { w: 512, h: 512 },
+  '16:9': { w: 768, h: 432 },
+  '9:16': { w: 432, h: 768 },
+  '3:2':  { w: 768, h: 512 },
+  '2:3':  { w: 512, h: 768 },
+  '4:3':  { w: 640, h: 480 },
+  '3:4':  { w: 480, h: 640 },
+  '5:4':  { w: 640, h: 512 },
+  '4:5':  { w: 512, h: 640 },
+  '21:9': { w: 768, h: 336 },
+}
+
+// Video models — based on resolution spec (720p, 1080p, 768p)
+const VIDEO_720P: ResolutionMap = {
+  '16:9': { w: 1280, h: 720 },
+  '9:16': { w: 720, h: 1280 },
+  '1:1':  { w: 720, h: 720 },
+}
+
+const VIDEO_1080P: ResolutionMap = {
+  '16:9': { w: 1920, h: 1080 },
+  '9:16': { w: 1080, h: 1920 },
+  '1:1':  { w: 1080, h: 1080 },
+}
+
+const VIDEO_768P: ResolutionMap = {
+  '16:9': { w: 1360, h: 768 },
+  '9:16': { w: 768, h: 1360 },
+  '1:1':  { w: 768, h: 768 },
+}
+
+function getImageResolutionProfile(modelId: string): ResolutionMap {
+  // Google Imagen / Flash / Gemini
+  if (modelId.startsWith('google/imagen') || modelId === 'google/flash-image-2.5' || modelId === 'google/gemini-3-pro-image') {
+    return IMAGEN_RESOLUTIONS
+  }
+  // FLUX and FLUX-based models (RunDiffusion Juggernaut, etc.)
+  if (modelId.startsWith('black-forest-labs/') || modelId.startsWith('RunDiffusion/') || modelId.startsWith('Rundiffusion/')) {
+    return FLUX_RESOLUTIONS
+  }
+  // Stability AI SDXL / SD3
+  if (modelId === 'stabilityai/stable-diffusion-3-medium' || modelId === 'stabilityai/stable-diffusion-xl-base-1.0') {
+    return SDXL_RESOLUTIONS
+  }
+  // DreamShaper (SD 1.5 based)
+  if (modelId === 'Lykon/DreamShaper') {
+    return SD15_RESOLUTIONS
+  }
+  // ByteDance Seedream / SeedEdit, Qwen, Wan, Ideogram, HiDream — use FLUX (safe default)
+  return FLUX_RESOLUTIONS
+}
+
+function getVideoResolutionProfile(modelId: string): ResolutionMap {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  if (!model) return VIDEO_720P
+  if (model.resolution === '1080p') return VIDEO_1080P
+  if (model.resolution === '768p') return VIDEO_768P
+  return VIDEO_720P
+}
+
+/**
+ * Get the correct pixel resolution for a model + aspect ratio.
+ * Used by both client (UI) and server (API validation).
+ */
+export function getModelResolution(modelId: string, aspectRatio: string): { w: number; h: number } {
+  const ar = aspectRatio === 'auto' ? '1:1' : aspectRatio
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  if (!model) return { w: 1024, h: 1024 }
+
+  const profile = model.type === 'video'
+    ? getVideoResolutionProfile(modelId)
+    : getImageResolutionProfile(modelId)
+
+  return profile[ar] || profile['1:1'] || { w: 1024, h: 1024 }
+}
+
+/**
+ * Get all valid aspect ratios for a model (i.e., ones that have a resolution mapping).
+ */
+export function getModelAspectRatios(modelId: string): string[] {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  if (!model) return DEFAULT_IMAGE_ASPECT_RATIOS
+  const profile = model.type === 'video'
+    ? getVideoResolutionProfile(modelId)
+    : getImageResolutionProfile(modelId)
+  return Object.keys(profile)
+}
+
+// ---------------------------------------------------------------------------
 // Helper functions
 // ---------------------------------------------------------------------------
 

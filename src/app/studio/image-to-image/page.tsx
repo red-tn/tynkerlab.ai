@@ -1,21 +1,20 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useCredits } from '@/hooks/use-credits'
 import { useGeneration } from '@/hooks/use-generation'
-import { getModelById, getDefaultModel } from '@/lib/together/models'
+import { getModelById, getDefaultModel, getModelResolution } from '@/lib/together/models'
 import { ModelSelector } from '@/components/studio/model-selector'
 import { PromptInput } from '@/components/studio/prompt-input'
 import { ImageUpload } from '@/components/studio/image-upload'
 import { AspectRatioPicker } from '@/components/studio/aspect-ratio-picker'
-import { ResolutionPicker, findClosestResolution } from '@/components/studio/resolution-picker'
 import { CreditCostDisplay } from '@/components/studio/credit-cost-display'
 import { GenerationResult } from '@/components/studio/generation-result'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Sparkles, Settings2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Sparkles, Settings2, ChevronDown, ChevronUp, Monitor } from 'lucide-react'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 
 export default function ImageToImagePage() {
@@ -34,7 +33,6 @@ export default function ImageToImagePage() {
   useEffect(() => {
     const urlModel = searchParams.get('model')
     if (urlModel) {
-      // Only set model if it supports image-to-image
       const m = getModelById(urlModel)
       if (m && m.supportsImageUrl) setModel(urlModel)
     }
@@ -44,7 +42,6 @@ export default function ImageToImagePage() {
   const [negativePrompt, setNegativePrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('1:1')
-  const [resolution, setResolution] = useState('1024x1024')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [steps, setSteps] = useState('')
   const [seed, setSeed] = useState('')
@@ -52,15 +49,17 @@ export default function ImageToImagePage() {
   const modelData = model ? getModelById(model) : null
   const cost = modelData?.credits ?? 0
 
+  // Auto-compute resolution from model + aspect ratio
+  const resolution = model ? getModelResolution(model, aspectRatio) : { w: 1024, h: 1024 }
+
   const handleGenerate = () => {
     if (!model || !prompt.trim() || !imageUrl || !user) return
-    const [w, h] = resolution.split('x').map(Number)
     generateImage({
       model,
       prompt: prompt.trim(),
       negativePrompt: negativePrompt.trim() || undefined,
-      width: w,
-      height: h,
+      width: resolution.w,
+      height: resolution.h,
       steps: steps ? parseInt(steps) : undefined,
       seed: seed ? parseInt(seed) : undefined,
       imageUrl,
@@ -92,10 +91,7 @@ export default function ImageToImagePage() {
             currentImage={imageUrl}
             onClear={() => setImageUrl(null)}
             disabled={isGenerating}
-            onAspectRatioDetected={(ar) => {
-              setAspectRatio(ar)
-              setResolution(findClosestResolution(resolution, ar))
-            }}
+            onAspectRatioDetected={setAspectRatio}
           />
 
           <PromptInput
@@ -109,19 +105,16 @@ export default function ImageToImagePage() {
 
           <AspectRatioPicker
             value={aspectRatio}
-            onChange={(ar) => {
-              setAspectRatio(ar)
-              setResolution(findClosestResolution(resolution, ar))
-            }}
+            onChange={setAspectRatio}
             disabled={isGenerating}
           />
 
-          <ResolutionPicker
-            value={resolution}
-            onChange={setResolution}
-            aspectRatio={aspectRatio}
-            disabled={isGenerating}
-          />
+          {/* Auto-selected resolution display */}
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-nyx-surface border border-nyx-border">
+            <Monitor className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-400">Resolution</span>
+            <span className="text-sm font-mono text-white ml-auto">{resolution.w} × {resolution.h}</span>
+          </div>
 
           {/* Advanced Settings */}
           <button

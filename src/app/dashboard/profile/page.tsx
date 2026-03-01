@@ -2,18 +2,16 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
-import { Query } from 'appwrite'
+import { account, storage, BUCKET_AVATARS } from '@/lib/appwrite/client'
+import { ID } from 'appwrite'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar } from '@/components/ui/avatar'
 import { useToast } from '@/components/ui/toast'
-import { Camera, Wand2, Trash2, LogOut, Upload, MapPin, Globe, Coins, Calendar, Crown, ImageIcon, KeyRound } from 'lucide-react'
+import { Wand2, Trash2, LogOut, Upload, Coins, Calendar, Crown, ImageIcon, KeyRound } from 'lucide-react'
 import { useCredits } from '@/hooks/use-credits'
 import Link from 'next/link'
-import { storage, BUCKET_AVATARS } from '@/lib/appwrite/client'
-import { ID } from 'appwrite'
 
 export default function ProfilePage() {
   const { user, profile, signOut, refreshProfile } = useAuth()
@@ -27,6 +25,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [generatingAvatar, setGeneratingAvatar] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [savingPassword, setSavingPassword] = useState(false)
@@ -36,13 +35,24 @@ export default function ProfilePage() {
     if (!profile) return
     setSaving(true)
     try {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profile.$id, {
-        fullName,
-        bio: bio || null,
-        location: location || null,
-        website: website || null,
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: profile.$id,
+          data: {
+            fullName,
+            bio: bio || null,
+            location: location || null,
+            website: website || null,
+          },
+        }),
       })
-      await account.updateName(fullName)
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to update profile')
+      }
+      try { await account.updateName(fullName) } catch {}
       await refreshProfile()
       addToast('Profile updated successfully', 'success')
     } catch (err: any) {
@@ -82,9 +92,15 @@ export default function ProfilePage() {
     try {
       const uploaded = await storage.createFile(BUCKET_AVATARS, ID.unique(), file)
       const fileUrl = storage.getFileView(BUCKET_AVATARS, uploaded.$id).toString()
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profile.$id, {
-        avatarUrl: fileUrl,
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: profile.$id,
+          data: { avatarUrl: fileUrl },
+        }),
       })
+      if (!res.ok) throw new Error('Failed to update avatar')
       await refreshProfile()
       addToast('Profile photo updated!', 'success')
     } catch (err: any) {
@@ -95,9 +111,14 @@ export default function ProfilePage() {
   }
 
   const handleDeleteAccount = async () => {
+    if (!user) return
     if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return
     try {
-      await fetch('/api/profile', { method: 'DELETE' })
+      await fetch('/api/profile', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.$id }),
+      })
       await signOut()
     } catch (err: any) {
       addToast(err.message || 'Failed to delete account', 'error')
@@ -212,6 +233,15 @@ export default function ProfilePage() {
             </p>
           )}
           <div className="space-y-3">
+            {!isOAuthUser && (
+              <Input
+                label="Current Password"
+                type="password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                placeholder="Enter current password"
+              />
+            )}
             <Input
               label="New Password"
               type="password"
@@ -227,12 +257,22 @@ export default function ProfilePage() {
               placeholder="Re-enter password"
             />
             <Button
-              disabled={!newPassword || newPassword.length < 8 || newPassword !== confirmPassword}
+              disabled={
+                !newPassword ||
+                newPassword.length < 8 ||
+                newPassword !== confirmPassword ||
+                (!isOAuthUser && !oldPassword)
+              }
               loading={savingPassword}
               onClick={async () => {
                 setSavingPassword(true)
                 try {
-                  await account.updatePassword(newPassword)
+                  if (isOAuthUser) {
+                    await account.updatePassword(newPassword)
+                  } else {
+                    await account.updatePassword(newPassword, oldPassword)
+                  }
+                  setOldPassword('')
                   setNewPassword('')
                   setConfirmPassword('')
                   addToast('Password updated successfully', 'success')
