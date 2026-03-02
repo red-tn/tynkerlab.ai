@@ -460,16 +460,38 @@ export default function AdminHomepagePage() {
                         }}
                       />
                     </div>
+                  ) : tool.key === 'image-to-video' ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      <ImageDropZone
+                        label="Source Image"
+                        value={tool.imageUrl}
+                        onChange={(url) => {
+                          const updated = [...tools]
+                          updated[idx] = { ...tool, imageUrl: url }
+                          setTools(updated)
+                        }}
+                      />
+                      <ImageDropZone
+                        label="Result Video"
+                        value={tool.imageUrlAfter || ''}
+                        onChange={(url) => {
+                          const updated = [...tools]
+                          updated[idx] = { ...tool, imageUrlAfter: url }
+                          setTools(updated)
+                        }}
+                        isVideo
+                      />
+                    </div>
                   ) : (
                     <ImageDropZone
-                      label={tool.key.includes('video') ? 'Showcase Video/Image' : 'Showcase Image'}
+                      label={tool.key === 'text-to-video' ? 'Showcase Video/Image' : 'Showcase Image'}
                       value={tool.imageUrl}
                       onChange={(url) => {
                         const updated = [...tools]
                         updated[idx] = { ...tool, imageUrl: url }
                         setTools(updated)
                       }}
-                      isVideo={tool.key.includes('video')}
+                      isVideo={tool.key === 'text-to-video'}
                     />
                   )}
                   <div className="space-y-1.5">

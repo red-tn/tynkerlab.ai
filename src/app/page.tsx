@@ -197,7 +197,7 @@ export default function HomePage() {
           {TOOLS.map(({ key, Icon, title, desc, href }) => {
             const toolData = toolImages[key]
             const hasImage = !!toolData?.imageUrl
-            const isBeforeAfter = key === 'image-to-image' && toolData?.imageUrl && toolData?.imageUrlAfter
+            const isBeforeAfter = (key === 'image-to-image' || key === 'image-to-video') && toolData?.imageUrl && toolData?.imageUrlAfter
             const studioHref = toolData?.prompt
               ? `${href}?prompt=${encodeURIComponent(toolData.prompt)}`
               : href
@@ -214,12 +214,16 @@ export default function HomePage() {
                         {isBeforeAfter ? (
                           <div className="aspect-square relative overflow-hidden">
                             <div className="absolute inset-0 grid grid-cols-2">
-                              <img src={toolData.imageUrl} alt="Before" className="w-full h-full object-cover" />
-                              <img src={toolData.imageUrlAfter!} alt="After" className="w-full h-full object-cover" />
+                              <img src={toolData.imageUrl} alt={key === 'image-to-video' ? 'Source' : 'Before'} className="w-full h-full object-cover" />
+                              {key === 'image-to-video' ? (
+                                <video src={toolData.imageUrlAfter!} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+                              ) : (
+                                <img src={toolData.imageUrlAfter!} alt="After" className="w-full h-full object-cover" />
+                              )}
                             </div>
                             <div className="absolute inset-y-0 left-1/2 w-px bg-white/30" />
-                            <div className="absolute top-2 left-2 text-[8px] font-bold uppercase tracking-wider bg-black/60 text-white px-1.5 py-0.5 rounded">Before</div>
-                            <div className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-black/60 text-primary-300 px-1.5 py-0.5 rounded">After</div>
+                            <div className="absolute top-2 left-2 text-[8px] font-bold uppercase tracking-wider bg-black/60 text-white px-1.5 py-0.5 rounded">{key === 'image-to-video' ? 'Image' : 'Before'}</div>
+                            <div className="absolute top-2 right-2 text-[8px] font-bold uppercase tracking-wider bg-black/60 text-primary-300 px-1.5 py-0.5 rounded">{key === 'image-to-video' ? 'Video' : 'After'}</div>
                           </div>
                         ) : (
                           <div className="aspect-square relative overflow-hidden">
