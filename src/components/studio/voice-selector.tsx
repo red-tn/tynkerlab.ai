@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { TTS_MODEL_FAMILIES } from '@/lib/together/tts'
+import { getVoicePreviewUrl } from '@/lib/together/voice-previews'
 import type { TTSGender, TTSVoiceSettings, VoiceMode } from '@/types/together'
 import { cn } from '@/lib/utils'
 import { Volume2, Coins, Wand2, Trash2, Loader2, Play, Square } from 'lucide-react'
@@ -85,6 +86,16 @@ export function VoiceSelector({
     }
   }, [settingsKey])
 
+  const playFromUrl = useCallback((url: string, key: string) => {
+    setPreviewingVoice(key)
+    if (!previewAudioRef.current) {
+      previewAudioRef.current = new Audio()
+    }
+    previewAudioRef.current.src = url
+    previewAudioRef.current.onended = () => setPreviewingVoice(null)
+    previewAudioRef.current.play().catch(() => setPreviewingVoice(null))
+  }, [])
+
   const handlePreview = useCallback(async (familyId: string, voiceId: string) => {
     const key = `${familyId}:${voiceId}`
 
@@ -100,18 +111,26 @@ export function VoiceSelector({
     // Check cache first
     const cached = previewCacheRef.current.get(key)
     if (cached) {
-      setPreviewingVoice(key)
-      if (!previewAudioRef.current) {
-        previewAudioRef.current = new Audio()
-      }
-      previewAudioRef.current.src = cached
-      previewAudioRef.current.onended = () => setPreviewingVoice(null)
-      previewAudioRef.current.play().catch(() => setPreviewingVoice(null))
+      playFromUrl(cached, key)
       return
     }
 
-    // Fetch preview from API
     setLoadingPreview(key)
+    try {
+      // Try pre-loaded storage URL first (instant, no API cost)
+      const storageUrl = getVoicePreviewUrl(familyId, voiceId)
+      const headRes = await fetch(storageUrl, { method: 'HEAD' })
+      if (headRes.ok) {
+        previewCacheRef.current.set(key, storageUrl)
+        playFromUrl(storageUrl, key)
+        setLoadingPreview(null)
+        return
+      }
+    } catch {
+      // Storage file doesn't exist — fall through to API
+    }
+
+    // Fallback: generate preview via API
     try {
       const res = await fetch('/api/generate/speech/preview', {
         method: 'POST',
@@ -129,23 +148,14 @@ export function VoiceSelector({
       const blob = new Blob([bytes], { type: data.mimeType || 'audio/mpeg' })
       const url = URL.createObjectURL(blob)
 
-      // Cache it
       previewCacheRef.current.set(key, url)
-
-      // Play it
-      setPreviewingVoice(key)
-      if (!previewAudioRef.current) {
-        previewAudioRef.current = new Audio()
-      }
-      previewAudioRef.current.src = url
-      previewAudioRef.current.onended = () => setPreviewingVoice(null)
-      previewAudioRef.current.play().catch(() => setPreviewingVoice(null))
+      playFromUrl(url, key)
     } catch {
       // silently fail
     } finally {
       setLoadingPreview(null)
     }
-  }, [previewingVoice, stopPreview, voiceSettings])
+  }, [previewingVoice, stopPreview, voiceSettings, playFromUrl])
 
   // Cleanup audio on unmount
   useEffect(() => {

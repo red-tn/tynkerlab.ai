@@ -85,6 +85,9 @@ export function getAllTTSVoices(): TTSVoice[] {
   return TTS_MODEL_FAMILIES.flatMap(f => f.voices)
 }
 
+/** Models that do NOT accept the `speed` parameter */
+const NO_SPEED_MODELS = ['cartesia/sonic-2']
+
 export async function generateSpeech(
   modelId: string,
   input: string,
@@ -98,14 +101,19 @@ export async function generateSpeech(
   // SDK only supports mp3, wav, raw — map opus to mp3
   const format = responseFormat === 'opus' ? 'mp3' : responseFormat
 
-  const response = await (together.audio.speech.create as Function)({
+  // Cartesia rejects the speed parameter with a 400 error
+  const params: Record<string, unknown> = {
     model: modelId,
     input,
     voice,
     response_format: format,
-    speed: merged.speed,
     stream: false,
-  })
+  }
+  if (!NO_SPEED_MODELS.includes(modelId)) {
+    params.speed = merged.speed
+  }
+
+  const response = await (together.audio.speech.create as Function)(params)
 
   return (response as Response).arrayBuffer()
 }
