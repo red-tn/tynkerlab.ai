@@ -36,6 +36,10 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await account.createEmailPasswordSession(email, password)
+      // Verify the session is persisted (critical for mobile browsers
+      // where cross-origin cookies from Appwrite may be blocked by ITP
+      // and the SDK falls back to localStorage)
+      await account.get()
       window.location.href = redirect
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
@@ -71,6 +75,8 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              autoComplete="email"
+              inputMode="email"
               required
             />
             <Input
@@ -79,6 +85,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="current-password"
               required
             />
             {error && (

@@ -173,33 +173,33 @@ export async function DELETE(request: Request) {
 function matchVoiceToBase(gender: string, age: string, accent: string, tone: string) {
   // Use Kokoro as default base family (affordable, good quality)
   let baseFamily = 'kokoro'
-  let baseVoice = 'alloy'
+  let baseVoice = 'af_alloy'
 
   // Gender + tone matching
   if (gender === 'male') {
     if (tone === 'deep' || tone === 'authoritative') {
-      baseVoice = 'onyx'
+      baseVoice = 'am_onyx'
     } else if (tone === 'warm' || tone === 'friendly') {
-      baseVoice = 'echo'
+      baseVoice = 'am_echo'
     } else if (tone === 'wise' || tone === 'calm') {
-      baseVoice = 'sage'
+      baseVoice = 'am_adam'
     } else {
-      baseVoice = 'echo'
+      baseVoice = 'am_echo'
     }
   } else if (gender === 'female') {
     if (tone === 'bright' || tone === 'energetic') {
-      baseVoice = 'nova'
+      baseVoice = 'af_nova'
     } else if (tone === 'calm' || tone === 'gentle') {
-      baseVoice = 'shimmer'
+      baseVoice = 'af_sky'
     } else if (tone === 'expressive' || tone === 'storytelling') {
-      baseVoice = 'fable'
+      baseVoice = 'bm_fable'
     } else if (tone === 'friendly' || tone === 'casual') {
-      baseVoice = 'coral'
+      baseVoice = 'af_nicole'
     } else {
-      baseVoice = 'nova'
+      baseVoice = 'af_nova'
     }
   } else {
-    baseVoice = 'alloy'
+    baseVoice = 'af_alloy'
   }
 
   // If premium tone is needed, use Orpheus for more expressive output

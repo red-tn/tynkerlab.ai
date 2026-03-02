@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { TTS_MODEL_FAMILIES } from '@/lib/together/tts'
-import type { TTSGender, VoiceMode } from '@/types/together'
+import type { TTSGender, TTSVoiceSettings, VoiceMode } from '@/types/together'
 import { cn } from '@/lib/utils'
 import { Volume2, Coins, Wand2, Trash2, Loader2, Play, Square } from 'lucide-react'
 import { VoiceWizard } from './voice-wizard'
@@ -34,6 +34,7 @@ interface VoiceSelectorProps {
   onVoiceChange: (voiceId: string) => void
   voiceMode: VoiceMode
   onVoiceModeChange: (mode: VoiceMode) => void
+  voiceSettings?: TTSVoiceSettings
   disabled?: boolean
   subscriptionTier?: string
   userId?: string
@@ -44,6 +45,7 @@ export function VoiceSelector({
   selectedFamily, onFamilyChange,
   selectedVoice, onVoiceChange,
   voiceMode, onVoiceModeChange,
+  voiceSettings,
   disabled,
   subscriptionTier = 'free',
   userId,
@@ -70,6 +72,18 @@ export function VoiceSelector({
     }
     setPreviewingVoice(null)
   }, [])
+
+  // Clear cache when settings change so previews reflect new settings
+  const settingsKey = JSON.stringify(voiceSettings || {})
+  const prevSettingsKeyRef = useRef(settingsKey)
+  useEffect(() => {
+    if (prevSettingsKeyRef.current !== settingsKey) {
+      // Revoke old blob URLs
+      previewCacheRef.current.forEach(url => URL.revokeObjectURL(url))
+      previewCacheRef.current.clear()
+      prevSettingsKeyRef.current = settingsKey
+    }
+  }, [settingsKey])
 
   const handlePreview = useCallback(async (familyId: string, voiceId: string) => {
     const key = `${familyId}:${voiceId}`
@@ -102,7 +116,7 @@ export function VoiceSelector({
       const res = await fetch('/api/generate/speech/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ familyId, voice: voiceId }),
+        body: JSON.stringify({ familyId, voice: voiceId, settings: voiceSettings }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Preview failed')
@@ -131,7 +145,7 @@ export function VoiceSelector({
     } finally {
       setLoadingPreview(null)
     }
-  }, [previewingVoice, stopPreview])
+  }, [previewingVoice, stopPreview, voiceSettings])
 
   // Cleanup audio on unmount
   useEffect(() => {

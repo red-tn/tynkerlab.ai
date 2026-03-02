@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { account } from '@/lib/appwrite/client'
 import { ID, OAuthProvider } from 'appwrite'
@@ -21,7 +20,7 @@ const signupSchema = z.object({
 })
 
 export default function SignupPage() {
-  const router = useRouter()
+
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,6 +42,9 @@ export default function SignupPage() {
     try {
       await account.create(ID.unique(), email, password, name)
       await account.createEmailPasswordSession(email, password)
+      // Verify the session is persisted (critical for mobile where
+      // cross-origin cookies may be blocked by Safari ITP)
+      await account.get()
 
       // Create profile via API route
       await fetch('/api/profile', {
@@ -51,7 +53,7 @@ export default function SignupPage() {
         body: JSON.stringify({ name, email }),
       })
 
-      router.push('/dashboard')
+      window.location.href = '/dashboard'
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to create account'
       setError(message)
@@ -107,6 +109,7 @@ export default function SignupPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="John Doe"
+              autoComplete="name"
               required
             />
             <Input
@@ -115,6 +118,8 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
+              autoComplete="email"
+              inputMode="email"
               required
             />
             <Input
@@ -123,6 +128,7 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="new-password"
               required
             />
             <Input
@@ -131,6 +137,7 @@ export default function SignupPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="new-password"
               required
             />
             {error && (

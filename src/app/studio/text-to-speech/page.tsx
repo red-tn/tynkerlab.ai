@@ -65,7 +65,7 @@ export default function TextToSpeechPage() {
   const { balance, refetch: refetchCredits } = useCredits(user?.$id)
 
   const [familyId, setFamilyId] = useState('kokoro')
-  const [voice, setVoice] = useState('alloy')
+  const [voice, setVoice] = useState('af_alloy')
   const [voiceMode, setVoiceMode] = useState<VoiceMode>('library')
   const [text, setText] = useState('')
   const [format, setFormat] = useState('mp3')
@@ -149,6 +149,7 @@ export default function TextToSpeechPage() {
             onVoiceChange={setVoice}
             voiceMode={voiceMode}
             onVoiceModeChange={setVoiceMode}
+            voiceSettings={settings}
             disabled={generating}
             subscriptionTier={profile?.subscriptionTier}
             userId={user?.$id}
