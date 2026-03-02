@@ -54,16 +54,27 @@ export function useAuth(): AuthState {
 
   useEffect(() => {
     const init = async () => {
-      try {
-        const currentUser = await account.get()
-        setUser(currentUser)
-        await fetchProfile(currentUser.$id, currentUser.email, currentUser.name)
-      } catch {
-        setUser(null)
-        setProfile(null)
-      } finally {
-        setIsLoading(false)
+      // On mobile (Safari ITP), cross-origin cookies may be blocked and
+      // the SDK falls back to localStorage. A retry handles the rare case
+      // where the SDK needs an extra moment to restore the session.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const currentUser = await account.get()
+          setUser(currentUser)
+          await fetchProfile(currentUser.$id, currentUser.email, currentUser.name)
+          setIsLoading(false)
+          return
+        } catch {
+          if (attempt === 0) {
+            // Brief pause before retry — gives SDK time to read localStorage fallback
+            await new Promise(r => setTimeout(r, 500))
+          }
+        }
       }
+      // Both attempts failed — no valid session
+      setUser(null)
+      setProfile(null)
+      setIsLoading(false)
     }
     init()
   }, [fetchProfile])

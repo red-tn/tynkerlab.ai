@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/hooks/use-auth'
-import { useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect, type ReactNode } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -12,13 +12,15 @@ interface AuthGuardProps {
 
 export function AuthGuard({ children, fallback }: AuthGuardProps) {
   const { isAuthenticated, isLoading } = useAuth()
-  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login')
+      // Pass the current path so login can redirect back here
+      const returnUrl = pathname && pathname !== '/' ? `?redirect=${encodeURIComponent(pathname)}` : ''
+      window.location.href = `/login${returnUrl}`
     }
-  }, [isLoading, isAuthenticated, router])
+  }, [isLoading, isAuthenticated, pathname])
 
   if (isLoading) {
     return fallback || (

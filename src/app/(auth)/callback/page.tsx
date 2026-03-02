@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { account } from '@/lib/appwrite/client'
 import { Logo } from '@/components/brand/logo'
 
-export default function CallbackPage() {
+function CallbackHandler() {
   const searchParams = useSearchParams()
   const [status, setStatus] = useState('Signing you in...')
 
@@ -21,14 +21,14 @@ export default function CallbackPage() {
       try {
         await account.get()
         // Session is valid — redirect to destination
-        window.location.href = redirect
+        window.location.replace(redirect)
       } catch {
         if (attempt < 5) {
           setStatus(attempt > 1 ? 'Still working...' : 'Signing you in...')
           setTimeout(() => checkSession(attempt + 1), 800 + attempt * 400)
         } else {
           // All retries exhausted
-          window.location.href = `/login?error=oauth_failed`
+          window.location.replace('/login?error=oauth_failed')
         }
       }
     }
@@ -38,9 +38,24 @@ export default function CallbackPage() {
   }, [searchParams])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative z-[1]">
+    <>
       <Logo size={48} className="animate-pulse mb-4" />
       <p className="text-sm text-gray-400">{status}</p>
+    </>
+  )
+}
+
+export default function CallbackPage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center relative z-[1]">
+      <Suspense fallback={
+        <>
+          <Logo size={48} className="animate-pulse mb-4" />
+          <p className="text-sm text-gray-400">Signing you in...</p>
+        </>
+      }>
+        <CallbackHandler />
+      </Suspense>
     </div>
   )
 }
