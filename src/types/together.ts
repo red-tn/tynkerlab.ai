@@ -36,7 +36,7 @@ export interface VideoJobResult {
 
 export interface VideoStatusResult {
   id: string
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'pending' | 'processing' | 'in_progress' | 'completed' | 'failed'
   output?: {
     video_url: string
   }

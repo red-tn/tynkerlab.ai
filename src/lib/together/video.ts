@@ -31,10 +31,13 @@ export async function checkVideoStatus(jobId: string): Promise<VideoStatusResult
   const together = getTogetherClient()
   const status = await together.videos.retrieve(jobId) as any
 
+  // Together.ai returns "outputs" (plural) in their API, but SDK may use "output"
+  const outputData = status.outputs || status.output
+
   return {
     id: jobId,
     status: status.status as VideoStatusResult['status'],
-    output: status.output ? { video_url: status.output.video_url } : undefined,
+    output: outputData?.video_url ? { video_url: outputData.video_url } : undefined,
     error: status.error || undefined,
   }
 }
