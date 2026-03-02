@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { TTS_MODEL_FAMILIES } from '@/lib/together/tts'
 import type { TTSGender, VoiceMode } from '@/types/together'
 import { cn } from '@/lib/utils'
-import { Volume2, Coins, Wand2, Trash2, Loader2 } from 'lucide-react'
+import { Volume2, Coins, Wand2, Trash2, Loader2, Play, Square } from 'lucide-react'
 import { VoiceWizard } from './voice-wizard'
 
 const GENDERS: { id: TTSGender | 'all'; label: string }[] = [
@@ -56,6 +56,92 @@ export function VoiceSelector({
   const [showWizard, setShowWizard] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [selectedCustomId, setSelectedCustomId] = useState<string | null>(null)
+
+  // Voice preview state
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null) // "familyId:voiceId"
+  const [loadingPreview, setLoadingPreview] = useState<string | null>(null)
+  const previewCacheRef = useRef<Map<string, string>>(new Map()) // key -> blob URL
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  const stopPreview = useCallback(() => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause()
+      previewAudioRef.current.currentTime = 0
+    }
+    setPreviewingVoice(null)
+  }, [])
+
+  const handlePreview = useCallback(async (familyId: string, voiceId: string) => {
+    const key = `${familyId}:${voiceId}`
+
+    // If already playing this voice, stop it
+    if (previewingVoice === key) {
+      stopPreview()
+      return
+    }
+
+    // Stop any current playback
+    stopPreview()
+
+    // Check cache first
+    const cached = previewCacheRef.current.get(key)
+    if (cached) {
+      setPreviewingVoice(key)
+      if (!previewAudioRef.current) {
+        previewAudioRef.current = new Audio()
+      }
+      previewAudioRef.current.src = cached
+      previewAudioRef.current.onended = () => setPreviewingVoice(null)
+      previewAudioRef.current.play().catch(() => setPreviewingVoice(null))
+      return
+    }
+
+    // Fetch preview from API
+    setLoadingPreview(key)
+    try {
+      const res = await fetch('/api/generate/speech/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ familyId, voice: voiceId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Preview failed')
+
+      const binaryStr = atob(data.audio)
+      const bytes = new Uint8Array(binaryStr.length)
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: data.mimeType || 'audio/mpeg' })
+      const url = URL.createObjectURL(blob)
+
+      // Cache it
+      previewCacheRef.current.set(key, url)
+
+      // Play it
+      setPreviewingVoice(key)
+      if (!previewAudioRef.current) {
+        previewAudioRef.current = new Audio()
+      }
+      previewAudioRef.current.src = url
+      previewAudioRef.current.onended = () => setPreviewingVoice(null)
+      previewAudioRef.current.play().catch(() => setPreviewingVoice(null))
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingPreview(null)
+    }
+  }, [previewingVoice, stopPreview])
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause()
+        previewAudioRef.current = null
+      }
+    }
+  }, [])
 
   const family = useMemo(
     () => TTS_MODEL_FAMILIES.find(f => f.id === selectedFamily),
@@ -202,42 +288,68 @@ export function VoiceSelector({
 
           {/* Voice Grid */}
           <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
-            {filteredVoices.map((voice) => (
-              <button
-                key={voice.id}
-                type="button"
-                onClick={() => { if (!disabled) { onVoiceChange(voice.id); setSelectedCustomId(null) } }}
-                disabled={disabled}
-                className={cn(
-                  'flex items-start gap-2 p-2.5 rounded-lg border transition-all text-left',
-                  selectedVoice === voice.id && !selectedCustomId
-                    ? 'border-primary-500 bg-primary-500/10 text-white'
-                    : 'border-nyx-border bg-nyx-surface text-gray-400 hover:border-nyx-border-bright hover:text-gray-300',
-                  'disabled:opacity-50'
-                )}
-              >
-                <Volume2 className="h-4 w-4 shrink-0 text-primary-400 mt-0.5" />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-medium truncate">{voice.name}</p>
-                    <span className={cn(
-                      'text-[9px] px-1.5 py-0.5 rounded-full uppercase',
-                      voice.gender === 'male' ? 'bg-blue-500/10 text-blue-400' :
-                      voice.gender === 'female' ? 'bg-pink-500/10 text-pink-400' :
-                      'bg-gray-500/10 text-gray-400'
-                    )}>{voice.gender}</span>
-                  </div>
-                  <p className="text-[10px] text-gray-500 truncate">{voice.description}</p>
-                  {voice.tags && (
-                    <div className="flex gap-1 mt-1 flex-wrap">
-                      {voice.tags.map(tag => (
-                        <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500">{tag}</span>
-                      ))}
-                    </div>
+            {filteredVoices.map((v) => {
+              const previewKey = `${selectedFamily}:${v.id}`
+              const isPlaying = previewingVoice === previewKey
+              const isLoading = loadingPreview === previewKey
+              return (
+                <div
+                  key={v.id}
+                  className={cn(
+                    'flex items-start gap-2 p-2.5 rounded-lg border transition-all text-left cursor-pointer',
+                    selectedVoice === v.id && !selectedCustomId
+                      ? 'border-primary-500 bg-primary-500/10 text-white'
+                      : 'border-nyx-border bg-nyx-surface text-gray-400 hover:border-nyx-border-bright hover:text-gray-300',
+                    disabled && 'opacity-50 pointer-events-none'
                   )}
+                  onClick={() => { if (!disabled) { onVoiceChange(v.id); setSelectedCustomId(null) } }}
+                >
+                  {/* Preview button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handlePreview(selectedFamily, v.id)
+                    }}
+                    disabled={disabled || isLoading}
+                    className={cn(
+                      'shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all mt-0.5',
+                      isPlaying
+                        ? 'bg-primary-500 text-white'
+                        : 'bg-primary-500/15 text-primary-400 hover:bg-primary-500/30'
+                    )}
+                    title={isPlaying ? 'Stop preview' : 'Preview voice'}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isPlaying ? (
+                      <Square className="h-2.5 w-2.5 fill-current" />
+                    ) : (
+                      <Play className="h-3 w-3 ml-0.5" />
+                    )}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-medium truncate">{v.name}</p>
+                      <span className={cn(
+                        'text-[9px] px-1.5 py-0.5 rounded-full uppercase',
+                        v.gender === 'male' ? 'bg-blue-500/10 text-blue-400' :
+                        v.gender === 'female' ? 'bg-pink-500/10 text-pink-400' :
+                        'bg-gray-500/10 text-gray-400'
+                      )}>{v.gender}</span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 truncate">{v.description}</p>
+                    {v.tags && (
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {v.tags.map(tag => (
+                          <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-500">{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </button>
-            ))}
+              )
+            })}
             {filteredVoices.length === 0 && (
               <div className="col-span-2 text-center py-6 text-gray-500 text-sm">
                 No voices match this filter
