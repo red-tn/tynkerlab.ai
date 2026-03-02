@@ -20,18 +20,22 @@ export function ImageDropZone({ value, onChange, className, label, compact, isVi
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [uploadedIsVideo, setUploadedIsVideo] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const uploadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return
     setUploading(true)
+    setError(null)
     try {
       const uploaded = await storage.createFile(BUCKET_UPLOADS, ID.unique(), file)
       const fileUrl = storage.getFileView(BUCKET_UPLOADS, uploaded.$id).toString()
       setUploadedIsVideo(file.type.startsWith('video/'))
       onChange(fileUrl)
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err?.message || 'Upload failed'
       console.error('Upload failed:', err)
+      setError(msg.includes('File size') ? `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Increase your bucket size limit in Appwrite Console.` : msg)
     } finally {
       setUploading(false)
     }
@@ -124,6 +128,9 @@ export function ImageDropZone({ value, onChange, className, label, compact, isVi
               </p>
               <p className="text-[10px] text-gray-600 mt-0.5">PNG, JPG, GIF, WEBP, MP4</p>
             </div>
+            {error && (
+              <p className="text-[11px] text-red-400 mt-1 px-2 text-center">{error}</p>
+            )}
           </>
         )}
         <input

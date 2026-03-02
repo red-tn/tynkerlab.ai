@@ -259,10 +259,14 @@ export default function AdminHomepagePage() {
                     <div key={prompt.$id} className="relative rounded-xl border border-yellow-500/20 bg-nyx-surface overflow-hidden group">
                       <div className="aspect-video bg-nyx-bg relative overflow-hidden">
                         {prompt.previewImageUrl ? (
-                          <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover" />
+                          prompt.modelType === 'video' ? (
+                            <video src={prompt.previewImageUrl} className="w-full h-full object-cover" muted playsInline controls />
+                          ) : (
+                            <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover" />
+                          )
                         ) : (
                           <div className="flex items-center justify-center h-full">
-                            <ImageIcon className="h-6 w-6 text-gray-700" />
+                            {prompt.modelType === 'video' ? <Video className="h-6 w-6 text-gray-700" /> : <ImageIcon className="h-6 w-6 text-gray-700" />}
                           </div>
                         )}
                         <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -347,7 +351,11 @@ export default function AdminHomepagePage() {
                     <div key={prompt.$id} className="relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden group hover:border-nyx-border-bright transition-colors">
                       <div className="aspect-video bg-nyx-bg relative overflow-hidden">
                         {prompt.previewImageUrl ? (
-                          <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover" />
+                          prompt.modelType === 'video' ? (
+                            <video src={prompt.previewImageUrl} className="w-full h-full object-cover" muted playsInline controls />
+                          ) : (
+                            <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover" />
+                          )
                         ) : (
                           <div className="flex items-center justify-center h-full">
                             {prompt.modelType === 'video' ? <Video className="h-6 w-6 text-gray-700" /> : <ImageIcon className="h-6 w-6 text-gray-700" />}

@@ -60,7 +60,7 @@ export default function HomePage() {
       .then(d => setFeatured(d.prompts || []))
       .catch(() => {})
 
-    fetch('/api/admin/settings?key=homepage_tools')
+    fetch('/api/settings?key=homepage_tools')
       .then(r => r.json())
       .then(d => {
         if (d.value) {
@@ -223,11 +223,19 @@ export default function HomePage() {
                           </div>
                         ) : (
                           <div className="aspect-square relative overflow-hidden">
-                            <img
-                              src={toolData!.imageUrl}
-                              alt={title}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                            />
+                            {key.includes('video') ? (
+                              <video
+                                src={toolData!.imageUrl}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                muted autoPlay loop playsInline
+                              />
+                            ) : (
+                              <img
+                                src={toolData!.imageUrl}
+                                alt={title}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                              />
+                            )}
                           </div>
                         )}
                         {/* Always-visible gradient overlay */}
