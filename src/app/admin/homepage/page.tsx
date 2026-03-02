@@ -454,13 +454,14 @@ export default function AdminHomepagePage() {
                     </div>
                   ) : (
                     <ImageDropZone
-                      label="Showcase Image"
+                      label={tool.key.includes('video') ? 'Showcase Video/Image' : 'Showcase Image'}
                       value={tool.imageUrl}
                       onChange={(url) => {
                         const updated = [...tools]
                         updated[idx] = { ...tool, imageUrl: url }
                         setTools(updated)
                       }}
+                      isVideo={tool.key.includes('video')}
                     />
                   )}
                   <div className="space-y-1.5">

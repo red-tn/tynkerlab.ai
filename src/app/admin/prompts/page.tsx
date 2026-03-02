@@ -527,6 +527,7 @@ export default function AdminPromptsPage() {
               label="Preview Image/Video"
               value={form.previewImageUrl}
               onChange={(url) => setForm({ ...form, previewImageUrl: url })}
+              isVideo={form.modelType === 'video'}
             />
 
             <div className="flex items-center gap-6">

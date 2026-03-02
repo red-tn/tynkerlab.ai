@@ -12,11 +12,14 @@ interface ImageDropZoneProps {
   className?: string
   label?: string
   compact?: boolean
+  /** Hint that the current value is a video (for Appwrite URLs without extensions) */
+  isVideo?: boolean
 }
 
-export function ImageDropZone({ value, onChange, className, label, compact }: ImageDropZoneProps) {
+export function ImageDropZone({ value, onChange, className, label, compact, isVideo: isVideoProp }: ImageDropZoneProps) {
   const [uploading, setUploading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [uploadedIsVideo, setUploadedIsVideo] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const uploadFile = useCallback(async (file: File) => {
@@ -25,6 +28,7 @@ export function ImageDropZone({ value, onChange, className, label, compact }: Im
     try {
       const uploaded = await storage.createFile(BUCKET_UPLOADS, ID.unique(), file)
       const fileUrl = storage.getFileView(BUCKET_UPLOADS, uploaded.$id).toString()
+      setUploadedIsVideo(file.type.startsWith('video/'))
       onChange(fileUrl)
     } catch (err) {
       console.error('Upload failed:', err)
@@ -67,8 +71,8 @@ export function ImageDropZone({ value, onChange, className, label, compact }: Im
           'relative rounded-lg overflow-hidden border border-nyx-border bg-nyx-bg',
           compact ? 'aspect-video' : 'aspect-video'
         )}>
-          {value.includes('.mp4') || value.includes('.webm') ? (
-            <video src={value} className="w-full h-full object-cover" muted />
+          {isVideoProp || uploadedIsVideo || /\.(mp4|webm|mov)/.test(value) ? (
+            <video src={value} className="w-full h-full object-cover" controls muted playsInline />
           ) : (
             <img src={value} alt="Preview" className="w-full h-full object-cover" />
           )}
