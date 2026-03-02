@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
 
@@ -25,12 +27,14 @@ export async function GET(request: Request) {
     ])
     return NextResponse.json({ settings: result.documents })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
+    await requireAdmin(request)
     const { key, value } = await request.json()
 
     if (!key) {
@@ -65,6 +69,7 @@ export async function POST(request: Request) {
       return NextResponse.json(doc)
     }
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

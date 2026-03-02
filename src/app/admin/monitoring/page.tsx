@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 import { ApiStatusCard } from '@/components/admin/api-status-card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/utils'
@@ -23,7 +24,7 @@ export default function AdminMonitoringPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/admin/monitoring')
+        const res = await adminFetch('/api/admin/monitoring')
         if (res.ok) setData(await res.json())
       } catch (err) {
         console.error(err)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog } from '@/components/ui/dialog'
@@ -22,7 +23,7 @@ export default function AdminAffiliatesPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/affiliates')
+      const res = await adminFetch('/api/admin/affiliates')
       if (res.ok) {
         const data = await res.json()
         setAffiliates(data.affiliates)
@@ -41,7 +42,7 @@ export default function AdminAffiliatesPage() {
   const handleStatusChange = async (affiliateId: string, status: string) => {
     setActionLoading(true)
     try {
-      await fetch('/api/admin/affiliates', {
+      await adminFetch('/api/admin/affiliates', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ affiliateId, status }),
@@ -59,7 +60,7 @@ export default function AdminAffiliatesPage() {
     if (!payoutTarget) return
     setActionLoading(true)
     try {
-      const res = await fetch('/api/admin/affiliates', {
+      const res = await adminFetch('/api/admin/affiliates', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ affiliateId: payoutTarget.$id, action: 'payout' }),

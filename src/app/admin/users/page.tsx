@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Profile } from '@/types/database'
+import { adminFetch } from '@/lib/admin-fetch'
 import { UserTable } from '@/components/admin/user-table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,7 +29,7 @@ export default function AdminUsersPage() {
     try {
       const params = new URLSearchParams({ page: page.toString(), limit: '20' })
       if (search) params.set('search', search)
-      const res = await fetch(`/api/admin/users?${params}`)
+      const res = await adminFetch(`/api/admin/users?${params}`)
       if (res.ok) {
         const data = await res.json()
         setUsers(data.users)
@@ -56,7 +57,7 @@ export default function AdminUsersPage() {
     if (!selectedUser) return
     setSaving(true)
     try {
-      await fetch('/api/admin/users', {
+      await adminFetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileId: selectedUser.$id, ...updates }),
@@ -72,7 +73,7 @@ export default function AdminUsersPage() {
 
   const handleDeleteUser = async (user: Profile) => {
     try {
-      const res = await fetch(`/api/admin/users?profileId=${user.$id}`, { method: 'DELETE' })
+      const res = await adminFetch(`/api/admin/users?profileId=${user.$id}`, { method: 'DELETE' })
       if (res.ok) {
         if (selectedUser?.$id === user.$id) setSelectedUser(null)
         await fetchUsers()

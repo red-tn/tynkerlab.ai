@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 import dynamic from 'next/dynamic'
 import { StatsCard } from '@/components/admin/stats-card'
 import { ActivityFeed, type ActivityItem } from '@/components/admin/activity-feed'
@@ -41,7 +42,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/admin/analytics')
+        const res = await adminFetch('/api/admin/analytics')
         if (res.ok) {
           setData(await res.json())
         }

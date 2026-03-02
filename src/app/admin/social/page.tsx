@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -62,14 +63,14 @@ export default function AdminSocialPage() {
           limit: PAGE_SIZE.toString(),
           ...(filter !== 'all' ? { type: filter } : {}),
         })
-        const res = await fetch(`/api/admin/social/generations?${params}`)
+        const res = await adminFetch(`/api/admin/social/generations?${params}`)
         if (res.ok) {
           const data = await res.json()
           setItems(data.generations)
           setTotal(data.total)
         }
       } else {
-        const res = await fetch(`/api/admin/prompts?limit=100`)
+        const res = await adminFetch(`/api/admin/prompts?limit=100`)
         if (res.ok) {
           const data = await res.json()
           let prompts = data.prompts.filter((p: any) => p.previewImageUrl)

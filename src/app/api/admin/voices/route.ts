@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { Query, ID } from 'node-appwrite'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 const SETTINGS_KEY = 'voice_config'
 
@@ -42,18 +43,21 @@ async function saveVoiceConfig(databases: any, config: Record<string, any>) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
     const { databases } = createAdminClient()
     const config = await getVoiceConfig(databases)
     return NextResponse.json({ config })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    await requireAdmin(request)
     const { databases } = createAdminClient()
     const body = await request.json()
     const { voiceKey, enabled, displayName, featured } = body
@@ -76,6 +80,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ config })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

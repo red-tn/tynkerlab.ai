@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query, Permission, Role } from 'node-appwrite'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '0')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -20,12 +22,14 @@ export async function GET(request: Request) {
       total: result.total,
     })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
+    await requireAdmin(request)
     const body = await request.json()
     const { title, promptText, category, modelType, isPublished } = body
 
@@ -51,12 +55,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json(doc)
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    await requireAdmin(request)
     const body = await request.json()
     const { id, ...updates } = body
 
@@ -71,12 +77,14 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(doc)
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    await requireAdmin(request)
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -89,6 +97,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

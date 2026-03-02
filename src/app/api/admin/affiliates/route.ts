@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { Query } from 'node-appwrite'
 import { getAllAffiliates, processPayout } from '@/lib/affiliates'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
     const result = await getAllAffiliates(200)
 
     // Aggregate stats
@@ -23,12 +25,14 @@ export async function GET() {
       stats: { totalEarnings, totalPending, activeCount },
     })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    await requireAdmin(request)
     const { affiliateId, action, status } = await request.json()
     if (!affiliateId) {
       return NextResponse.json({ error: 'affiliateId required' }, { status: 400 })
@@ -48,6 +52,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ error: 'No action specified' }, { status: 400 })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

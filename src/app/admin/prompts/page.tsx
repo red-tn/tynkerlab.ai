@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Prompt } from '@/types/database'
+import { adminFetch } from '@/lib/admin-fetch'
 import { ALL_MODELS } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import { Button } from '@/components/ui/button'
@@ -75,7 +76,7 @@ export default function AdminPromptsPage() {
   const fetchPrompts = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/prompts?limit=100')
+      const res = await adminFetch('/api/admin/prompts?limit=100')
       if (res.ok) {
         const data = await res.json()
         setPrompts(data.prompts)
@@ -105,13 +106,13 @@ export default function AdminPromptsPage() {
 
       let res: Response
       if (editingId) {
-        res = await fetch('/api/admin/prompts', {
+        res = await adminFetch('/api/admin/prompts', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: editingId, ...payload }),
         })
       } else {
-        res = await fetch('/api/admin/prompts', {
+        res = await adminFetch('/api/admin/prompts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -140,7 +141,7 @@ export default function AdminPromptsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this prompt?')) return
     try {
-      await fetch(`/api/admin/prompts?id=${id}`, { method: 'DELETE' })
+      await adminFetch(`/api/admin/prompts?id=${id}`, { method: 'DELETE' })
       if (flyout?.$id === id) setFlyout(null)
       fetchPrompts()
     } catch (err) {
@@ -165,7 +166,7 @@ export default function AdminPromptsPage() {
 
   const toggleFeatured = async (prompt: Prompt) => {
     try {
-      await fetch('/api/admin/prompts', {
+      await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: prompt.$id, isFeatured: !prompt.isFeatured }),
@@ -178,7 +179,7 @@ export default function AdminPromptsPage() {
 
   const togglePublished = async (prompt: Prompt) => {
     try {
-      await fetch('/api/admin/prompts', {
+      await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: prompt.$id, isPublished: !prompt.isPublished }),

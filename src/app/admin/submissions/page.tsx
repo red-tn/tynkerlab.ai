@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { Prompt } from '@/types/database'
+import { adminFetch } from '@/lib/admin-fetch'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Dialog } from '@/components/ui/dialog'
@@ -21,7 +22,7 @@ export default function AdminSubmissionsPage() {
   const fetchSubmissions = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/prompts?page=${page}&limit=20`)
+      const res = await adminFetch(`/api/admin/prompts?page=${page}&limit=20`)
       if (res.ok) {
         const data = await res.json()
         // Filter to show pending submissions
@@ -49,7 +50,7 @@ export default function AdminSubmissionsPage() {
         updates.isPublished = true
       }
 
-      const res = await fetch('/api/admin/prompts', {
+      const res = await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),

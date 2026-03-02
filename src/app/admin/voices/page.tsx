@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 import { TTS_MODEL_FAMILIES } from '@/lib/together/tts'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +20,7 @@ export default function AdminVoicesPage() {
   const [saving, setSaving] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/admin/voices')
+    adminFetch('/api/admin/voices')
       .then(r => r.json())
       .then(d => setConfig(d.config || {}))
       .catch(() => {})
@@ -29,7 +30,7 @@ export default function AdminVoicesPage() {
   const updateVoice = async (voiceKey: string, updates: Partial<VoiceConfig>) => {
     setSaving(voiceKey)
     try {
-      const res = await fetch('/api/admin/voices', {
+      const res = await adminFetch('/api/admin/voices', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ voiceKey, ...updates }),

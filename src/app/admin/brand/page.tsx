@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -121,7 +122,7 @@ export default function AdminBrandPage() {
   const handleActivate = useCallback((id: string) => {
     setActiveSet(id)
     // Persist to site_settings
-    fetch('/api/admin/settings', {
+    adminFetch('/api/admin/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key: 'active_icon_set', value: id }),

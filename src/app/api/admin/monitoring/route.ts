@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { Query } from 'node-appwrite'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
     const { databases } = createAdminClient()
     const now = new Date()
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
@@ -64,6 +66,7 @@ export async function GET() {
       })),
     })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

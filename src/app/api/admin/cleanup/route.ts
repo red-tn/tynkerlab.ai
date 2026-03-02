@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { Query } from 'node-appwrite'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 /**
  * POST /api/admin/cleanup
@@ -8,6 +9,7 @@ import { Query } from 'node-appwrite'
  */
 export async function POST(request: Request) {
   try {
+    await requireAdmin(request)
     const { databases, storage } = createAdminClient()
     const bucketId = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
     let deletedCount = 0
@@ -85,6 +87,7 @@ export async function POST(request: Request) {
       message: `Cleaned up ${deletedCount} records, marked ${cleanedCount} stuck jobs as failed`,
     })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
@@ -93,8 +96,9 @@ export async function POST(request: Request) {
  * GET /api/admin/cleanup
  * Get counts of records that need cleanup.
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
     const { databases } = createAdminClient()
     const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
 
@@ -122,6 +126,7 @@ export async function GET() {
       totalCleanable: failed.total + stuckProcessing.total + stuckPending.total,
     })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

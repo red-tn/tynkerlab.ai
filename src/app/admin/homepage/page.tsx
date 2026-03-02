@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { adminFetch } from '@/lib/admin-fetch'
 import type { Prompt } from '@/types/database'
 import { ALL_MODELS } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
@@ -47,7 +48,7 @@ export default function AdminHomepagePage() {
 
   const fetchPrompts = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/prompts?limit=100')
+      const res = await adminFetch('/api/admin/prompts?limit=100')
       if (res.ok) {
         const data = await res.json()
         setAllPrompts(data.prompts)
@@ -64,7 +65,7 @@ export default function AdminHomepagePage() {
       try {
         await fetchPrompts()
 
-        const settingsRes = await fetch('/api/admin/settings?key=homepage_tools')
+        const settingsRes = await adminFetch('/api/admin/settings?key=homepage_tools')
         if (settingsRes.ok) {
           const data = await settingsRes.json()
           if (data.value) {
@@ -98,7 +99,7 @@ export default function AdminHomepagePage() {
 
     saveTimer.current = setTimeout(async () => {
       try {
-        const res = await fetch('/api/admin/settings', {
+        const res = await adminFetch('/api/admin/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -128,7 +129,7 @@ export default function AdminHomepagePage() {
   const toggleFeatured = async (prompt: Prompt) => {
     setTogglingId(prompt.$id)
     try {
-      const res = await fetch('/api/admin/prompts', {
+      const res = await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: prompt.$id, isFeatured: !prompt.isFeatured }),
@@ -148,7 +149,7 @@ export default function AdminHomepagePage() {
   const deletePrompt = async (promptId: string) => {
     setDeletingId(promptId)
     try {
-      const res = await fetch(`/api/admin/prompts?id=${promptId}`, { method: 'DELETE' })
+      const res = await adminFetch(`/api/admin/prompts?id=${promptId}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
         console.error('Delete failed:', err)
@@ -167,7 +168,7 @@ export default function AdminHomepagePage() {
     if ((direction === 'up' && idx <= 0) || (direction === 'down' && idx >= featuredPrompts.length - 1)) return
     const newOrder = direction === 'up' ? prompt.sortOrder + 1 : Math.max(0, prompt.sortOrder - 1)
     try {
-      await fetch('/api/admin/prompts', {
+      await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: prompt.$id, sortOrder: newOrder }),

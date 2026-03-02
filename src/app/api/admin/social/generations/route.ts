@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { Query } from 'node-appwrite'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '0')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -32,6 +34,7 @@ export async function GET(request: Request) {
       totalPages: Math.ceil(result.total / limit),
     })
   } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
