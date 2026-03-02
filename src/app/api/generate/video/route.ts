@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ jobId: job.id, generationId })
     } catch (genError: any) {
-      await refundCredits(userId, modelData.credits, `Refund: video failed`, generationId)
+      await refundCredits(userId, creditsToCharge, `Refund: video failed`, generationId)
       await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
         status: 'failed', errorMessage: genError.message,
       })
