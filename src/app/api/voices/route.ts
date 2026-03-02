@@ -55,20 +55,52 @@ export async function GET(request: Request) {
   }
 }
 
-// POST — create a new custom voice (costs credits for preview generation)
+// POST — create or preview a custom voice
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { userId, name, gender, age, accent, tone, preview } = body
+    const { userId, name, gender, age, accent, tone, preview, previewOnly, customSettings } = body
 
-    if (!userId || !name || !gender || !age || !tone) {
+    if (!userId || !gender || !age || !tone) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     // Match wizard choices to the best base voice + settings
-    const { baseFamily, baseVoice, settings } = matchVoiceToBase(gender, age, accent, tone)
+    const matched = matchVoiceToBase(gender, age, accent, tone)
+    // Allow client to override settings (for fine-tuning)
+    const settings = customSettings
+      ? { ...matched.settings, ...customSettings }
+      : matched.settings
 
-    // If preview requested, generate a sample (costs credits)
+    // previewOnly: generate audio + return matched settings, but don't save
+    if (previewOnly) {
+      const hasCredits = await checkCredits(userId, VOICE_CREATION_CREDITS)
+      if (!hasCredits) {
+        return NextResponse.json({ error: 'Insufficient credits for voice preview' }, { status: 402 })
+      }
+
+      const ref = `voice-preview-${Date.now()}`
+      await deductCredits(userId, VOICE_CREATION_CREDITS, `Voice preview: ${name || tone + ' ' + gender}`, ref)
+
+      const family = getTTSFamily(matched.baseFamily)!
+      const sampleText = getSampleText(gender, age, accent, tone)
+      const audioBuffer = await generateSpeech(family.modelId, sampleText, matched.baseVoice, 'mp3', settings)
+      const previewAudio = Buffer.from(audioBuffer).toString('base64')
+
+      return NextResponse.json({
+        previewAudio,
+        baseFamily: matched.baseFamily,
+        baseVoice: matched.baseVoice,
+        settings,
+      })
+    }
+
+    // Save mode — require name
+    if (!name?.trim()) {
+      return NextResponse.json({ error: 'Name is required to save a voice' }, { status: 400 })
+    }
+
+    // If preview requested alongside save (legacy), generate a sample
     let previewAudio: string | null = null
     if (preview) {
       const hasCredits = await checkCredits(userId, VOICE_CREATION_CREDITS)
@@ -80,12 +112,11 @@ export async function POST(request: Request) {
       await deductCredits(userId, VOICE_CREATION_CREDITS, `Voice preview: ${name}`, ref)
 
       try {
-        const family = getTTSFamily(baseFamily)!
+        const family = getTTSFamily(matched.baseFamily)!
         const sampleText = getSampleText(gender, age, accent, tone)
-        const audioBuffer = await generateSpeech(family.modelId, sampleText, baseVoice, 'mp3', settings)
+        const audioBuffer = await generateSpeech(family.modelId, sampleText, matched.baseVoice, 'mp3', settings)
         previewAudio = Buffer.from(audioBuffer).toString('base64')
       } catch (err: any) {
-        // Don't fail voice creation if preview fails — just skip it
         console.error('Preview generation failed:', err.message)
       }
     }
@@ -97,8 +128,8 @@ export async function POST(request: Request) {
       age,
       accent: accent || 'neutral',
       tone,
-      baseFamily,
-      baseVoice,
+      baseFamily: matched.baseFamily,
+      baseVoice: matched.baseVoice,
       settings,
       createdAt: new Date().toISOString(),
     }

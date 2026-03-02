@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { cn } from '@/lib/utils'
-import { Wand2, ChevronRight, ChevronLeft, Loader2, Play, Check, Coins } from 'lucide-react'
+import { Wand2, ChevronRight, ChevronLeft, Loader2, Play, Square, Check, Coins, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface VoiceWizardProps {
@@ -60,7 +60,25 @@ const TONES: Record<string, { id: string; label: string; desc: string }[]> = {
   ],
 }
 
-type WizardStep = 'gender' | 'age' | 'tone' | 'name'
+interface VoiceSettings {
+  stability: number
+  similarity: number
+  style: number
+  speed: number
+  loudness: number
+  guidanceScale: number
+  speakerBoost: boolean
+}
+
+const SETTING_SLIDERS = [
+  { key: 'speed' as const, label: 'Speed', min: 0.5, max: 2.0, step: 0.05, format: (v: number) => `${v.toFixed(2)}x` },
+  { key: 'stability' as const, label: 'Stability', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+  { key: 'loudness' as const, label: 'Loudness', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+  { key: 'style' as const, label: 'Style', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+  { key: 'similarity' as const, label: 'Similarity', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+]
+
+type WizardStep = 'gender' | 'age' | 'tone' | 'name' | 'tune'
 
 export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: VoiceWizardProps) {
   const [step, setStep] = useState<WizardStep>('gender')
@@ -71,15 +89,23 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
   const [name, setName] = useState<string>('')
   const [creating, setCreating] = useState(false)
   const [previewing, setPreviewing] = useState(false)
-  const [previewAudio, setPreviewAudio] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const steps: WizardStep[] = ['gender', 'age', 'tone', 'name']
+  // Tune step state
+  const [settings, setSettings] = useState<VoiceSettings | null>(null)
+  const [baseFamily, setBaseFamily] = useState<string>('')
+  const [baseVoice, setBaseVoice] = useState<string>('')
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const steps: WizardStep[] = ['gender', 'age', 'tone', 'name', 'tune']
   const stepIndex = steps.indexOf(step)
   const canGoNext = step === 'gender' ? !!gender :
     step === 'age' ? !!age :
     step === 'tone' ? !!tone :
-    step === 'name' ? !!name.trim() : false
+    step === 'name' ? !!name.trim() :
+    false
 
   const goNext = () => {
     const nextIdx = stepIndex + 1
@@ -87,14 +113,40 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
   }
 
   const goBack = () => {
+    if (step === 'tune') {
+      setStep('name')
+      return
+    }
     const prevIdx = stepIndex - 1
     if (prevIdx >= 0) setStep(steps[prevIdx])
     else onCancel()
   }
 
-  const handlePreview = async () => {
+  const stopPlayback = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+    }
+    setIsPlaying(false)
+  }, [])
+
+  const playPreview = useCallback(() => {
+    if (!previewBlobUrl) return
+    if (isPlaying) {
+      stopPlayback()
+      return
+    }
+    if (!audioRef.current) audioRef.current = new Audio()
+    audioRef.current.src = previewBlobUrl
+    audioRef.current.onended = () => setIsPlaying(false)
+    audioRef.current.play().catch(() => setIsPlaying(false))
+    setIsPlaying(true)
+  }, [previewBlobUrl, isPlaying, stopPlayback])
+
+  const handlePreview = async (customSettings?: VoiceSettings) => {
     setPreviewing(true)
     setError(null)
+    stopPlayback()
     try {
       const res = await fetch('/api/voices', {
         method: 'POST',
@@ -106,24 +158,40 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
           age,
           accent,
           tone,
-          preview: true,
+          previewOnly: true,
+          customSettings: customSettings || undefined,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+
+      // Store the matched settings (first preview) or keep custom ones
+      if (!customSettings) {
+        setSettings(data.settings)
+        setBaseFamily(data.baseFamily)
+        setBaseVoice(data.baseVoice)
+      }
+
+      // Create blob URL for playback
       if (data.previewAudio) {
-        setPreviewAudio(data.previewAudio)
-        // Play it
+        if (previewBlobUrl) URL.revokeObjectURL(previewBlobUrl)
         const binary = atob(data.previewAudio)
         const bytes = new Uint8Array(binary.length)
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
         const blob = new Blob([bytes], { type: 'audio/mpeg' })
         const url = URL.createObjectURL(blob)
-        const audio = new Audio(url)
-        audio.play()
+        setPreviewBlobUrl(url)
+
+        // Auto-play
+        if (!audioRef.current) audioRef.current = new Audio()
+        audioRef.current.src = url
+        audioRef.current.onended = () => setIsPlaying(false)
+        audioRef.current.play().catch(() => {})
+        setIsPlaying(true)
       }
-      // Voice was also saved
-      onVoiceCreated(data.voice)
+
+      // Move to tune step
+      if (step === 'name') setStep('tune')
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -131,7 +199,7 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
     }
   }
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     setCreating(true)
     setError(null)
     try {
@@ -146,6 +214,7 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
           accent,
           tone,
           preview: false,
+          customSettings: settings || undefined,
         }),
       })
       const data = await res.json()
@@ -158,11 +227,19 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
     }
   }
 
+  const updateSetting = (key: keyof VoiceSettings, value: number) => {
+    if (!settings) return
+    setSettings({ ...settings, [key]: value })
+  }
+
+  // Step labels for the progress indicator (hide "tune" from initial steps)
+  const visibleSteps = step === 'tune' ? steps : steps.slice(0, 4)
+
   return (
     <div className="space-y-4">
       {/* Progress */}
       <div className="flex items-center gap-1">
-        {steps.map((s, i) => (
+        {visibleSteps.map((s, i) => (
           <div key={s} className="flex items-center">
             <div className={cn(
               'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors',
@@ -172,7 +249,7 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
             )}>
               {i < stepIndex ? <Check className="h-3 w-3" /> : i + 1}
             </div>
-            {i < steps.length - 1 && (
+            {i < visibleSteps.length - 1 && (
               <div className={cn(
                 'w-6 h-0.5 mx-0.5',
                 i < stepIndex ? 'bg-primary-500' : 'bg-nyx-border'
@@ -180,7 +257,9 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
             )}
           </div>
         ))}
-        <span className="ml-2 text-xs text-gray-500 capitalize">{step}</span>
+        <span className="ml-2 text-xs text-gray-500 capitalize">
+          {step === 'tune' ? 'Fine-tune' : step}
+        </span>
       </div>
 
       {/* Step Content */}
@@ -312,6 +391,83 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
         </div>
       )}
 
+      {step === 'tune' && settings && (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-300">Fine-tune your voice, then save</p>
+
+          {/* Playback control */}
+          <div className="flex items-center gap-3 rounded-lg bg-nyx-bg/50 border border-nyx-border p-3">
+            <button
+              type="button"
+              onClick={playPreview}
+              disabled={!previewBlobUrl || previewing}
+              className={cn(
+                'shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all',
+                isPlaying
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-primary-500/15 text-primary-400 hover:bg-primary-500/30',
+                'disabled:opacity-40'
+              )}
+            >
+              {isPlaying ? (
+                <Square className="h-3.5 w-3.5 fill-current" />
+              ) : (
+                <Play className="h-4 w-4 ml-0.5" />
+              )}
+            </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">{name || `${tone} ${gender}`}</p>
+              <p className="text-[10px] text-gray-500 capitalize">{tone} · {age === 'middle-aged' ? 'adult' : age} · {accent}</p>
+            </div>
+            <Button
+              onClick={() => handlePreview(settings)}
+              disabled={previewing}
+              loading={previewing}
+              size="sm"
+              variant="ghost"
+              className="text-xs shrink-0"
+            >
+              <Play className="h-3 w-3 mr-1" />
+              Re-preview
+              <span className="ml-1 flex items-center gap-0.5 text-primary-400">
+                <Coins className="h-3 w-3" /> 2
+              </span>
+            </Button>
+          </div>
+
+          {/* Settings sliders */}
+          <div className="space-y-3 rounded-lg bg-nyx-bg/50 border border-nyx-border p-3">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Voice Settings</p>
+            {SETTING_SLIDERS.map(({ key, label, min, max, step: sliderStep, format }) => (
+              <div key={key} className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-gray-400">{label}</label>
+                  <span className="text-xs text-primary-300 font-mono">{format(settings[key] as number)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={sliderStep}
+                  value={settings[key] as number}
+                  onChange={(e) => updateSetting(key, parseFloat(e.target.value))}
+                  className="w-full h-1.5 rounded-full appearance-none bg-nyx-border cursor-pointer accent-primary-500
+                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
+                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-400
+                    [&::-webkit-slider-thumb]:hover:bg-primary-300 [&::-webkit-slider-thumb]:transition-colors"
+                />
+              </div>
+            ))}
+          </div>
+
+          {error && (
+            <div className="rounded-lg bg-error/10 border border-error/20 p-2">
+              <p className="text-xs text-error">{error}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Navigation */}
       <div className="flex items-center justify-between pt-2 border-t border-nyx-border">
         <button
@@ -324,32 +480,30 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
         </button>
 
         {step === 'name' ? (
-          <div className="flex gap-2">
-            <Button
-              onClick={handlePreview}
-              disabled={!name.trim() || previewing || creating}
-              loading={previewing}
-              size="sm"
-              variant="ghost"
-              className="text-xs"
-            >
-              <Play className="h-3 w-3 mr-1" />
-              Preview
-              <span className="ml-1 flex items-center gap-0.5 text-primary-400">
-                <Coins className="h-3 w-3" /> 2
-              </span>
-            </Button>
-            <Button
-              onClick={handleCreate}
-              disabled={!name.trim() || creating || previewing}
-              loading={creating}
-              size="sm"
-              className="text-xs"
-            >
-              <Wand2 className="h-3 w-3 mr-1" />
-              Save Voice
-            </Button>
-          </div>
+          <Button
+            onClick={() => handlePreview()}
+            disabled={!name.trim() || previewing}
+            loading={previewing}
+            size="sm"
+            className="text-xs"
+          >
+            <Play className="h-3 w-3 mr-1" />
+            Preview & Tune
+            <span className="ml-1 flex items-center gap-0.5 text-primary-200">
+              <Coins className="h-3 w-3" /> 2
+            </span>
+          </Button>
+        ) : step === 'tune' ? (
+          <Button
+            onClick={handleSave}
+            disabled={creating || previewing}
+            loading={creating}
+            size="sm"
+            className="text-xs"
+          >
+            <Save className="h-3 w-3 mr-1" />
+            Save Voice
+          </Button>
         ) : (
           <button
             type="button"
