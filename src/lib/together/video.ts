@@ -9,14 +9,18 @@ export async function createVideoJob(params: VideoGenerationParams): Promise<Vid
     prompt: params.prompt,
   }
 
+  // Only send params that the Together.ai video API actually supports
+  // See SDK: VideoCreateParams in together-ai/resources/videos.d.ts
   if (params.width) requestParams.width = params.width
   if (params.height) requestParams.height = params.height
-  if (params.aspectRatio) requestParams.aspect_ratio = params.aspectRatio
+  // Note: aspect_ratio is NOT a valid video API param — use width/height instead
   if (params.seed != null) requestParams.seed = params.seed
   if (params.seconds) requestParams.seconds = String(params.seconds)
   if (params.steps) requestParams.steps = params.steps
   if (params.guidanceScale) requestParams.guidance_scale = params.guidanceScale
   if (params.negativePrompt) requestParams.negative_prompt = params.negativePrompt
+  // camera_movement is supported by some models (e.g. PixVerse) even though
+  // it's not in the SDK types — the API accepts it
   if (params.cameraMotion) requestParams.camera_movement = params.cameraMotion
 
   if (params.frameImages && params.frameImages.length > 0) {
@@ -35,16 +39,17 @@ export async function createVideoJob(params: VideoGenerationParams): Promise<Vid
 
 export async function checkVideoStatus(jobId: string): Promise<VideoStatusResult> {
   const together = getTogetherClient()
-  const status = await together.videos.retrieve(jobId) as any
+  const job = await together.videos.retrieve(jobId)
 
-  // Together.ai returns "outputs" (plural) in their API, but SDK may use "output"
-  const outputData = status.outputs || status.output
+  // SDK returns typed VideoJob: { status, outputs?: { cost, video_url }, error?: { message, code } }
+  const videoUrl = job.outputs?.video_url
+  const errorMsg = job.error?.message
 
   return {
     id: jobId,
-    status: status.status as VideoStatusResult['status'],
-    output: outputData?.video_url ? { video_url: outputData.video_url } : undefined,
-    error: status.error || undefined,
+    status: job.status as VideoStatusResult['status'],
+    videoUrl: videoUrl || undefined,
+    error: errorMsg || undefined,
   }
 }
 

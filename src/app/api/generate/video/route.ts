@@ -5,15 +5,14 @@ import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
 
-// Allow up to 5 minutes for video download + re-upload (Vercel)
-export const maxDuration = 300
+export const maxDuration = 60
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const {
       model, prompt, imageUrl, type, userId, aspectRatio, duration,
-      quality, seed, negativePrompt, cameraMotion, width, height,
+      quality, seed, negativePrompt, cameraMotion,
     } = body
 
     if (!model || !prompt || !userId) {
@@ -25,7 +24,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid model' }, { status: 400 })
     }
 
-    // Validate model supports image-to-video if an image URL is provided
     if (imageUrl && !modelData.supportsFrameImages) {
       return NextResponse.json(
         { error: `${modelData.displayName} does not support image-to-video. Please select a model that supports image input.` },
@@ -33,14 +31,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Compute valid resolution for this model + quality + aspect ratio
     const ar = aspectRatio || '16:9'
     const selectedQuality = quality || modelData.defaultQuality || '720p'
     const validRes = quality
       ? getVideoResolutionForQuality(model, selectedQuality, ar)
       : getModelResolution(model, ar)
 
-    // Compute credits based on quality tier
     const creditsToCharge = quality
       ? getVideoCreditsForQuality(model, selectedQuality)
       : modelData.credits
@@ -75,10 +71,12 @@ export async function POST(request: Request) {
 
     try {
       const frameImages = imageUrl ? [imageUrl] : undefined
+      // Only send params the Together.ai video API actually supports
+      // (no aspect_ratio — use width/height instead)
       const job = await createVideoJob({
         model, prompt,
         width: validRes.w, height: validRes.h,
-        aspectRatio: ar, frameImages,
+        frameImages,
         seed: seed || undefined,
         seconds: duration ? parseInt(duration) : undefined,
         negativePrompt: negativePrompt || undefined,
@@ -111,9 +109,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'jobId is required' }, { status: 400 })
     }
 
-    const { databases, storage } = createAdminClient()
+    const { databases } = createAdminClient()
 
-    // Check if we already processed this job (avoid re-downloading on every poll)
+    // Check if we already marked this job done (avoid re-polling Together)
     const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
       Query.equal('togetherJobId', jobId), Query.limit(1),
     ])
@@ -130,60 +128,44 @@ export async function GET(request: Request) {
     // Poll Together.ai for current status
     const status = await checkVideoStatus(jobId)
 
-    if (status.status === 'completed' && status.output?.video_url) {
-      const videoUrl = status.output.video_url
+    if (status.status === 'completed' && status.videoUrl) {
+      // Return the Together.ai CDN URL directly — no download/re-upload.
+      // This is fast and reliable. Together hosts the video for us.
+      const videoUrl = status.videoUrl
 
-      // Try to download and store in Appwrite (best effort)
-      let outputUrl = videoUrl // fallback: use Together.ai URL directly
-      try {
-        const videoResponse = await fetch(videoUrl)
-        const videoBuffer = await videoResponse.arrayBuffer()
-
-        const bucketId = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
-        const file = await storage.createFile(
-          bucketId,
-          ID.unique(),
-          new File([Buffer.from(videoBuffer)], `video-${jobId}.mp4`, { type: 'video/mp4' })
-        )
-
-        outputUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${bucketId}/files/${file.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
-      } catch {
-        // Storage upload failed — use Together.ai URL directly (still works)
-        console.log(`[video] Storage upload failed for ${jobId}, using direct URL`)
-      }
-
-      // Update generation record
+      // Update generation record + user stats (non-blocking, don't wait)
       if (existing.documents[0]) {
         const gen = existing.documents[0]
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
-          status: 'completed', outputUrl, completedAt: new Date().toISOString(),
-        })
-        // Update user stats
-        const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
+        databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
+          status: 'completed', outputUrl: videoUrl, completedAt: new Date().toISOString(),
+        }).catch(() => {})
+        databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
           Query.equal('userId', gen.userId), Query.limit(1),
-        ])
-        if (profiles.documents[0]) {
-          const p = profiles.documents[0]
-          await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, p.$id, {
-            totalGenerations: (p.totalGenerations || 0) + 1,
-            totalVideos: (p.totalVideos || 0) + 1,
-            lastActiveAt: new Date().toISOString(),
-          })
-        }
+        ]).then(profiles => {
+          if (profiles.documents[0]) {
+            const p = profiles.documents[0]
+            databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, p.$id, {
+              totalGenerations: (p.totalGenerations || 0) + 1,
+              totalVideos: (p.totalVideos || 0) + 1,
+              lastActiveAt: new Date().toISOString(),
+            }).catch(() => {})
+          }
+        }).catch(() => {})
       }
 
-      return NextResponse.json({ status: 'completed', url: outputUrl })
+      return NextResponse.json({ status: 'completed', url: videoUrl })
     }
 
     if (status.status === 'failed') {
+      const errorMsg = status.error || 'Video generation failed'
       if (existing.documents[0]) {
         const gen = existing.documents[0]
         await refundCredits(gen.userId, gen.creditsUsed, 'Refund: video generation failed', gen.$id)
         await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
-          status: 'failed', errorMessage: status.error || 'Video generation failed',
+          status: 'failed', errorMessage: errorMsg,
         })
       }
-      return NextResponse.json({ status: 'failed', error: status.error })
+      return NextResponse.json({ status: 'failed', error: errorMsg })
     }
 
     return NextResponse.json({ status: status.status })

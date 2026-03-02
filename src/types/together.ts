@@ -23,7 +23,6 @@ export interface VideoGenerationParams {
   prompt: string
   width?: number
   height?: number
-  aspectRatio?: string
   frameImages?: string[] // For image-to-video
   seed?: number
   seconds?: number
@@ -42,10 +41,8 @@ export interface VideoJobResult {
 
 export interface VideoStatusResult {
   id: string
-  status: 'pending' | 'processing' | 'in_progress' | 'completed' | 'failed'
-  output?: {
-    video_url: string
-  }
+  status: 'in_progress' | 'completed' | 'failed'
+  videoUrl?: string
   error?: string
 }
 
