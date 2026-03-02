@@ -5,16 +5,24 @@ import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { useCredits } from '@/hooks/use-credits'
 import { useGeneration } from '@/hooks/use-generation'
-import { getModelById, getDefaultModel } from '@/lib/together/models'
+import {
+  getModelById, getDefaultModel, getVideoQualityOptions, getVideoDefaultQuality,
+  getVideoCreditsForQuality, getVideoDurationOptions, getVideoCameraMotionOptions,
+  getVideoResolutionForQuality,
+} from '@/lib/together/models'
+import type { VideoQuality } from '@/lib/together/models'
 import { ModelSelector } from '@/components/studio/model-selector'
 import { PromptInput } from '@/components/studio/prompt-input'
 import { ImageUpload } from '@/components/studio/image-upload'
 import { AspectRatioPicker } from '@/components/studio/aspect-ratio-picker'
 import { DurationPicker } from '@/components/studio/duration-picker'
+import { VideoQualityPicker } from '@/components/studio/video-quality-picker'
+import { SeedInput } from '@/components/studio/seed-input'
+import { CameraMotionPicker } from '@/components/studio/camera-motion-picker'
 import { CreditCostDisplay } from '@/components/studio/credit-cost-display'
 import { GenerationResult } from '@/components/studio/generation-result'
 import { Button } from '@/components/ui/button'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Monitor } from 'lucide-react'
 
 export default function ImageToVideoPage() {
   const { user } = useAuth()
@@ -42,20 +50,45 @@ export default function ImageToVideoPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('16:9')
   const [duration, setDuration] = useState('5')
+  const [quality, setQuality] = useState<VideoQuality>('720p')
+  const [seed, setSeed] = useState('')
+  const [cameraMotion, setCameraMotion] = useState('')
+
+  // Reset options when model changes
+  useEffect(() => {
+    if (!model) return
+    const defaultQ = getVideoDefaultQuality(model)
+    setQuality(defaultQ)
+    const durationOpts = getVideoDurationOptions(model)
+    if (!durationOpts.find(d => d.value === duration)) {
+      setDuration(durationOpts[0]?.value || '5')
+    }
+    setCameraMotion('')
+  }, [model])
 
   const modelData = model ? getModelById(model) : null
-  const cost = modelData?.credits ?? 0
+  const qualityOptions = model ? getVideoQualityOptions(model) : ['720p' as VideoQuality]
+  const durationOptions = model ? getVideoDurationOptions(model) : []
+  const cameraOptions = model ? getVideoCameraMotionOptions(model) : null
+  const cost = model ? getVideoCreditsForQuality(model, quality) : 0
+  const resolution = model ? getVideoResolutionForQuality(model, quality, aspectRatio) : { w: 1280, h: 720 }
 
   const handleGenerate = () => {
     if (!model || !prompt.trim() || !imageUrl || !user) return
     generateVideo({
       model,
       prompt: prompt.trim(),
+      negativePrompt: negativePrompt.trim() || undefined,
       imageUrl,
       type: 'image-to-video',
       userId: user.$id,
       duration: parseInt(duration),
       aspectRatio,
+      quality,
+      seed: seed ? parseInt(seed) : undefined,
+      cameraMotion: cameraMotion || undefined,
+      width: resolution.w,
+      height: resolution.h,
     })
   }
 
@@ -100,11 +133,43 @@ export default function ImageToVideoPage() {
             disabled={isGenerating}
           />
 
+          <VideoQualityPicker
+            value={quality}
+            onChange={setQuality}
+            options={qualityOptions}
+            modelId={model}
+            disabled={isGenerating}
+          />
+
           <DurationPicker
             value={duration}
             onChange={setDuration}
             disabled={isGenerating}
+            options={durationOptions}
           />
+
+          {cameraOptions && (
+            <CameraMotionPicker
+              value={cameraMotion}
+              onChange={setCameraMotion}
+              options={cameraOptions}
+              disabled={isGenerating}
+            />
+          )}
+
+          <SeedInput
+            value={seed}
+            onChange={setSeed}
+            disabled={isGenerating}
+          />
+
+          {/* Resolution display */}
+          {model && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Monitor className="h-3.5 w-3.5" />
+              <span className="font-mono">{resolution.w} × {resolution.h}</span>
+            </div>
+          )}
 
           {model && (
             <CreditCostDisplay cost={cost} balance={balance} />

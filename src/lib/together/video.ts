@@ -12,6 +12,12 @@ export async function createVideoJob(params: VideoGenerationParams): Promise<Vid
   if (params.width) requestParams.width = params.width
   if (params.height) requestParams.height = params.height
   if (params.aspectRatio) requestParams.aspect_ratio = params.aspectRatio
+  if (params.seed != null) requestParams.seed = params.seed
+  if (params.seconds) requestParams.seconds = String(params.seconds)
+  if (params.steps) requestParams.steps = params.steps
+  if (params.guidanceScale) requestParams.guidance_scale = params.guidanceScale
+  if (params.negativePrompt) requestParams.negative_prompt = params.negativePrompt
+  if (params.cameraMotion) requestParams.camera_movement = params.cameraMotion
 
   if (params.frameImages && params.frameImages.length > 0) {
     requestParams.frame_images = params.frameImages.map(url => ({

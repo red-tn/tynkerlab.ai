@@ -3,20 +3,22 @@
 import { cn } from '@/lib/utils'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 
-const DURATIONS = [
+const DEFAULT_DURATIONS = [
   { label: '5s', value: '5' },
   { label: '8s', value: '8' },
   { label: '10s', value: '10' },
-  { label: '15s', value: '15' },
 ]
 
 interface DurationPickerProps {
   value: string
   onChange: (value: string) => void
   disabled?: boolean
+  options?: { label: string; value: string }[]
 }
 
-export function DurationPicker({ value, onChange, disabled }: DurationPickerProps) {
+export function DurationPicker({ value, onChange, disabled, options }: DurationPickerProps) {
+  const durations = options && options.length > 0 ? options : DEFAULT_DURATIONS
+
   return (
     <div className="space-y-1.5">
       <label className="flex items-center gap-1.5 text-sm font-medium text-gray-300">
@@ -24,7 +26,7 @@ export function DurationPicker({ value, onChange, disabled }: DurationPickerProp
         <InfoTooltip text="Length of generated video. Longer = more credits and processing time." />
       </label>
       <div className="flex gap-2">
-        {DURATIONS.map((dur) => (
+        {durations.map((dur) => (
           <button
             key={dur.value}
             type="button"

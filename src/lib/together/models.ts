@@ -1,5 +1,6 @@
 export type ModelCapability = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video'
 export type ModelCategory = 'google' | 'flux' | 'bytedance' | 'qwen' | 'wan' | 'ideogram' | 'hidream' | 'rundiffusion' | 'stability' | 'lykon' | 'openai' | 'minimax' | 'kling' | 'pixverse' | 'vidu'
+export type VideoQuality = '480p' | '720p' | '1080p'
 
 export interface AIModel {
   id: string
@@ -22,6 +23,13 @@ export interface AIModel {
   aspectRatios: string[]
   maxWidth?: number
   maxHeight?: number
+  // Video-specific
+  videoQualities?: VideoQuality[]
+  defaultQuality?: VideoQuality
+  maxSeconds?: number
+  supportsNegativePrompt?: boolean
+  supportsCameraMotion?: boolean
+  cameraMotionOptions?: string[]
 }
 
 const CATEGORY_LABELS: Record<ModelCategory, string> = {
@@ -552,6 +560,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Google Veo 3.0 — high quality video generation with text-to-video and image-to-video.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p', '1080p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
   },
   {
     id: 'google/veo-3.0-audio',
@@ -570,6 +582,10 @@ const VIDEO_MODELS: AIModel[] = [
     badge: 'NEW',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p', '1080p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
   },
   {
     id: 'google/veo-3.0-fast',
@@ -583,9 +599,13 @@ const VIDEO_MODELS: AIModel[] = [
     resolution: '1080p',
     duration: '8s',
     supportsFrameImages: true,
-    description: 'Veo 3.0 Fast — speed-optimized 1080p video generation for rapid iteration.',
+    description: 'Veo 3.0 Fast — speed-optimized video generation for rapid iteration.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p', '1080p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
   },
   {
     id: 'google/veo-3.0-fast-audio',
@@ -600,9 +620,13 @@ const VIDEO_MODELS: AIModel[] = [
     duration: '8s',
     hasAudio: true,
     supportsFrameImages: true,
-    description: 'Veo 3.0 Fast with audio — rapid 1080p video generation with synchronized sound.',
+    description: 'Veo 3.0 Fast with audio — rapid video generation with synchronized sound.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p', '1080p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
   },
   {
     id: 'google/veo-2.0',
@@ -619,6 +643,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Google Veo 2.0 — premium video generation with cinematic quality.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p'],
+    defaultQuality: '720p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
 
   // ---- OpenAI ----
@@ -637,6 +665,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'OpenAI Sora 2 — text-to-video and image-to-video with strong prompt understanding.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
   },
   {
     id: 'openai/sora-2-pro',
@@ -647,12 +679,16 @@ const VIDEO_MODELS: AIModel[] = [
     capabilities: ['text-to-video', 'image-to-video'],
     credits: 75,
     togetherPrice: '$2.40/video',
-    resolution: '1080p',
+    resolution: '720p',
     duration: '8s',
     supportsFrameImages: true,
-    description: 'Sora 2 Pro — premium 1080p video generation from OpenAI with enhanced detail.',
+    description: 'Sora 2 Pro — premium video generation from OpenAI with enhanced detail.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
   },
 
   // ---- MiniMax ----
@@ -671,6 +707,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'MiniMax Director — affordable video generation with camera control capabilities.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p'],
+    defaultQuality: '720p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'minimax/hailuo-02',
@@ -684,9 +724,13 @@ const VIDEO_MODELS: AIModel[] = [
     resolution: '768p',
     duration: '10s',
     supportsFrameImages: true,
-    description: 'Hailuo 02 — MiniMax video model producing longer 10-second clips at 768p.',
+    description: 'Hailuo 02 — MiniMax video model producing longer 10-second clips.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p', '1080p'],
+    defaultQuality: '720p',
+    maxSeconds: 10,
+    supportsNegativePrompt: true,
   },
 
   // ---- ByteDance ----
@@ -702,9 +746,13 @@ const VIDEO_MODELS: AIModel[] = [
     resolution: '1080p',
     duration: '5s',
     supportsFrameImages: true,
-    description: 'ByteDance Seedance 1.0 Pro — 1080p video generation with strong motion quality.',
+    description: 'ByteDance Seedance 1.0 Pro — video generation with strong motion quality.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['480p', '720p'],
+    defaultQuality: '720p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'ByteDance/Seedance-1.0-lite',
@@ -718,9 +766,13 @@ const VIDEO_MODELS: AIModel[] = [
     resolution: '720p',
     duration: '5s',
     supportsFrameImages: true,
-    description: 'ByteDance Seedance 1.0 Lite — affordable 720p video generation for quick iterations.',
+    description: 'ByteDance Seedance 1.0 Lite — affordable video generation for quick iterations.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['480p', '720p'],
+    defaultQuality: '480p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
 
   // ---- Kuaishou / Kling ----
@@ -739,6 +791,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Kling 2.1 Master — highest quality Kling model with cinematic 1080p output.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['1080p'],
+    defaultQuality: '1080p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'kwaivgI/kling-2.1-pro',
@@ -755,6 +811,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Kling 2.1 Pro — professional 1080p video generation at a balanced price.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['1080p'],
+    defaultQuality: '1080p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'kwaivgI/kling-2.1-standard',
@@ -765,12 +825,16 @@ const VIDEO_MODELS: AIModel[] = [
     capabilities: ['text-to-video', 'image-to-video'],
     credits: 8,
     togetherPrice: '$0.18/video',
-    resolution: '720p',
+    resolution: '1080p',
     duration: '5s',
     supportsFrameImages: true,
-    description: 'Kling 2.1 Standard — affordable 720p video generation for everyday use.',
+    description: 'Kling 2.1 Standard — affordable video generation for everyday use.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['1080p'],
+    defaultQuality: '1080p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'kwaivgI/kling-2.0-master',
@@ -781,12 +845,16 @@ const VIDEO_MODELS: AIModel[] = [
     capabilities: ['text-to-video', 'image-to-video'],
     credits: 30,
     togetherPrice: '$0.92/video',
-    resolution: '1080p',
+    resolution: '720p',
     duration: '5s',
     supportsFrameImages: true,
-    description: 'Kling 2.0 Master — proven master-tier video generation with reliable 1080p output.',
+    description: 'Kling 2.0 Master — proven master-tier video generation with reliable output.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p'],
+    defaultQuality: '720p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'kwaivgI/kling-1.6-pro',
@@ -803,6 +871,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Kling 1.6 Pro — stable professional video generation at 1080p resolution.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['1080p'],
+    defaultQuality: '1080p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'kwaivgI/kling-1.6-standard',
@@ -813,12 +885,16 @@ const VIDEO_MODELS: AIModel[] = [
     capabilities: ['text-to-video', 'image-to-video'],
     credits: 8,
     togetherPrice: '$0.19/video',
-    resolution: '720p',
+    resolution: '1080p',
     duration: '5s',
     supportsFrameImages: true,
-    description: 'Kling 1.6 Standard — budget-friendly 720p video generation.',
+    description: 'Kling 1.6 Standard — budget-friendly video generation.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['1080p'],
+    defaultQuality: '1080p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
 
   // ---- PixVerse ----
@@ -834,9 +910,21 @@ const VIDEO_MODELS: AIModel[] = [
     resolution: '1080p',
     duration: '5s',
     supportsFrameImages: true,
-    description: 'PixVerse V5 — 1080p video generation with strong visual quality and motion.',
+    description: 'PixVerse V5 — video generation with strong visual quality, motion, and camera control.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['480p', '720p', '1080p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
+    supportsCameraMotion: true,
+    cameraMotionOptions: [
+      'horizontal_left', 'horizontal_right', 'vertical_up', 'vertical_down',
+      'zoom_in', 'zoom_out', 'crane_up', 'quickly_zoom_in', 'quickly_zoom_out',
+      'smooth_zoom_in', 'camera_rotation', 'robo_arm', 'super_dolly_out',
+      'whip_pan', 'hitchcock', 'left_follow', 'right_follow',
+      'pan_left', 'pan_right', 'fix_bg',
+    ],
   },
 
   // ---- Wan-AI ----
@@ -853,6 +941,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Wan 2.2 Text-to-Video — text-to-video only model from Wan-AI with 14B parameters.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p'],
+    defaultQuality: '720p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
   {
     id: 'Wan-AI/Wan2.2-I2V-A14B',
@@ -867,6 +959,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Wan 2.2 Image-to-Video — image-to-video only model from Wan-AI with 14B parameters.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['720p'],
+    defaultQuality: '720p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
 
   // ---- Vidu ----
@@ -882,9 +978,13 @@ const VIDEO_MODELS: AIModel[] = [
     resolution: '720p',
     duration: '8s',
     supportsFrameImages: true,
-    description: 'Vidu 2.0 — affordable 720p video generation with 8-second duration.',
+    description: 'Vidu 2.0 — affordable video generation with 8-second duration.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['480p', '720p', '1080p'],
+    defaultQuality: '720p',
+    maxSeconds: 8,
+    supportsNegativePrompt: true,
   },
   {
     id: 'vidu/vidu-q1',
@@ -901,6 +1001,10 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Vidu Q1 — quality-focused 1080p video generation at a competitive price.',
     enabled: true,
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    videoQualities: ['1080p'],
+    defaultQuality: '1080p',
+    maxSeconds: 5,
+    supportsNegativePrompt: true,
   },
 ]
 
@@ -972,7 +1076,13 @@ const SD15_RESOLUTIONS: ResolutionMap = {
   '21:9': { w: 768, h: 336 },
 }
 
-// Video models — based on resolution spec (720p, 1080p, 768p)
+// Video resolution maps per quality tier
+const VIDEO_480P: ResolutionMap = {
+  '16:9': { w: 864, h: 480 },
+  '9:16': { w: 480, h: 864 },
+  '1:1':  { w: 640, h: 640 },
+}
+
 const VIDEO_720P: ResolutionMap = {
   '16:9': { w: 1280, h: 720 },
   '9:16': { w: 720, h: 1280 },
@@ -989,6 +1099,79 @@ const VIDEO_768P: ResolutionMap = {
   '16:9': { w: 1360, h: 768 },
   '9:16': { w: 768, h: 1360 },
   '1:1':  { w: 768, h: 768 },
+}
+
+// Seedance uses non-standard resolutions
+const SEEDANCE_480P: ResolutionMap = {
+  '16:9': { w: 960, h: 416 },
+  '9:16': { w: 416, h: 960 },
+  '1:1':  { w: 640, h: 640 },
+}
+
+const SEEDANCE_720P: ResolutionMap = {
+  '16:9': { w: 1248, h: 704 },
+  '9:16': { w: 640, h: 1504 },
+  '1:1':  { w: 960, h: 960 },
+}
+
+// PixVerse has many resolutions per quality tier
+const PIXVERSE_480P: ResolutionMap = {
+  '16:9': { w: 640, h: 360 },
+  '9:16': { w: 360, h: 640 },
+  '1:1':  { w: 360, h: 360 },
+}
+
+const PIXVERSE_720P: ResolutionMap = {
+  '16:9': { w: 1280, h: 720 },
+  '9:16': { w: 720, h: 1280 },
+  '1:1':  { w: 720, h: 720 },
+}
+
+const PIXVERSE_1080P: ResolutionMap = {
+  '16:9': { w: 1920, h: 1080 },
+  '9:16': { w: 1080, h: 1920 },
+  '1:1':  { w: 1080, h: 1080 },
+}
+
+// Vidu supports 360p through 1080p
+const VIDU_480P: ResolutionMap = {
+  '16:9': { w: 640, h: 360 },
+  '9:16': { w: 360, h: 640 },
+  '1:1':  { w: 360, h: 360 },
+}
+
+// Quality tier → resolution map per model family
+const QUALITY_RESOLUTION_MAP: Record<string, Partial<Record<VideoQuality, ResolutionMap>>> = {
+  // Google Veo 3.0 family
+  'google/veo-3.0':            { '720p': VIDEO_720P, '1080p': VIDEO_1080P },
+  'google/veo-3.0-audio':      { '720p': VIDEO_720P, '1080p': VIDEO_1080P },
+  'google/veo-3.0-fast':       { '720p': VIDEO_720P, '1080p': VIDEO_1080P },
+  'google/veo-3.0-fast-audio': { '720p': VIDEO_720P, '1080p': VIDEO_1080P },
+  'google/veo-2.0':            { '720p': VIDEO_720P },
+  // OpenAI
+  'openai/sora-2':             { '720p': VIDEO_720P },
+  'openai/sora-2-pro':         { '720p': VIDEO_720P },
+  // MiniMax
+  'minimax/video-01-director': { '720p': VIDEO_768P },
+  'minimax/hailuo-02':         { '720p': VIDEO_768P, '1080p': VIDEO_1080P },
+  // ByteDance Seedance
+  'ByteDance/Seedance-1.0-pro':  { '480p': SEEDANCE_480P, '720p': SEEDANCE_720P },
+  'ByteDance/Seedance-1.0-lite': { '480p': SEEDANCE_480P, '720p': SEEDANCE_720P },
+  // Kling
+  'kwaivgI/kling-2.1-master':   { '1080p': VIDEO_1080P },
+  'kwaivgI/kling-2.1-pro':      { '1080p': VIDEO_1080P },
+  'kwaivgI/kling-2.1-standard': { '1080p': VIDEO_1080P },
+  'kwaivgI/kling-2.0-master':   { '720p': VIDEO_720P },
+  'kwaivgI/kling-1.6-pro':      { '1080p': VIDEO_1080P },
+  'kwaivgI/kling-1.6-standard': { '1080p': VIDEO_1080P },
+  // PixVerse
+  'pixverse/pixverse-v5':        { '480p': PIXVERSE_480P, '720p': PIXVERSE_720P, '1080p': PIXVERSE_1080P },
+  // Wan-AI
+  'Wan-AI/Wan2.2-T2V-A14B':     { '720p': VIDEO_720P },
+  'Wan-AI/Wan2.2-I2V-A14B':     { '720p': VIDEO_720P },
+  // Vidu
+  'vidu/vidu-2.0':              { '480p': VIDU_480P, '720p': VIDEO_720P, '1080p': VIDEO_1080P },
+  'vidu/vidu-q1':               { '1080p': VIDEO_1080P },
 }
 
 function getImageResolutionProfile(modelId: string): ResolutionMap {
@@ -1015,6 +1198,12 @@ function getImageResolutionProfile(modelId: string): ResolutionMap {
 function getVideoResolutionProfile(modelId: string): ResolutionMap {
   const model = ALL_MODELS.find(m => m.id === modelId)
   if (!model) return VIDEO_720P
+  // Use quality-aware resolution if available
+  const qualityMap = QUALITY_RESOLUTION_MAP[modelId]
+  if (qualityMap) {
+    const defaultQ = model.defaultQuality || '720p'
+    return qualityMap[defaultQ] || VIDEO_720P
+  }
   if (model.resolution === '1080p') return VIDEO_1080P
   if (model.resolution === '768p') return VIDEO_768P
   return VIDEO_720P
@@ -1046,6 +1235,92 @@ export function getModelAspectRatios(modelId: string): string[] {
     ? getVideoResolutionProfile(modelId)
     : getImageResolutionProfile(modelId)
   return Object.keys(profile)
+}
+
+// ---------------------------------------------------------------------------
+// Video quality helpers
+// ---------------------------------------------------------------------------
+
+/** Credit multiplier for each quality tier (base model credits × multiplier) */
+const QUALITY_CREDIT_MULTIPLIER: Record<VideoQuality, number> = {
+  '480p': 0.7,
+  '720p': 1.0,
+  '1080p': 1.5,
+}
+
+/**
+ * Get available quality options for a video model.
+ */
+export function getVideoQualityOptions(modelId: string): VideoQuality[] {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  return model?.videoQualities || ['720p']
+}
+
+/**
+ * Get the default quality for a video model.
+ */
+export function getVideoDefaultQuality(modelId: string): VideoQuality {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  return model?.defaultQuality || '720p'
+}
+
+/**
+ * Compute final credit cost for a video model at a given quality.
+ * Base credits × quality multiplier, rounded up.
+ */
+export function getVideoCreditsForQuality(modelId: string, quality: VideoQuality): number {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  if (!model) return 0
+  const multiplier = QUALITY_CREDIT_MULTIPLIER[quality] || 1.0
+  return Math.ceil(model.credits * multiplier)
+}
+
+/**
+ * Get resolution (w×h) for a model at a specific quality + aspect ratio.
+ */
+export function getVideoResolutionForQuality(
+  modelId: string,
+  quality: VideoQuality,
+  aspectRatio: string
+): { w: number; h: number } {
+  const ar = aspectRatio === 'auto' ? '16:9' : aspectRatio
+  const qualityMap = QUALITY_RESOLUTION_MAP[modelId]
+  if (qualityMap && qualityMap[quality]) {
+    return qualityMap[quality]![ar] || qualityMap[quality]!['16:9'] || { w: 1280, h: 720 }
+  }
+  // Fallback to generic quality maps
+  if (quality === '1080p') return VIDEO_1080P[ar] || { w: 1920, h: 1080 }
+  if (quality === '480p') return VIDEO_480P[ar] || { w: 864, h: 480 }
+  return VIDEO_720P[ar] || { w: 1280, h: 720 }
+}
+
+/**
+ * Get max duration in seconds for a video model.
+ */
+export function getVideoMaxDuration(modelId: string): number {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  return model?.maxSeconds || 5
+}
+
+/**
+ * Get duration options for a video model (1s increments up to max).
+ */
+export function getVideoDurationOptions(modelId: string): { label: string; value: string }[] {
+  const max = getVideoMaxDuration(modelId)
+  const options: { label: string; value: string }[] = []
+  if (max >= 5) options.push({ label: '5s', value: '5' })
+  if (max >= 8) options.push({ label: '8s', value: '8' })
+  if (max >= 10) options.push({ label: '10s', value: '10' })
+  return options.length > 0 ? options : [{ label: '5s', value: '5' }]
+}
+
+/**
+ * Check if a video model supports camera motion.
+ */
+export function getVideoCameraMotionOptions(modelId: string): string[] | null {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  if (!model?.supportsCameraMotion || !model.cameraMotionOptions) return null
+  return model.cameraMotionOptions
 }
 
 // ---------------------------------------------------------------------------

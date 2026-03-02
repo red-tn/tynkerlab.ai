@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createVideoJob, checkVideoStatus } from '@/lib/together/video'
-import { getModelById, getModelResolution } from '@/lib/together/models'
+import { getModelById, getModelResolution, getVideoResolutionForQuality, getVideoCreditsForQuality } from '@/lib/together/models'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
 import { ID, Query } from 'node-appwrite'
@@ -11,7 +11,10 @@ export const maxDuration = 300
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { model, prompt, imageUrl, type, userId, aspectRatio, duration } = body
+    const {
+      model, prompt, imageUrl, type, userId, aspectRatio, duration,
+      quality, seed, negativePrompt, cameraMotion, width, height,
+    } = body
 
     if (!model || !prompt || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -30,13 +33,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Compute valid resolution for this model + aspect ratio
+    // Compute valid resolution for this model + quality + aspect ratio
     const ar = aspectRatio || '16:9'
-    const validRes = getModelResolution(model, ar)
+    const selectedQuality = quality || modelData.defaultQuality || '720p'
+    const validRes = quality
+      ? getVideoResolutionForQuality(model, selectedQuality, ar)
+      : getModelResolution(model, ar)
 
-    const hasCredits = await checkCredits(userId, modelData.credits)
+    // Compute credits based on quality tier
+    const creditsToCharge = quality
+      ? getVideoCreditsForQuality(model, selectedQuality)
+      : modelData.credits
+
+    const hasCredits = await checkCredits(userId, creditsToCharge)
     if (!hasCredits) {
-      return NextResponse.json({ error: 'Insufficient credits', required: modelData.credits }, { status: 402 })
+      return NextResponse.json({ error: 'Insufficient credits', required: creditsToCharge }, { status: 402 })
     }
 
     const { databases } = createAdminClient()
@@ -50,12 +61,13 @@ export async function POST(request: Request) {
       inputImageUrl: imageUrl || null,
       width: validRes.w,
       height: validRes.h,
-      creditsUsed: modelData.credits,
+      creditsUsed: creditsToCharge,
       status: 'processing',
       aspectRatio: ar,
+      seed: seed || null,
     })
 
-    const deducted = await deductCredits(userId, modelData.credits, `${type || 'text-to-video'}: ${model}`, generationId)
+    const deducted = await deductCredits(userId, creditsToCharge, `${type || 'text-to-video'}: ${model} (${selectedQuality})`, generationId)
     if (!deducted) {
       await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, { status: 'failed', errorMessage: 'Credit deduction failed' })
       return NextResponse.json({ error: 'Failed to deduct credits' }, { status: 402 })
@@ -63,7 +75,15 @@ export async function POST(request: Request) {
 
     try {
       const frameImages = imageUrl ? [imageUrl] : undefined
-      const job = await createVideoJob({ model, prompt, width: validRes.w, height: validRes.h, aspectRatio: ar, frameImages })
+      const job = await createVideoJob({
+        model, prompt,
+        width: validRes.w, height: validRes.h,
+        aspectRatio: ar, frameImages,
+        seed: seed || undefined,
+        seconds: duration ? parseInt(duration) : undefined,
+        negativePrompt: negativePrompt || undefined,
+        cameraMotion: cameraMotion || undefined,
+      })
 
       await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
         togetherJobId: job.id,

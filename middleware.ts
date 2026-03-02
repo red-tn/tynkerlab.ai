@@ -4,18 +4,21 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Track page views asynchronously (fire-and-forget)
+  // Track page views asynchronously (fire-and-forget, never block)
   if (!pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
-    const referrer = request.headers.get('referer') || ''
-    const sessionId = request.cookies.get('nyx_session_id')?.value
+    try {
+      const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
+      const referrer = request.headers.get('referer') || ''
+      const sessionId = request.cookies.get('nyx_session_id')?.value
 
-    const analyticsUrl = new URL('/api/analytics/pageview', request.url)
-    fetch(analyticsUrl.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: pathname, ip, referrer, sessionId }),
-    }).catch(() => {})
+      const analyticsUrl = new URL('/api/analytics/pageview', request.url)
+      fetch(analyticsUrl.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: pathname, ip, referrer, sessionId }),
+        signal: AbortSignal.timeout(3000),
+      }).catch(() => {})
+    } catch {}
   }
 
   return NextResponse.next()

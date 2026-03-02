@@ -25,6 +25,12 @@ export interface VideoGenerationParams {
   height?: number
   aspectRatio?: string
   frameImages?: string[] // For image-to-video
+  seed?: number
+  seconds?: number
+  steps?: number
+  guidanceScale?: number
+  negativePrompt?: string
+  cameraMotion?: string
 }
 
 export interface VideoJobResult {

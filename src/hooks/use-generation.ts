@@ -95,6 +95,9 @@ export function useGeneration(options?: UseGenerationOptions) {
     duration?: number
     aspectRatio?: string
     negativePrompt?: string
+    quality?: string
+    seed?: number
+    cameraMotion?: string
   }) => {
     reset()
     setState('generating')
