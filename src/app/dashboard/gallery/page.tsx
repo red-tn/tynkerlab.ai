@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 import { Image as ImageIcon, Video, Download, ChevronLeft, ChevronRight, BookOpen, Send, Trash2 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
+import { adminFetch } from '@/lib/admin-fetch'
+import { getModelById } from '@/lib/together/models'
+import { ModelCategoryIcon } from '@/components/studio/model-icons'
 
 const CATEGORIES: { value: PromptCategory; label: string }[] = [
   { value: 'general', label: 'General' },
@@ -45,6 +48,8 @@ export default function GalleryPage() {
   const [inspirationGen, setInspirationGen] = useState<Generation | null>(null)
   const [inspirationTitle, setInspirationTitle] = useState('')
   const [inspirationCategory, setInspirationCategory] = useState<PromptCategory>('general')
+  const [inspirationPrompt, setInspirationPrompt] = useState('')
+  const [publishAs, setPublishAs] = useState<'curated' | 'community'>('curated')
   const [postingInspiration, setPostingInspiration] = useState(false)
   const [submitMode, setSubmitMode] = useState<'admin' | 'user'>('admin')
   const isAdmin = profile?.role === 'admin'
@@ -124,6 +129,8 @@ export default function GalleryPage() {
     setInspirationGen(gen)
     setInspirationTitle('')
     setInspirationCategory('general')
+    setInspirationPrompt(gen.prompt || '')
+    setPublishAs('curated')
     setSubmitMode(mode)
   }
 
@@ -132,22 +139,47 @@ export default function GalleryPage() {
     setPostingInspiration(true)
     try {
       if (submitMode === 'admin') {
-        const res = await fetch('/api/admin/prompts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: inspirationTitle.trim(),
-            promptText: inspirationGen.prompt,
-            category: inspirationCategory,
-            modelType: inspirationGen.type.includes('video') ? 'video' : 'image',
-            modelUsed: inspirationGen.model,
-            previewImageUrl: inspirationGen.outputUrl,
-            isPublished: true,
-            createdBy: 'Tynkerlab.ai Team',
-          }),
-        })
-        if (!res.ok) throw new Error('Failed to post')
-        addToast('Posted to Inspirations!', 'success')
+        const promptText = inspirationPrompt.trim() || inspirationGen.prompt
+        const modelType = inspirationGen.type.includes('video') ? 'video' : 'image'
+
+        if (publishAs === 'community') {
+          const res = await adminFetch('/api/admin/prompts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: inspirationTitle.trim(),
+              promptText,
+              category: inspirationCategory,
+              modelType,
+              modelUsed: inspirationGen.model,
+              previewImageUrl: inspirationGen.outputUrl,
+              isPublished: true,
+              submissionStatus: 'approved',
+              submittedBy: user?.$id,
+              submitterName: profile?.fullName || 'Anonymous',
+              createdBy: profile?.fullName || 'Anonymous',
+            }),
+          })
+          if (!res.ok) throw new Error('Failed to post')
+          addToast('Posted as Community inspiration!', 'success')
+        } else {
+          const res = await adminFetch('/api/admin/prompts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: inspirationTitle.trim(),
+              promptText,
+              category: inspirationCategory,
+              modelType,
+              modelUsed: inspirationGen.model,
+              previewImageUrl: inspirationGen.outputUrl,
+              isPublished: true,
+              createdBy: 'Tynkerlab.ai Team',
+            }),
+          })
+          if (!res.ok) throw new Error('Failed to post')
+          addToast('Posted as Curated inspiration!', 'success')
+        }
       } else {
         const res = await fetch('/api/submissions', {
           method: 'POST',
@@ -312,50 +344,138 @@ export default function GalleryPage() {
       )}
 
       {/* Post/Submit to Inspirations Dialog */}
-      {inspirationGen && (
-        <Dialog open onClose={() => setInspirationGen(null)} title={submitMode === 'admin' ? 'Post to Inspirations' : 'Submit to Inspirations'} size="md">
-          <div className="space-y-4">
-            {submitMode === 'user' && (
-              <p className="text-xs text-gray-400 bg-primary-500/5 border border-primary-500/20 rounded-lg p-3">
-                Submissions are reviewed before publishing. Your name will appear as the creator.
-              </p>
-            )}
-            <Input
-              label="Title"
-              value={inspirationTitle}
-              onChange={(e) => setInspirationTitle(e.target.value)}
-              placeholder="Give this creation a title..."
-            />
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-300">Category</label>
-              <select
-                value={inspirationCategory}
-                onChange={(e) => setInspirationCategory(e.target.value as PromptCategory)}
-                className="w-full rounded-lg bg-nyx-surface border border-nyx-border px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
+      {inspirationGen && (() => {
+        const modelInfo = getModelById(inspirationGen.model)
+        return (
+          <Dialog open onClose={() => setInspirationGen(null)} title={submitMode === 'admin' ? 'Post to Inspirations' : 'Submit to Inspirations'} size="md">
+            <div className="space-y-4">
+              {/* Preview */}
+              <div className="rounded-lg overflow-hidden border border-nyx-border">
+                {inspirationGen.type.includes('video') ? (
+                  <video
+                    src={inspirationGen.outputUrl || ''}
+                    className="w-full aspect-video object-cover"
+                    controls
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={inspirationGen.outputUrl || ''}
+                    alt={inspirationGen.prompt}
+                    className="w-full aspect-video object-cover"
+                  />
+                )}
+              </div>
+
+              {/* Model info */}
+              {modelInfo && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-nyx-surface border border-nyx-border">
+                  <ModelCategoryIcon category={modelInfo.category} className="h-4 w-4 text-primary-400" />
+                  <span className="text-sm font-medium text-white">{modelInfo.displayName}</span>
+                  <span className="text-xs text-gray-500">&middot;</span>
+                  <span className="text-xs text-gray-400">{modelInfo.categoryLabel}</span>
+                  {inspirationGen.width && inspirationGen.height && (
+                    <>
+                      <span className="text-xs text-gray-500">&middot;</span>
+                      <span className="text-xs text-gray-400">{inspirationGen.width} &times; {inspirationGen.height}</span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Admin: Curated / Community toggle */}
+              {submitMode === 'admin' && (
+                <div className="flex rounded-lg border border-nyx-border overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setPublishAs('curated')}
+                    className={cn(
+                      'flex-1 px-3 py-2 text-sm font-medium transition-colors',
+                      publishAs === 'curated'
+                        ? 'bg-primary-500/20 text-primary-300 border-r border-primary-500/30'
+                        : 'bg-nyx-surface text-gray-400 hover:text-white border-r border-nyx-border'
+                    )}
+                  >
+                    Public (Curated)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPublishAs('community')}
+                    className={cn(
+                      'flex-1 px-3 py-2 text-sm font-medium transition-colors',
+                      publishAs === 'community'
+                        ? 'bg-accent-500/20 text-accent-300'
+                        : 'bg-nyx-surface text-gray-400 hover:text-white'
+                    )}
+                  >
+                    Community
+                  </button>
+                </div>
+              )}
+
+              {submitMode === 'user' && (
+                <p className="text-xs text-gray-400 bg-primary-500/5 border border-primary-500/20 rounded-lg p-3">
+                  Submissions are reviewed before publishing. Your name will appear as the creator.
+                </p>
+              )}
+
+              {/* Title */}
+              <Input
+                label="Title"
+                value={inspirationTitle}
+                onChange={(e) => setInspirationTitle(e.target.value)}
+                placeholder="Give this creation a title..."
+              />
+
+              {/* Category */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-300">Category</label>
+                <select
+                  value={inspirationCategory}
+                  onChange={(e) => setInspirationCategory(e.target.value as PromptCategory)}
+                  className="w-full rounded-lg bg-nyx-surface border border-nyx-border px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                >
+                  {CATEGORIES.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Prompt */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-300">Prompt</label>
+                {submitMode === 'admin' ? (
+                  <textarea
+                    value={inspirationPrompt}
+                    onChange={(e) => setInspirationPrompt(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-lg bg-nyx-surface border border-nyx-border px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 resize-none"
+                    placeholder="Edit the prompt..."
+                  />
+                ) : (
+                  <div className="p-3 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-sm text-gray-300 line-clamp-4">{inspirationGen.prompt}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setInspirationGen(null)}>Cancel</Button>
+                <Button
+                  variant="primary"
+                  onClick={handlePostInspiration}
+                  loading={postingInspiration}
+                  disabled={!inspirationTitle.trim()}
+                >
+                  {submitMode === 'admin' ? 'Post' : 'Submit'}
+                </Button>
+              </div>
             </div>
-            <div className="p-3 rounded-lg bg-nyx-bg">
-              <p className="text-xs text-gray-500 mb-1">Prompt</p>
-              <p className="text-sm text-gray-300 line-clamp-3">{inspirationGen.prompt}</p>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="ghost" onClick={() => setInspirationGen(null)}>Cancel</Button>
-              <Button
-                variant="primary"
-                onClick={handlePostInspiration}
-                loading={postingInspiration}
-                disabled={!inspirationTitle.trim()}
-              >
-                {submitMode === 'admin' ? 'Post' : 'Submit'}
-              </Button>
-            </div>
-          </div>
-        </Dialog>
-      )}
+          </Dialog>
+        )
+      })()}
     </div>
   )
 }

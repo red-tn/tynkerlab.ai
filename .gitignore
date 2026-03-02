@@ -50,3 +50,5 @@ media/
 # markdown docs (keep README)
 *.md
 !README.md
+
+.vercel
