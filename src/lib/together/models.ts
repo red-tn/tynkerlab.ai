@@ -30,6 +30,8 @@ export interface AIModel {
   supportsNegativePrompt?: boolean
   supportsCameraMotion?: boolean
   cameraMotionOptions?: string[]
+  /** Exact supported duration values in seconds (overrides maxSeconds-based derivation) */
+  durationOptions?: number[]
 }
 
 const CATEGORY_LABELS: Record<ModelCategory, string> = {
@@ -563,6 +565,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
+    durationOptions: [4, 6, 8],
     supportsNegativePrompt: true,
   },
   {
@@ -585,6 +588,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
+    durationOptions: [4, 6, 8],
     supportsNegativePrompt: true,
   },
   {
@@ -605,6 +609,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
+    durationOptions: [4, 6, 8],
     supportsNegativePrompt: true,
   },
   {
@@ -626,6 +631,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
+    durationOptions: [4, 6, 8],
     supportsNegativePrompt: true,
   },
   {
@@ -645,7 +651,8 @@ const VIDEO_MODELS: AIModel[] = [
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
     videoQualities: ['720p'],
     defaultQuality: '720p',
-    maxSeconds: 5,
+    maxSeconds: 8,
+    durationOptions: [5, 8],
     supportsNegativePrompt: true,
   },
 
@@ -667,7 +674,8 @@ const VIDEO_MODELS: AIModel[] = [
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
     videoQualities: ['720p'],
     defaultQuality: '720p',
-    maxSeconds: 8,
+    maxSeconds: 10,
+    durationOptions: [5, 10],
     supportsNegativePrompt: true,
   },
   {
@@ -687,7 +695,8 @@ const VIDEO_MODELS: AIModel[] = [
     aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
     videoQualities: ['720p'],
     defaultQuality: '720p',
-    maxSeconds: 8,
+    maxSeconds: 10,
+    durationOptions: [5, 10],
     supportsNegativePrompt: true,
   },
 
@@ -730,6 +739,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 10,
+    durationOptions: [5, 10],
     supportsNegativePrompt: true,
   },
 
@@ -916,6 +926,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['480p', '720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
+    durationOptions: [5, 8],
     supportsNegativePrompt: true,
     supportsCameraMotion: true,
     cameraMotionOptions: [
@@ -984,6 +995,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['480p', '720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
+    durationOptions: [4, 8],
     supportsNegativePrompt: true,
   },
   {
@@ -1004,6 +1016,7 @@ const VIDEO_MODELS: AIModel[] = [
     videoQualities: ['1080p'],
     defaultQuality: '1080p',
     maxSeconds: 5,
+    durationOptions: [4, 5],
     supportsNegativePrompt: true,
   },
 ]
@@ -1303,9 +1316,18 @@ export function getVideoMaxDuration(modelId: string): number {
 }
 
 /**
- * Get duration options for a video model (1s increments up to max).
+ * Get duration options for a video model.
+ * Uses model-specific durationOptions if defined, otherwise derives from maxSeconds.
  */
 export function getVideoDurationOptions(modelId: string): { label: string; value: string }[] {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+
+  // Use explicit duration options if the model defines them
+  if (model?.durationOptions && model.durationOptions.length > 0) {
+    return model.durationOptions.map(s => ({ label: `${s}s`, value: String(s) }))
+  }
+
+  // Fallback: derive from maxSeconds
   const max = getVideoMaxDuration(modelId)
   const options: { label: string; value: string }[] = []
   if (max >= 5) options.push({ label: '5s', value: '5' })

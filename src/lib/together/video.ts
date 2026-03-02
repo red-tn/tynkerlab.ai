@@ -15,7 +15,7 @@ export async function createVideoJob(params: VideoGenerationParams): Promise<Vid
   if (params.height) requestParams.height = params.height
   // Note: aspect_ratio is NOT a valid video API param — use width/height instead
   if (params.seed != null) requestParams.seed = params.seed
-  if (params.seconds) requestParams.seconds = String(params.seconds)
+  if (params.seconds) requestParams.seconds = params.seconds
   if (params.steps) requestParams.steps = params.steps
   if (params.guidanceScale) requestParams.guidance_scale = params.guidanceScale
   if (params.negativePrompt) requestParams.negative_prompt = params.negativePrompt

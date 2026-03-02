@@ -49,7 +49,11 @@ export default function ImageToVideoPage() {
   const [negativePrompt, setNegativePrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('16:9')
-  const [duration, setDuration] = useState('5')
+  const [duration, setDuration] = useState(() => {
+    const defaultModel = getDefaultModel('image-to-video')
+    const opts = getVideoDurationOptions(defaultModel)
+    return opts[0]?.value || '5'
+  })
   const [quality, setQuality] = useState<VideoQuality>('720p')
   const [seed, setSeed] = useState('')
   const [cameraMotion, setCameraMotion] = useState('')
