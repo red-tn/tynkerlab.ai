@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       userId,
       type: type || 'text-to-image',
       model,
-      prompt,
+      prompt: prompt.slice(0, 1500),
       negativePrompt: negativePrompt || null,
       inputImageUrl: imageUrl || null,
       width: safeWidth,
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
       }
 
       await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
-        status: 'failed', errorMessage: errorMsg,
+        status: 'failed', errorMessage: errorMsg.slice(0, 1500),
       })
 
       await databases.createDocument(DATABASE_ID, COLLECTIONS.API_USAGE_LOG, ID.unique(), {

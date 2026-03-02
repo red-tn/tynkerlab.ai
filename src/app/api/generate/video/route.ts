@@ -7,6 +7,19 @@ import { ID, Query } from 'node-appwrite'
 
 export const maxDuration = 60
 
+/** Detect content moderation / safety filter errors from Google Veo, OpenAI Sora, etc. */
+function isContentModerationError(msg: string): boolean {
+  const lower = msg.toLowerCase()
+  return lower.includes('content moderation') ||
+    lower.includes('content was flagged') ||
+    lower.includes('safety filter') ||
+    lower.includes('content policy') ||
+    lower.includes('violates') ||
+    lower.includes('blocked by') ||
+    lower.includes('unsafe content') ||
+    lower.includes('responsible ai')
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -53,7 +66,7 @@ export async function POST(request: Request) {
       userId,
       type: type || 'text-to-video',
       model,
-      prompt,
+      prompt: prompt.slice(0, 1500),
       inputImageUrl: imageUrl || null,
       width: validRes.w,
       height: validRes.h,
@@ -90,10 +103,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ jobId: job.id, generationId })
     } catch (genError: any) {
       await refundCredits(userId, creditsToCharge, `Refund: video failed`, generationId)
+      let errorMsg = genError.message || 'Video generation failed'
+      if (isContentModerationError(errorMsg)) {
+        errorMsg = 'Invalid content detected. The generated content was flagged and rejected by the model\'s content moderation system. Try rephrasing your prompt or using a different model.'
+      }
       await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
-        status: 'failed', errorMessage: genError.message,
+        status: 'failed', errorMessage: errorMsg.slice(0, 1500),
       })
-      return NextResponse.json({ error: genError.message }, { status: 500 })
+      return NextResponse.json({ error: errorMsg }, { status: 500 })
     }
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -157,12 +174,15 @@ export async function GET(request: Request) {
     }
 
     if (status.status === 'failed') {
-      const errorMsg = status.error || 'Video generation failed'
+      let errorMsg = status.error || 'Video generation failed'
+      if (isContentModerationError(errorMsg)) {
+        errorMsg = 'Invalid content detected. The generated content was flagged and rejected by the model\'s content moderation system. Try rephrasing your prompt or using a different model.'
+      }
       if (existing.documents[0]) {
         const gen = existing.documents[0]
         await refundCredits(gen.userId, gen.creditsUsed, 'Refund: video generation failed', gen.$id)
         await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
-          status: 'failed', errorMessage: errorMsg,
+          status: 'failed', errorMessage: errorMsg.slice(0, 1500),
         })
       }
       return NextResponse.json({ status: 'failed', error: errorMsg })
