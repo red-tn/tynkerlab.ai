@@ -59,7 +59,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { userId, name, gender, age, accent, tone, preview, previewOnly, customSettings } = body
+    const { userId, name, gender, age, accent, tone, preview, previewOnly, customSettings, sampleText } = body
 
     if (!userId || !gender || !age || !tone) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -83,8 +83,10 @@ export async function POST(request: Request) {
       await deductCredits(userId, VOICE_CREATION_CREDITS, `Voice preview: ${name || tone + ' ' + gender}`, ref)
 
       const family = getTTSFamily(matched.baseFamily)!
-      const sampleText = getSampleText(gender, age, accent, tone)
-      const audioBuffer = await generateSpeech(family.modelId, sampleText, matched.baseVoice, 'mp3', settings)
+      const previewText = (sampleText && sampleText.trim())
+        ? sampleText.trim().slice(0, family.maxCharacters)
+        : getSampleText(gender, age, accent, tone)
+      const audioBuffer = await generateSpeech(family.modelId, previewText, matched.baseVoice, 'mp3', settings)
       const previewAudio = Buffer.from(audioBuffer).toString('base64')
 
       return NextResponse.json({
@@ -159,6 +161,51 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ voice: newVoice, previewAudio })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+// PATCH — update a custom voice's settings or name
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json()
+    const { userId, voiceId, settings: newSettings, name: newName } = body
+
+    if (!userId || !voiceId) {
+      return NextResponse.json({ error: 'userId and voiceId required' }, { status: 400 })
+    }
+
+    const { databases } = createAdminClient()
+    const key = `custom_voices_${userId}`
+
+    const results = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
+      Query.equal('key', key),
+      Query.limit(1),
+    ])
+
+    if (results.documents.length === 0) {
+      return NextResponse.json({ error: 'No custom voices found' }, { status: 404 })
+    }
+
+    const voices: CustomVoice[] = JSON.parse(results.documents[0].value || '[]')
+    const idx = voices.findIndex(v => v.id === voiceId)
+    if (idx === -1) {
+      return NextResponse.json({ error: 'Voice not found' }, { status: 404 })
+    }
+
+    if (newSettings) {
+      voices[idx].settings = { ...voices[idx].settings, ...newSettings }
+    }
+    if (newName?.trim()) {
+      voices[idx].name = newName.trim()
+    }
+
+    await databases.updateDocument(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, results.documents[0].$id, {
+      value: JSON.stringify(voices),
+    })
+
+    return NextResponse.json({ voice: voices[idx] })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

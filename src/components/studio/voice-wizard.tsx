@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { cn } from '@/lib/utils'
-import { Wand2, ChevronRight, ChevronLeft, Loader2, Play, Square, Check, Coins, Save } from 'lucide-react'
+import { Wand2, ChevronRight, ChevronLeft, Loader2, Play, Square, Check, Coins, Save, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface VoiceWizardProps {
@@ -87,6 +87,7 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
   const [accent, setAccent] = useState<string>('neutral')
   const [tone, setTone] = useState<string>('')
   const [name, setName] = useState<string>('')
+  const [sampleText, setSampleText] = useState<string>('')
   const [creating, setCreating] = useState(false)
   const [previewing, setPreviewing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -160,6 +161,7 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
           tone,
           previewOnly: true,
           customSettings: customSettings || undefined,
+          sampleText: sampleText.trim() || undefined,
         }),
       })
       const data = await res.json()
@@ -368,6 +370,23 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
             className="w-full rounded-lg bg-nyx-surface border border-nyx-border px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500"
           />
 
+          {/* Voice prompt */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <MessageSquare className="h-3 w-3 text-gray-500" />
+              <label className="text-xs text-gray-400">Preview prompt <span className="text-gray-600">(optional)</span></label>
+            </div>
+            <textarea
+              value={sampleText}
+              onChange={(e) => setSampleText(e.target.value.slice(0, 500))}
+              placeholder="Type what you want the voice to say for the preview, or leave blank for a default sample..."
+              maxLength={500}
+              rows={3}
+              className="w-full rounded-lg bg-nyx-surface border border-nyx-border px-3 py-2 text-xs text-white placeholder:text-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500"
+            />
+            <p className="text-[10px] text-gray-600 text-right">{sampleText.length}/500</p>
+          </div>
+
           {/* Summary */}
           <div className="rounded-lg bg-nyx-bg/50 border border-nyx-border p-3 space-y-1.5">
             <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Voice Summary</p>
@@ -433,6 +452,22 @@ export function VoiceWizard({ userId, onVoiceCreated, onCancel, disabled }: Voic
                 <Coins className="h-3 w-3" /> 2
               </span>
             </Button>
+          </div>
+
+          {/* Voice prompt */}
+          <div className="space-y-1 rounded-lg bg-nyx-bg/50 border border-nyx-border p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <MessageSquare className="h-3 w-3 text-gray-500" />
+              <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Preview Prompt</label>
+            </div>
+            <textarea
+              value={sampleText}
+              onChange={(e) => setSampleText(e.target.value.slice(0, 500))}
+              placeholder="Type custom text to hear with your settings, or leave blank for default..."
+              maxLength={500}
+              rows={2}
+              className="w-full rounded-md bg-nyx-surface border border-nyx-border px-2.5 py-1.5 text-xs text-white placeholder:text-gray-500 resize-none focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500"
+            />
           </div>
 
           {/* Settings sliders */}

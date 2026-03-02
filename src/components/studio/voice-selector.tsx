@@ -5,7 +5,8 @@ import { TTS_MODEL_FAMILIES } from '@/lib/together/tts'
 import { getVoicePreviewUrl } from '@/lib/together/voice-previews'
 import type { TTSGender, TTSVoiceSettings, VoiceMode } from '@/types/together'
 import { cn } from '@/lib/utils'
-import { Volume2, Coins, Wand2, Trash2, Loader2, Play, Square } from 'lucide-react'
+import { Volume2, Coins, Wand2, Trash2, Loader2, Play, Square, Pencil, Save, X, RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { VoiceWizard } from './voice-wizard'
 
 const GENDERS: { id: TTSGender | 'all'; label: string }[] = [
@@ -42,6 +43,14 @@ interface VoiceSelectorProps {
   onCustomVoiceSelected?: (voice: CustomVoice) => void
 }
 
+const EDIT_SLIDERS = [
+  { key: 'speed' as const, label: 'Speed', min: 0.5, max: 2.0, step: 0.05, format: (v: number) => `${v.toFixed(2)}x` },
+  { key: 'stability' as const, label: 'Stability', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+  { key: 'loudness' as const, label: 'Loudness', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+  { key: 'style' as const, label: 'Style', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+  { key: 'similarity' as const, label: 'Similarity', min: 0, max: 100, step: 1, format: (v: number) => `${v}%` },
+]
+
 export function VoiceSelector({
   selectedFamily, onFamilyChange,
   selectedVoice, onVoiceChange,
@@ -60,11 +69,17 @@ export function VoiceSelector({
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [selectedCustomId, setSelectedCustomId] = useState<string | null>(null)
 
-  // Voice preview state
-  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null) // "familyId:voiceId"
+  // Voice preview state (shared for library + custom)
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null)
   const [loadingPreview, setLoadingPreview] = useState<string | null>(null)
-  const previewCacheRef = useRef<Map<string, string>>(new Map()) // key -> blob URL
+  const previewCacheRef = useRef<Map<string, string>>(new Map())
   const previewAudioRef = useRef<HTMLAudioElement | null>(null)
+
+  // Custom voice edit state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editSettings, setEditSettings] = useState<Record<string, number | boolean> | null>(null)
+  const [editName, setEditName] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
 
   const stopPreview = useCallback(() => {
     if (previewAudioRef.current) {
@@ -79,8 +94,9 @@ export function VoiceSelector({
   const prevSettingsKeyRef = useRef(settingsKey)
   useEffect(() => {
     if (prevSettingsKeyRef.current !== settingsKey) {
-      // Revoke old blob URLs
-      previewCacheRef.current.forEach(url => URL.revokeObjectURL(url))
+      previewCacheRef.current.forEach(url => {
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      })
       previewCacheRef.current.clear()
       prevSettingsKeyRef.current = settingsKey
     }
@@ -96,19 +112,16 @@ export function VoiceSelector({
     previewAudioRef.current.play().catch(() => setPreviewingVoice(null))
   }, [])
 
+  // Library voice preview (tries storage then API)
   const handlePreview = useCallback(async (familyId: string, voiceId: string) => {
     const key = `${familyId}:${voiceId}`
 
-    // If already playing this voice, stop it
     if (previewingVoice === key) {
       stopPreview()
       return
     }
-
-    // Stop any current playback
     stopPreview()
 
-    // Check cache first
     const cached = previewCacheRef.current.get(key)
     if (cached) {
       playFromUrl(cached, key)
@@ -117,7 +130,6 @@ export function VoiceSelector({
 
     setLoadingPreview(key)
     try {
-      // Try pre-loaded storage URL first (instant, no API cost)
       const storageUrl = getVoicePreviewUrl(familyId, voiceId)
       const headRes = await fetch(storageUrl, { method: 'HEAD' })
       if (headRes.ok) {
@@ -127,10 +139,9 @@ export function VoiceSelector({
         return
       }
     } catch {
-      // Storage file doesn't exist — fall through to API
+      // fall through
     }
 
-    // Fallback: generate preview via API
     try {
       const res = await fetch('/api/generate/speech/preview', {
         method: 'POST',
@@ -156,6 +167,49 @@ export function VoiceSelector({
       setLoadingPreview(null)
     }
   }, [previewingVoice, stopPreview, voiceSettings, playFromUrl])
+
+  // Custom voice preview (uses base family/voice + its settings via the preview API)
+  const handleCustomPreview = useCallback(async (voice: CustomVoice, overrideSettings?: Record<string, number | boolean>) => {
+    const key = `custom:${voice.id}`
+
+    if (previewingVoice === key) {
+      stopPreview()
+      return
+    }
+    stopPreview()
+
+    // Don't cache custom previews during editing (settings may change)
+    const useSettings = overrideSettings || voice.settings
+
+    setLoadingPreview(key)
+    try {
+      const res = await fetch('/api/generate/speech/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          familyId: voice.baseFamily,
+          voice: voice.baseVoice,
+          settings: useSettings,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Preview failed')
+
+      const binaryStr = atob(data.audio)
+      const bytes = new Uint8Array(binaryStr.length)
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: data.mimeType || 'audio/mpeg' })
+      const url = URL.createObjectURL(blob)
+
+      playFromUrl(url, key)
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingPreview(null)
+    }
+  }, [previewingVoice, stopPreview, playFromUrl])
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -196,6 +250,7 @@ export function VoiceSelector({
       await fetch(`/api/voices?userId=${userId}&voiceId=${voiceId}`, { method: 'DELETE' })
       setCustomVoices(prev => prev.filter(v => v.id !== voiceId))
       if (selectedCustomId === voiceId) setSelectedCustomId(null)
+      if (editingId === voiceId) { setEditingId(null); setEditSettings(null) }
     } catch {} finally {
       setDeletingId(null)
     }
@@ -203,7 +258,6 @@ export function VoiceSelector({
 
   const handleSelectCustom = (voice: CustomVoice) => {
     setSelectedCustomId(voice.id)
-    // Set the base family and voice for TTS generation
     onFamilyChange(voice.baseFamily)
     onVoiceChange(voice.baseVoice)
     onCustomVoiceSelected?.(voice)
@@ -215,13 +269,59 @@ export function VoiceSelector({
     handleSelectCustom(voice)
   }
 
+  // Open edit mode for a custom voice
+  const startEdit = (voice: CustomVoice) => {
+    if (editingId === voice.id) {
+      // Toggle off
+      setEditingId(null)
+      setEditSettings(null)
+      return
+    }
+    setEditingId(voice.id)
+    setEditSettings({ ...voice.settings })
+    setEditName(voice.name)
+  }
+
+  // Save edited custom voice settings
+  const saveEdit = async (voiceId: string) => {
+    if (!userId || !editSettings) return
+    setSavingEdit(true)
+    try {
+      const res = await fetch('/api/voices', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          voiceId,
+          settings: editSettings,
+          name: editName.trim() || undefined,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+
+      // Update local state
+      setCustomVoices(prev => prev.map(v => v.id === voiceId ? data.voice : v))
+      // If this is the selected voice, re-apply settings upstream
+      if (selectedCustomId === voiceId) {
+        onCustomVoiceSelected?.(data.voice)
+      }
+      setEditingId(null)
+      setEditSettings(null)
+    } catch {
+      // silently fail
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Tabs */}
       <div className="flex gap-1 p-0.5 rounded-lg bg-nyx-surface border border-nyx-border">
         <button
           type="button"
-          onClick={() => { setTab('library'); setSelectedCustomId(null) }}
+          onClick={() => { setTab('library'); setSelectedCustomId(null); setEditingId(null) }}
           className={cn(
             'flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
             tab === 'library'
@@ -431,52 +531,205 @@ export function VoiceSelector({
                   <p className="text-xs text-gray-600 mt-1">Create your first voice to get started</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2 max-h-[280px] overflow-y-auto pr-1">
-                  {customVoices.map((voice) => (
-                    <div
-                      key={voice.id}
-                      className={cn(
-                        'flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer',
-                        selectedCustomId === voice.id
-                          ? 'border-primary-500 bg-primary-500/10'
-                          : 'border-nyx-border bg-nyx-surface hover:border-nyx-border-bright'
-                      )}
-                      onClick={() => !disabled && handleSelectCustom(voice)}
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary-500/15 flex items-center justify-center">
-                        <Wand2 className="h-4 w-4 text-primary-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-white truncate">{voice.name}</p>
-                          <span className={cn(
-                            'text-[9px] px-1.5 py-0.5 rounded-full uppercase',
-                            voice.gender === 'male' ? 'bg-blue-500/10 text-blue-400' :
-                            voice.gender === 'female' ? 'bg-pink-500/10 text-pink-400' :
-                            'bg-gray-500/10 text-gray-400'
-                          )}>{voice.gender}</span>
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                  {customVoices.map((voice) => {
+                    const previewKey = `custom:${voice.id}`
+                    const isPlaying = previewingVoice === previewKey
+                    const isLoading = loadingPreview === previewKey
+                    const isEditing = editingId === voice.id
+
+                    return (
+                      <div key={voice.id} className="space-y-0">
+                        {/* Voice card */}
+                        <div
+                          className={cn(
+                            'flex items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer',
+                            selectedCustomId === voice.id
+                              ? 'border-primary-500 bg-primary-500/10'
+                              : 'border-nyx-border bg-nyx-surface hover:border-nyx-border-bright',
+                            isEditing && 'rounded-b-none'
+                          )}
+                          onClick={() => !disabled && handleSelectCustom(voice)}
+                        >
+                          {/* Preview button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCustomPreview(voice)
+                            }}
+                            disabled={disabled || isLoading}
+                            className={cn(
+                              'shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all',
+                              isPlaying
+                                ? 'bg-primary-500 text-white'
+                                : 'bg-primary-500/15 text-primary-400 hover:bg-primary-500/30'
+                            )}
+                            title={isPlaying ? 'Stop preview' : 'Preview voice'}
+                          >
+                            {isLoading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : isPlaying ? (
+                              <Square className="h-3 w-3 fill-current" />
+                            ) : (
+                              <Play className="h-3.5 w-3.5 ml-0.5" />
+                            )}
+                          </button>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-white truncate">{voice.name}</p>
+                              <span className={cn(
+                                'text-[9px] px-1.5 py-0.5 rounded-full uppercase',
+                                voice.gender === 'male' ? 'bg-blue-500/10 text-blue-400' :
+                                voice.gender === 'female' ? 'bg-pink-500/10 text-pink-400' :
+                                'bg-gray-500/10 text-gray-400'
+                              )}>{voice.gender}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-500">
+                              {voice.tone} &middot; {voice.age === 'middle-aged' ? 'adult' : voice.age} &middot; {voice.accent}
+                            </p>
+                          </div>
+
+                          {/* Edit button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              startEdit(voice)
+                            }}
+                            className={cn(
+                              'p-1.5 rounded-md transition-colors',
+                              isEditing
+                                ? 'text-primary-400 bg-primary-500/10'
+                                : 'text-gray-600 hover:text-primary-400 hover:bg-primary-500/10'
+                            )}
+                            title="Edit voice settings"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+
+                          {/* Delete button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteCustom(voice.id)
+                            }}
+                            disabled={deletingId === voice.id}
+                            className="p-1.5 rounded-md text-gray-600 hover:text-error hover:bg-error/10 transition-colors"
+                          >
+                            {deletingId === voice.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                          </button>
                         </div>
-                        <p className="text-[10px] text-gray-500">
-                          {voice.tone} &middot; {voice.age === 'middle-aged' ? 'adult' : voice.age} &middot; {voice.accent}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteCustom(voice.id)
-                        }}
-                        disabled={deletingId === voice.id}
-                        className="p-1.5 rounded-md text-gray-600 hover:text-error hover:bg-error/10 transition-colors"
-                      >
-                        {deletingId === voice.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
+
+                        {/* Inline edit panel */}
+                        {isEditing && editSettings && (
+                          <div className="border border-t-0 border-nyx-border rounded-b-lg bg-nyx-bg/60 p-3 space-y-3">
+                            {/* Name edit */}
+                            <div className="space-y-1">
+                              <label className="text-xs text-gray-400">Name</label>
+                              <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                maxLength={50}
+                                className="w-full rounded-md bg-nyx-surface border border-nyx-border px-2.5 py-1.5 text-xs text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 focus:border-primary-500"
+                              />
+                            </div>
+
+                            {/* Sliders */}
+                            {EDIT_SLIDERS.map(({ key, label, min, max, step, format }) => (
+                              <div key={key} className="space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-xs text-gray-400">{label}</label>
+                                  <span className="text-xs text-primary-300 font-mono">{format(editSettings[key] as number)}</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min={min}
+                                  max={max}
+                                  step={step}
+                                  value={editSettings[key] as number}
+                                  onChange={(e) => setEditSettings({ ...editSettings, [key]: parseFloat(e.target.value) })}
+                                  className="w-full h-1.5 rounded-full appearance-none bg-nyx-border cursor-pointer accent-primary-500
+                                    [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
+                                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary-400
+                                    [&::-webkit-slider-thumb]:hover:bg-primary-300 [&::-webkit-slider-thumb]:transition-colors"
+                                />
+                              </div>
+                            ))}
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 pt-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs"
+                                disabled={isLoading}
+                                loading={isLoading}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleCustomPreview(voice, editSettings)
+                                }}
+                              >
+                                <Play className="h-3 w-3 mr-1" />
+                                Preview
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditSettings({ ...voice.settings })
+                                  setEditName(voice.name)
+                                }}
+                              >
+                                <RotateCcw className="h-3 w-3 mr-1" />
+                                Reset
+                              </Button>
+
+                              <div className="flex-1" />
+
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs text-gray-500"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingId(null)
+                                  setEditSettings(null)
+                                }}
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Cancel
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                className="text-xs"
+                                disabled={savingEdit}
+                                loading={savingEdit}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  saveEdit(voice.id)
+                                }}
+                              >
+                                <Save className="h-3 w-3 mr-1" />
+                                Save
+                              </Button>
+                            </div>
+                          </div>
                         )}
-                      </button>
-                    </div>
-                  ))}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </>
