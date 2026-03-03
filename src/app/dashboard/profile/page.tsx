@@ -98,22 +98,17 @@ export default function ProfilePage() {
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !profile) return
+    if (!file || !user) return
     setUploadingPhoto(true)
     try {
-      const filePath = `avatars/${profile.user_id}/${crypto.randomUUID()}-${file.name}`
-      const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file)
-      if (uploadError) throw uploadError
-      const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(filePath)
-      const res = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profileId: profile.id,
-          data: { avatar_url: publicUrl },
-        }),
-      })
-      if (!res.ok) throw new Error('Failed to update avatar')
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('userId', user.id)
+      const res = await fetch('/api/profile/avatar', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || 'Failed to upload photo')
+      }
       await refreshProfile()
       addToast('Profile photo updated!', 'success')
     } catch (err: any) {
