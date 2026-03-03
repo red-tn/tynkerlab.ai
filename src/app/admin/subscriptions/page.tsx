@@ -50,8 +50,8 @@ export default function AdminSubscriptionsPage() {
         <StatsCard title="Creator / Pro Creator" value={`${proCount} / ${enterpriseCount}`} icon={Users} iconColor="text-accent-400" />
       </div>
 
-      <div className="rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
           <thead>
             <tr className="border-b border-nyx-border bg-nyx-bg/50">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">User</th>
