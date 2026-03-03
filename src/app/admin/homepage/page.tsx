@@ -26,6 +26,7 @@ const DEFAULT_TOOLS: ToolCardConfig[] = [
   { key: 'image-to-image', title: 'Image to Image', imageUrl: '', prompt: '' },
   { key: 'text-to-video', title: 'Text to Video', imageUrl: '', prompt: '' },
   { key: 'image-to-video', title: 'Image to Video', imageUrl: '', prompt: '' },
+  { key: 'ugc-avatar', title: 'UGC Avatar', imageUrl: '', prompt: '' },
 ]
 
 export default function AdminHomepagePage() {

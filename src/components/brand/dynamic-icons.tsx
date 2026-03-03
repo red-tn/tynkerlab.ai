@@ -37,6 +37,16 @@ export function ImageToVideoIcon({ size, className }: { size?: number; className
   return <icons.ImageToVideoIcon size={size} className={className} />
 }
 
+export function UGCAvatarIcon({ size, className }: { size?: number; className?: string }) {
+  const icons = useBrand((s) => s.getIcons())
+  return <icons.UGCAvatarIcon size={size} className={className} />
+}
+
+export function PromptMakerIcon({ size, className }: { size?: number; className?: string }) {
+  const icons = useBrand((s) => s.getIcons())
+  return <icons.PromptMakerIcon size={size} className={className} />
+}
+
 export function TextToSpeechIcon({ size, className }: { size?: number; className?: string }) {
   const icons = useBrand((s) => s.getIcons())
   return <icons.TextToSpeechIcon size={size} className={className} />

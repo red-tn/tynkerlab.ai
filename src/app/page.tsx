@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, TextToSpeechIcon } from '@/components/brand/dynamic-icons'
+import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, UGCAvatarIcon, PromptMakerIcon, TextToSpeechIcon } from '@/components/brand/dynamic-icons'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Sparkles, Zap, Shield, ArrowRight, Star, Palette, Film, Wand2, Layers, Globe, Heart, Code, ImageIcon, Video, Copy, Volume2 } from 'lucide-react'
@@ -16,6 +16,8 @@ const TOOLS = [
   { key: 'image-to-image', Icon: ImageToImageIcon, title: 'Image to Image', desc: 'Transform and enhance existing images with AI', href: '/studio/image-to-image' },
   { key: 'text-to-video', Icon: TextToVideoIcon, title: 'Text to Video', desc: 'Create cinematic videos from text prompts', href: '/studio/text-to-video' },
   { key: 'image-to-video', Icon: ImageToVideoIcon, title: 'Image to Video', desc: 'Animate still images into dynamic videos', href: '/studio/image-to-video' },
+  { key: 'ugc-avatar', Icon: UGCAvatarIcon, title: 'UGC Avatar', desc: 'Create talking avatar videos from a photo', href: '/studio/ugc-avatar' },
+  { key: 'prompt-maker', Icon: PromptMakerIcon, title: 'Prompt Maker', desc: 'Build perfect AI prompts with structured guidance', href: '/studio/prompt-maker' },
   { key: 'text-to-speech', Icon: TextToSpeechIcon, title: 'Text to Speech', desc: 'Convert text to natural-sounding AI voices', href: '/studio/text-to-speech' },
 ]
 
@@ -190,10 +192,10 @@ export default function HomePage() {
       {/* Feature Tools */}
       <section className="max-w-6xl mx-auto px-4 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Five Powerful Tools</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Seven Powerful Tools</h2>
           <p className="text-gray-400 max-w-xl mx-auto">Everything you need to bring your creative vision to life</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 md:gap-5">
           {TOOLS.map(({ key, Icon, title, desc, href }) => {
             const toolData = toolImages[key]
             const hasImage = !!toolData?.imageUrl

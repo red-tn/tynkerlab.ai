@@ -17,6 +17,8 @@ const ICON_KEYS = [
   { key: 'ImageToImageIcon' as const, label: 'Image to Image' },
   { key: 'TextToVideoIcon' as const, label: 'Text to Video' },
   { key: 'ImageToVideoIcon' as const, label: 'Image to Video' },
+  { key: 'UGCAvatarIcon' as const, label: 'UGC Avatar' },
+  { key: 'PromptMakerIcon' as const, label: 'Prompt Maker' },
   { key: 'TextToSpeechIcon' as const, label: 'Text to Speech' },
 ]
 
@@ -141,7 +143,7 @@ export default function AdminBrandPage() {
     const container = document.getElementById('brand-preview-grid')
     if (!container) return
     const svgs = container.querySelectorAll('svg')
-    const names = ['text-to-image', 'image-to-image', 'text-to-video', 'image-to-video', 'text-to-speech']
+    const names = ['text-to-image', 'image-to-image', 'text-to-video', 'image-to-video', 'ugc-avatar', 'prompt-maker', 'text-to-speech']
     svgs.forEach((svg, i) => {
       if (i < names.length) {
         setTimeout(() => downloadSvg(svg, `tynkerlab-${previewSet.id}-${names[i]}`), i * 200)
@@ -215,6 +217,8 @@ export default function AdminBrandPage() {
                     <set.ImageToImageIcon size={16} />
                     <set.TextToVideoIcon size={16} />
                     <set.ImageToVideoIcon size={16} />
+                    <set.UGCAvatarIcon size={16} />
+                    <set.PromptMakerIcon size={16} />
                     <set.TextToSpeechIcon size={16} />
                   </div>
 

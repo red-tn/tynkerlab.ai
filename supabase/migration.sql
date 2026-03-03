@@ -385,5 +385,11 @@ CREATE POLICY storage_uploads_delete ON storage.objects FOR DELETE TO authentica
   USING (bucket_id IN ('uploads', 'avatars', 'generations'));
 
 -- ---------------------------------------------------------------------------
+-- UGC Avatar support
+-- ---------------------------------------------------------------------------
+ALTER TABLE generations ADD COLUMN IF NOT EXISTS input_audio_url text;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS total_avatars int NOT NULL DEFAULT 0;
+
+-- ---------------------------------------------------------------------------
 -- Done! Verify with: SELECT tablename FROM pg_tables WHERE schemaname = 'public';
 -- ---------------------------------------------------------------------------

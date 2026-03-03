@@ -372,6 +372,162 @@ export function SteampunkImageToVideoIcon({ size = 24, className }: IconProps) {
 }
 
 /**
+ * Steampunk x Cyberpunk: Brass automaton/mannequin head with glowing cyan eyes,
+ * gear jaw mechanism, and sound waves emanating outward.
+ */
+export function SteampunkUGCAvatarIcon({ size = 24, className }: IconProps) {
+  const reactId = useId()
+  const id = `sp-ugc-${reactId.replace(/:/g, '')}`
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={cn('shrink-0', className)}
+    >
+      <defs>
+        <linearGradient id={`${id}-brass`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+        <radialGradient id={`${id}-eye`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#06b6d4" stopOpacity="1" />
+          <stop offset="70%" stopColor="#06b6d4" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.1" />
+        </radialGradient>
+      </defs>
+
+      {/* Mannequin head outline - brass */}
+      <path d="M5 8C5 4.5 7.5 2 10.5 2C13.5 2 16 4.5 16 8V12C16 13 15.5 14 14.5 14.5H6.5C5.5 14 5 13 5 12V8Z" stroke={`url(#${id}-brass)`} strokeWidth="1.3" fill="none" />
+
+      {/* Glowing cyan eyes */}
+      <circle cx="8.5" cy="8" r="1.5" fill={`url(#${id}-eye)`} />
+      <circle cx="12.5" cy="8" r="1.5" fill={`url(#${id}-eye)`} />
+
+      {/* Eye center highlights */}
+      <circle cx="8.2" cy="7.7" r="0.4" fill="#06b6d4" fillOpacity="0.9" />
+      <circle cx="12.2" cy="7.7" r="0.4" fill="#06b6d4" fillOpacity="0.9" />
+
+      {/* Gear jaw mechanism */}
+      <circle cx="10.5" cy="12.5" r="1.5" stroke="#d97706" strokeWidth="0.7" fill="none" />
+      <circle cx="10.5" cy="12.5" r="0.4" fill="#d97706" />
+      {/* Jaw gear teeth */}
+      <line x1="10.5" y1="10.7" x2="10.5" y2="11" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+      <line x1="10.5" y1="14" x2="10.5" y2="14.3" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+      <line x1="8.7" y1="12.5" x2="9" y2="12.5" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+      <line x1="12" y1="12.5" x2="12.3" y2="12.5" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+
+      {/* Neck / body connector */}
+      <path d="M8 14.5V16.5H13V14.5" stroke={`url(#${id}-brass)`} strokeWidth="1" strokeLinecap="round" />
+
+      {/* Shoulders */}
+      <path d="M4 20C4 18 6 16.5 8 16.5H13C15 16.5 17 18 17 20" stroke={`url(#${id}-brass)`} strokeWidth="1.2" strokeLinecap="round" fill="none" />
+
+      {/* Rivets */}
+      <circle cx="6" cy="5" r="0.4" fill="#b45309" />
+      <circle cx="15" cy="5" r="0.4" fill="#b45309" />
+      <circle cx="5.5" cy="18.5" r="0.4" fill="#b45309" />
+      <circle cx="15.5" cy="18.5" r="0.4" fill="#b45309" />
+
+      {/* Sound waves - neon cyan */}
+      <path d="M18 7.5C19 8.5 19 11.5 18 12.5" stroke="#06b6d4" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M20 6C21.5 8 21.5 12 20 14" stroke="#06b6d4" strokeWidth="0.8" strokeLinecap="round" fill="none" strokeOpacity="0.6" />
+      <path d="M22 4.5C23.5 7 23.5 13 22 15.5" stroke="#06b6d4" strokeWidth="0.6" strokeLinecap="round" fill="none" strokeOpacity="0.3" />
+
+      {/* Circuit traces */}
+      <path d="M6 10H7L7.5 10.5" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" strokeOpacity="0.6" />
+
+      {/* Steam wisp */}
+      <path d="M14 3C14 2.3 14.5 1.8 14.3 1" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" fill="none" strokeOpacity="0.4" />
+    </svg>
+  )
+}
+
+/**
+ * Steampunk x Cyberpunk: Brass gramophone/megaphone with gear mechanisms at the base.
+ * Sound waves rendered as concentric neon arcs (cyan). Circuit board pattern on the horn.
+ */
+/**
+ * Steampunk x Cyberpunk: Brass quill pen with gear mechanism writing onto a scroll.
+ * Neon circuit traces on the scroll surface. Steam wisps from the ink reservoir.
+ */
+export function SteampunkPromptMakerIcon({ size = 24, className }: IconProps) {
+  const reactId = useId()
+  const id = `sp-pm-${reactId.replace(/:/g, '')}`
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={cn('shrink-0', className)}
+    >
+      <defs>
+        <linearGradient id={`${id}-brass`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+        <linearGradient id={`${id}-neon`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#06b6d4" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+      </defs>
+
+      {/* Scroll / document - brass */}
+      <rect x="10" y="3" width="12" height="15" rx="1.5" stroke={`url(#${id}-brass)`} strokeWidth="1.3" />
+
+      {/* Scroll curl at bottom */}
+      <path d="M10 18C10 19.5 11 20 12 20" stroke={`url(#${id}-brass)`} strokeWidth="1" strokeLinecap="round" fill="none" />
+
+      {/* Text lines on scroll - neon circuit style */}
+      <line x1="12.5" y1="6" x2="19.5" y2="6" stroke="#06b6d4" strokeWidth="0.6" strokeLinecap="round" strokeOpacity="0.7" />
+      <line x1="12.5" y1="8.5" x2="18" y2="8.5" stroke="#06b6d4" strokeWidth="0.6" strokeLinecap="round" strokeOpacity="0.6" />
+      <line x1="12.5" y1="11" x2="19" y2="11" stroke="#8b5cf6" strokeWidth="0.6" strokeLinecap="round" strokeOpacity="0.5" />
+      <line x1="12.5" y1="13.5" x2="16.5" y2="13.5" stroke="#06b6d4" strokeWidth="0.6" strokeLinecap="round" strokeOpacity="0.6" />
+
+      {/* Rivets on scroll corners */}
+      <circle cx="11.5" cy="4.5" r="0.4" fill="#b45309" />
+      <circle cx="20.5" cy="4.5" r="0.4" fill="#b45309" />
+      <circle cx="20.5" cy="16.5" r="0.4" fill="#b45309" />
+
+      {/* Quill pen - brass nib */}
+      <path d="M3 21L7 14L8.5 15.5Z" stroke={`url(#${id}-brass)`} strokeWidth="1.2" strokeLinejoin="round" fill="none" />
+
+      {/* Nib tip */}
+      <circle cx="3.5" cy="20.5" r="0.5" fill="#d97706" />
+
+      {/* Quill feather */}
+      <path d="M7 14L9.5 10C10 9 9.5 8 10 7" stroke={`url(#${id}-brass)`} strokeWidth="1" strokeLinecap="round" fill="none" />
+      <path d="M8.5 15.5L11 12C11.5 11 11 10 11.5 9" stroke={`url(#${id}-brass)`} strokeWidth="0.8" strokeLinecap="round" fill="none" />
+
+      {/* Gear on quill mechanism */}
+      <circle cx="7.5" cy="14.5" r="1.5" stroke="#d97706" strokeWidth="0.7" fill="none" />
+      <circle cx="7.5" cy="14.5" r="0.4" fill="#d97706" />
+      {/* Gear teeth */}
+      <line x1="7.5" y1="12.7" x2="7.5" y2="13" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+      <line x1="7.5" y1="16" x2="7.5" y2="16.3" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+      <line x1="5.7" y1="14.5" x2="6" y2="14.5" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+      <line x1="9" y1="14.5" x2="9.3" y2="14.5" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" />
+
+      {/* Ink splatter / spark particles */}
+      <circle cx="5" cy="18" r="0.4" fill="#06b6d4" fillOpacity="0.6" />
+      <circle cx="9" cy="16.5" r="0.3" fill="#8b5cf6" fillOpacity="0.5" />
+
+      {/* Steam wisp from quill */}
+      <path d="M10 8C10 7.3 10.5 6.8 10.3 6" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" fill="none" strokeOpacity="0.4" />
+
+      {/* Circuit trace on scroll */}
+      <path d="M12 15.5H13.5L14 16" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" strokeOpacity="0.5" />
+    </svg>
+  )
+}
+
+/**
  * Steampunk x Cyberpunk: Brass gramophone/megaphone with gear mechanisms at the base.
  * Sound waves rendered as concentric neon arcs (cyan). Circuit board pattern on the horn.
  */

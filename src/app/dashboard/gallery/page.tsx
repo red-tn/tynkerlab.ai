@@ -37,7 +37,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
-  const [filter, setFilter] = useState<'all' | 'image' | 'video'>('all')
+  const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'avatar'>('all')
 
   // Delete state
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -72,6 +72,8 @@ export default function GalleryPage() {
         query = query.ilike('type', '%image%')
       } else if (filter === 'video') {
         query = query.ilike('type', '%video%')
+      } else if (filter === 'avatar') {
+        query = query.eq('type', 'ugc-avatar')
       }
 
       const { data, count, error } = await query
@@ -98,7 +100,7 @@ export default function GalleryPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `tynkerlab-${gen.id}.${gen.type.includes('video') ? 'mp4' : 'png'}`
+      a.download = `tynkerlab-${gen.id}.${gen.type.includes('video') || gen.type === 'ugc-avatar' ? 'mp4' : 'png'}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -143,7 +145,7 @@ export default function GalleryPage() {
     try {
       if (submitMode === 'admin') {
         const promptText = inspirationPrompt.trim() || inspirationGen.prompt
-        const modelType = inspirationGen.type.includes('video') ? 'video' : 'image'
+        const modelType = inspirationGen.type.includes('video') || inspirationGen.type === 'ugc-avatar' ? 'video' : 'image'
 
         if (publishAs === 'community') {
           const res = await adminFetch('/api/admin/prompts', {
@@ -191,7 +193,7 @@ export default function GalleryPage() {
             title: inspirationTitle.trim(),
             promptText: inspirationGen.prompt,
             category: inspirationCategory,
-            modelType: inspirationGen.type.includes('video') ? 'video' : 'image',
+            modelType: inspirationGen.type.includes('video') || inspirationGen.type === 'ugc-avatar' ? 'video' : 'image',
             modelUsed: inspirationGen.model,
             previewImageUrl: inspirationGen.output_url,
             userId: user?.id,
@@ -217,7 +219,7 @@ export default function GalleryPage() {
           <p className="text-sm text-gray-400 mt-1">{total} generation{total !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex gap-2">
-          {(['all', 'image', 'video'] as const).map((f) => (
+          {(['all', 'image', 'video', 'avatar'] as const).map((f) => (
             <button
               key={f}
               onClick={() => { setFilter(f); setPage(0) }}
@@ -254,7 +256,7 @@ export default function GalleryPage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {generations.map((gen) => (
               <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
-                {gen.type.includes('video') ? (
+                {gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
                   <video src={gen.output_url || ''} className="w-full aspect-square object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => (e.target as HTMLVideoElement).pause()} />
                 ) : (
                   <img src={gen.output_url || ''} alt={gen.prompt} className="w-full aspect-square object-cover" />
@@ -264,7 +266,7 @@ export default function GalleryPage() {
                     <p className="text-xs text-white line-clamp-2 mb-2">{gen.prompt}</p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        {gen.type.includes('video') ? (
+                        {gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
                           <Video className="h-3 w-3 text-accent-400" />
                         ) : (
                           <ImageIcon className="h-3 w-3 text-primary-400" />
@@ -312,8 +314,8 @@ export default function GalleryPage() {
                     </div>
                   </div>
                 </div>
-                <Badge variant={gen.type.includes('video') ? 'info' : 'default'} className="absolute top-2 right-2 text-[10px]">
-                  {gen.type.includes('video') ? 'Video' : 'Image'}
+                <Badge variant={gen.type === 'ugc-avatar' ? 'warning' : gen.type.includes('video') ? 'info' : 'default'} className="absolute top-2 right-2 text-[10px]">
+                  {gen.type === 'ugc-avatar' ? 'Avatar' : gen.type.includes('video') ? 'Video' : 'Image'}
                 </Badge>
               </div>
             ))}
@@ -354,7 +356,7 @@ export default function GalleryPage() {
             <div className="space-y-4">
               {/* Preview */}
               <div className="rounded-lg overflow-hidden border border-nyx-border">
-                {inspirationGen.type.includes('video') ? (
+                {inspirationGen.type.includes('video') || inspirationGen.type === 'ugc-avatar' ? (
                   <video
                     src={inspirationGen.output_url || ''}
                     className="w-full aspect-video object-cover"

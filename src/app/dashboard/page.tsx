@@ -13,7 +13,7 @@ import type { Generation } from '@/types/database'
 import { useToast } from '@/components/ui/toast'
 import {
   Wand2, ImageIcon, Video, Image, Volume2, Coins, TrendingUp,
-  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2
+  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2, UserCircle
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -71,6 +71,7 @@ export default function DashboardPage() {
     { href: '/studio/image-to-image', label: 'Image to Image', desc: 'Transform existing images', icon: ImageIcon, gradient: 'from-accent-500 to-accent-700' },
     { href: '/studio/text-to-video', label: 'Text to Video', desc: 'Create videos from text', icon: Video, gradient: 'from-primary-400 to-accent-500' },
     { href: '/studio/image-to-video', label: 'Image to Video', desc: 'Animate still images', icon: Image, gradient: 'from-accent-400 to-primary-500' },
+    { href: '/studio/ugc-avatar', label: 'UGC Avatar', desc: 'Talking avatar videos', icon: UserCircle, gradient: 'from-primary-600 to-accent-400' },
     { href: '/studio/text-to-speech', label: 'Text to Speech', desc: 'AI voice generation', icon: Volume2, gradient: 'from-primary-500 to-accent-400' },
   ]
 
@@ -137,12 +138,13 @@ export default function DashboardPage() {
       </div>
 
       {/* ---- Stats row ---- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 relative">
         {[
           { label: 'Credits Balance', value: profile?.credits_balance?.toLocaleString() ?? '0', icon: Coins, color: 'text-primary-400', bg: 'bg-primary-500/10', ring: 'ring-primary-500/20' },
           { label: 'Total Generations', value: profile?.total_generations?.toString() ?? '0', icon: TrendingUp, color: 'text-accent-400', bg: 'bg-accent-500/10', ring: 'ring-accent-500/20' },
           { label: 'Images Created', value: profile?.total_images?.toString() ?? '0', icon: ImageIcon, color: 'text-primary-300', bg: 'bg-primary-500/10', ring: 'ring-primary-500/20' },
           { label: 'Videos Created', value: profile?.total_videos?.toString() ?? '0', icon: Video, color: 'text-accent-300', bg: 'bg-accent-500/10', ring: 'ring-accent-500/20' },
+          { label: 'Avatars Created', value: profile?.total_avatars?.toString() ?? '0', icon: UserCircle, color: 'text-pink-300', bg: 'bg-pink-500/10', ring: 'ring-pink-500/20' },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -253,7 +255,7 @@ export default function DashboardPage() {
               <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5">
                 <div className="aspect-video bg-nyx-border relative overflow-hidden">
                   {gen.output_url ? (
-                    gen.type.includes('video') ? (
+                    gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
                       <video src={gen.output_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted />
                     ) : (
                       <img src={gen.output_url} alt={gen.prompt || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

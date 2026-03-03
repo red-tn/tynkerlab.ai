@@ -31,7 +31,7 @@ interface DashboardData {
     generationsChange: number
   }
   revenueChart: { date: string; revenue: number }[]
-  generationsChart: { date: string; images: number; videos: number }[]
+  generationsChart: { date: string; images: number; videos: number; avatars: number }[]
   recentActivity: ActivityItem[]
 }
 
@@ -108,6 +108,7 @@ export default function AdminDashboard() {
             <Tooltip contentStyle={{ backgroundColor: '#12121a', border: '1px solid #2a2a3e', borderRadius: 8, fontSize: 12 }} />
             <Bar dataKey="images" fill="#7c3aed" radius={[4, 4, 0, 0]} />
             <Bar dataKey="videos" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="avatars" fill="#ec4899" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ChartWrapper>
       </div>

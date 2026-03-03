@@ -55,12 +55,13 @@ export async function GET(request: Request) {
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 15)
 
     // Build chart data (simplified — group generations by day)
-    const gensByDay: Record<string, { images: number; videos: number }> = {}
+    const gensByDay: Record<string, { images: number; videos: number; avatars: number }> = {}
     for (const g of generations) {
       const day = (g as any).created_at?.slice(0, 10)
       if (!day) continue
-      if (!gensByDay[day]) gensByDay[day] = { images: 0, videos: 0 }
-      if ((g as any).type?.includes('video')) gensByDay[day].videos++
+      if (!gensByDay[day]) gensByDay[day] = { images: 0, videos: 0, avatars: 0 }
+      if ((g as any).type === 'ugc-avatar') gensByDay[day].avatars++
+      else if ((g as any).type?.includes('video')) gensByDay[day].videos++
       else gensByDay[day].images++
     }
 

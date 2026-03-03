@@ -69,6 +69,7 @@ export async function POST(request: Request) {
         total_generations: 0,
         total_images: 0,
         total_videos: 0,
+        total_avatars: 0,
       })
       .select()
       .single()

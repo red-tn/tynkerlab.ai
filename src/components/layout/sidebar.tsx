@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useCredits } from '@/hooks/use-credits'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
-import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, TextToSpeechIcon } from '@/components/brand/dynamic-icons'
+import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, UGCAvatarIcon, PromptMakerIcon, TextToSpeechIcon } from '@/components/brand/dynamic-icons'
 import { Coins, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
@@ -15,6 +15,8 @@ const tools = [
   { href: '/studio/image-to-image', label: 'Image to Image', Icon: ImageToImageIcon },
   { href: '/studio/text-to-video', label: 'Text to Video', Icon: TextToVideoIcon },
   { href: '/studio/image-to-video', label: 'Image to Video', Icon: ImageToVideoIcon },
+  { href: '/studio/ugc-avatar', label: 'UGC Avatar', Icon: UGCAvatarIcon },
+  { href: '/studio/prompt-maker', label: 'Prompt Maker', Icon: PromptMakerIcon },
   { href: '/studio/text-to-speech', label: 'Text to Speech', Icon: TextToSpeechIcon },
 ]
 

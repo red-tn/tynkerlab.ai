@@ -151,6 +151,80 @@ export function ImageToVideoIcon({ size = 24, className }: IconProps) {
  * Text-to-Speech: sound wave emanating from a mic/speaker with text input.
  * Gradient: violet -> cyan
  */
+/**
+ * Prompt Maker: magic wand assembling puzzle pieces into a document.
+ * Gradient: violet -> cyan
+ */
+export function PromptMakerIcon({ size = 24, className }: IconProps) {
+  const reactId = useId()
+  const id = `pm-${reactId.replace(/:/g, '')}`
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={cn('shrink-0', className)}>
+      <defs>
+        <linearGradient id={`${id}-g`} x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#7c3aed" />
+          <stop offset="50%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#06b6d4" />
+        </linearGradient>
+      </defs>
+      {/* Wand handle */}
+      <line x1="2" y1="20" x2="8" y2="14" stroke={`url(#${id}-g)`} strokeWidth="1.8" strokeLinecap="round" />
+      {/* Wand tip sparkle */}
+      <path d="M8 14L9.5 12L11 14L9.5 16Z" fill="#06b6d4" />
+      <path d="M8 14L6.5 13L8 12L9.5 13Z" fill="#7c3aed" fillOpacity="0.7" />
+      {/* Document / scroll */}
+      <rect x="12" y="3" width="10" height="14" rx="2" stroke={`url(#${id}-g)`} strokeWidth="1.5" />
+      {/* Text lines on document */}
+      <line x1="14.5" y1="6.5" x2="19.5" y2="6.5" stroke={`url(#${id}-g)`} strokeWidth="1" strokeLinecap="round" />
+      <line x1="14.5" y1="9" x2="18.5" y2="9" stroke={`url(#${id}-g)`} strokeWidth="1" strokeLinecap="round" />
+      <line x1="14.5" y1="11.5" x2="19" y2="11.5" stroke={`url(#${id}-g)`} strokeWidth="1" strokeLinecap="round" />
+      <line x1="14.5" y1="14" x2="17" y2="14" stroke={`url(#${id}-g)`} strokeWidth="1" strokeLinecap="round" />
+      {/* Puzzle piece floating near wand */}
+      <path d="M5 9L7 9L7 7.5C7.8 7.5 7.8 8.5 7 8.5L7 9L9 9L9 11L5 11Z" stroke="#06b6d4" strokeWidth="0.7" fill="#06b6d4" fillOpacity="0.15" strokeLinejoin="round" />
+      {/* Spark particles */}
+      <circle cx="10" cy="10" r="0.6" fill="#06b6d4" />
+      <circle cx="6" cy="7" r="0.5" fill="#3b82f6" />
+      <circle cx="4" cy="14" r="0.4" fill="#7c3aed" fillOpacity="0.6" />
+    </svg>
+  )
+}
+
+/**
+ * UGC Avatar: person silhouette with speech/sound waves + video frame.
+ * Gradient: violet -> cyan
+ */
+export function UGCAvatarIcon({ size = 24, className }: IconProps) {
+  const reactId = useId()
+  const id = `ugc-${reactId.replace(/:/g, '')}`
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={cn('shrink-0', className)}>
+      <defs>
+        <linearGradient id={`${id}-g`} x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#7c3aed" />
+          <stop offset="50%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#06b6d4" />
+        </linearGradient>
+      </defs>
+      {/* Video frame */}
+      <rect x="1.5" y="3" width="14" height="18" rx="2" stroke={`url(#${id}-g)`} strokeWidth="1.3" />
+      {/* Person head */}
+      <circle cx="8.5" cy="9.5" r="3" stroke={`url(#${id}-g)`} strokeWidth="1.3" />
+      {/* Person shoulders */}
+      <path d="M3.5 19C3.5 16 5.5 14 8.5 14C11.5 14 13.5 16 13.5 19" stroke={`url(#${id}-g)`} strokeWidth="1.3" strokeLinecap="round" fill="none" />
+      {/* Sound waves */}
+      <path d="M17.5 8.5C18.5 9.5 18.5 12.5 17.5 13.5" stroke="#06b6d4" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      <path d="M19.5 7C21 9 21 13 19.5 15" stroke="#06b6d4" strokeWidth="1" strokeLinecap="round" fill="none" strokeOpacity="0.6" />
+      <path d="M21.5 5.5C23 8.5 23 13.5 21.5 16.5" stroke="#06b6d4" strokeWidth="0.8" strokeLinecap="round" fill="none" strokeOpacity="0.3" />
+      {/* Play triangle indicator */}
+      <path d="M17 18L20 20L17 22Z" fill="#7c3aed" fillOpacity="0.5" />
+    </svg>
+  )
+}
+
+/**
+ * Text-to-Speech: sound wave emanating from a mic/speaker with text input.
+ * Gradient: violet -> cyan
+ */
 export function TextToSpeechIcon({ size = 24, className }: IconProps) {
   const reactId = useId()
   const id = `tts-${reactId.replace(/:/g, '')}`

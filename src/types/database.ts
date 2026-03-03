@@ -28,6 +28,7 @@ export interface Profile extends DbRow {
   total_generations: number
   total_images: number
   total_videos: number
+  total_avatars: number
   last_active_at: string | null
   bio: string | null
   location: string | null
@@ -52,6 +53,7 @@ export interface ProfileCreate {
   total_generations?: number
   total_images?: number
   total_videos?: number
+  total_avatars?: number
   last_active_at?: string | null
   bio?: string | null
   location?: string | null
@@ -63,7 +65,7 @@ export type ProfileUpdate = Partial<Omit<ProfileCreate, 'user_id'>>
 // ---------------------------------------------------------------------------
 // Generation
 // ---------------------------------------------------------------------------
-export type GenerationType = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video'
+export type GenerationType = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video' | 'ugc-avatar'
 export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
 export interface Generation extends DbRow {
@@ -85,6 +87,7 @@ export interface Generation extends DbRow {
   credits_used: number
   status: GenerationStatus
   error_message: string | null
+  input_audio_url: string | null
   together_job_id: string | null
   metadata: Record<string, any> | null
   completed_at: string | null
@@ -109,6 +112,7 @@ export interface GenerationCreate {
   credits_used: number
   status?: GenerationStatus
   error_message?: string | null
+  input_audio_url?: string | null
   together_job_id?: string | null
   metadata?: Record<string, any> | null
   completed_at?: string | null

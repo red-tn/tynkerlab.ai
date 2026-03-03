@@ -10,7 +10,7 @@ import {
   Wand2, ImageIcon, Video, Image, Volume2, Coins, Sparkles,
   CreditCard, HelpCircle, ChevronDown, ChevronUp, Search,
   ArrowRight, Shield, Zap, Crown, Library, Paintbrush,
-  Settings2, Upload, Mic,
+  Settings2, Upload, Mic, UserCircle, PenTool,
 } from 'lucide-react'
 
 interface FAQItem {
@@ -45,7 +45,7 @@ const SECTIONS = [
     items: [
       {
         question: 'What tools are available?',
-        answer: 'Tynkerlab.ai offers five AI generation tools: Text to Image (generate from text), Image to Image (transform existing images), Text to Video (create videos from text), Image to Video (animate still images), and Text to Speech (generate AI voice audio).',
+        answer: 'Tynkerlab.ai offers seven AI generation tools: Text to Image (generate from text), Image to Image (transform existing images), Text to Video (create videos from text), Image to Video (animate still images), UGC Avatar (create talking avatar videos from a photo), Prompt Maker (build perfect AI prompts), and Text to Speech (generate AI voice audio).',
       },
       {
         question: 'What AI models can I use?',
@@ -204,12 +204,14 @@ export default function HelpPage() {
         </div>
 
         {/* Quick Links */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-12">
           {[
             { href: '/studio/text-to-image', label: 'Text to Image', icon: Wand2 },
             { href: '/studio/image-to-image', label: 'Image to Image', icon: ImageIcon },
             { href: '/studio/text-to-video', label: 'Text to Video', icon: Video },
             { href: '/studio/image-to-video', label: 'Image to Video', icon: Image },
+            { href: '/studio/ugc-avatar', label: 'UGC Avatar', icon: UserCircle },
+            { href: '/studio/prompt-maker', label: 'Prompt Maker', icon: PenTool },
             { href: '/studio/text-to-speech', label: 'Text to Speech', icon: Volume2 },
           ].map((link) => (
             <Link key={link.href} href={link.href}>

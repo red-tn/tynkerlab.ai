@@ -12,13 +12,13 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
   TextToImageIcon, ImageToImageIcon, TextToVideoIcon,
-  ImageToVideoIcon, TextToSpeechIcon,
+  ImageToVideoIcon, UGCAvatarIcon, PromptMakerIcon, TextToSpeechIcon,
 } from '@/components/brand/dynamic-icons'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import type { ModelCategory } from '@/lib/together/models'
 import {
   Menu, X, ChevronDown, Wand2, ImageIcon, Video, Coins,
-  LayoutDashboard, User, CreditCard, LogOut, Shield, Image, Volume2
+  LayoutDashboard, User, CreditCard, LogOut, Shield, Image, Volume2, PenTool, UserCircle
 } from 'lucide-react'
 
 const studioLinks = [
@@ -26,6 +26,8 @@ const studioLinks = [
   { href: '/studio/image-to-image', label: 'Image to Image', icon: ImageIcon },
   { href: '/studio/text-to-video', label: 'Text to Video', icon: Video },
   { href: '/studio/image-to-video', label: 'Image to Video', icon: Image },
+  { href: '/studio/ugc-avatar', label: 'UGC Avatar', icon: UserCircle },
+  { href: '/studio/prompt-maker', label: 'Prompt Maker', icon: PenTool },
   { href: '/studio/text-to-speech', label: 'Text to Speech', icon: Volume2 },
 ]
 
@@ -35,6 +37,8 @@ const megaFeatures = [
   { Icon: ImageToImageIcon, label: 'Image to Image', desc: 'Transform and enhance images', href: '/studio/image-to-image' },
   { Icon: TextToVideoIcon, label: 'Text to Video', desc: 'Create videos from descriptions', href: '/studio/text-to-video' },
   { Icon: ImageToVideoIcon, label: 'Image to Video', desc: 'Animate still images', href: '/studio/image-to-video' },
+  { Icon: UGCAvatarIcon, label: 'UGC Avatar', desc: 'Create talking avatar videos', href: '/studio/ugc-avatar' },
+  { Icon: PromptMakerIcon, label: 'Prompt Maker', desc: 'Build perfect prompts with AI', href: '/studio/prompt-maker' },
   { Icon: TextToSpeechIcon, label: 'Text to Speech', desc: 'Natural AI voice generation', href: '/studio/text-to-speech' },
 ]
 
