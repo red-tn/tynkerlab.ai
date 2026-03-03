@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { account, databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
+import { account, databases, DATABASE_ID, COLLECTIONS, refreshJWT, clearJWT } from '@/lib/appwrite/client'
 import { Models, Query } from 'appwrite'
 import type { Profile } from '@/types/database'
 
@@ -62,6 +62,8 @@ export function useAuth(): AuthState {
           const currentUser = await account.get()
           setUser(currentUser)
           await fetchProfile(currentUser.$id, currentUser.email, currentUser.name)
+          // Extend JWT lifetime for mobile Safari session persistence
+          refreshJWT()
           setIsLoading(false)
           return
         } catch {
@@ -85,6 +87,7 @@ export function useAuth(): AuthState {
     } catch {
       // Session may already be expired
     }
+    clearJWT()
     setUser(null)
     setProfile(null)
     window.location.href = '/login'

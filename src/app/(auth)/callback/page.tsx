@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { account } from '@/lib/appwrite/client'
+import { account, persistJWT } from '@/lib/appwrite/client'
 import { Logo } from '@/components/brand/logo'
 
 function CallbackHandler() {
@@ -20,6 +20,11 @@ function CallbackHandler() {
     const checkSession = async (attempt = 0) => {
       try {
         await account.get()
+        // Persist JWT for mobile Safari session persistence
+        try {
+          const jwt = await account.createJWT()
+          persistJWT(jwt.jwt)
+        } catch {}
         // Session is valid — redirect to destination
         window.location.replace(redirect)
       } catch {
