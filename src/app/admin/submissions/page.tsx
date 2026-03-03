@@ -90,7 +90,11 @@ export default function AdminSubmissionsPage() {
           {submissions.map(sub => (
             <div key={sub.id} className="bg-nyx-surface border border-nyx-border rounded-xl p-4 flex items-start gap-4">
               {sub.preview_image_url && (
-                <img src={sub.preview_image_url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                sub.model_type === 'video' ? (
+                  <video src={sub.preview_image_url} className="w-16 h-16 rounded-lg object-cover shrink-0" muted />
+                ) : (
+                  <img src={sub.preview_image_url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                )
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white">{sub.title}</p>
@@ -150,7 +154,11 @@ export default function AdminSubmissionsPage() {
         <Dialog open onClose={() => setPreview(null)} title="Submission Preview" size="lg">
           <div className="space-y-4">
             {preview.preview_image_url && (
-              <img src={preview.preview_image_url} alt="" className="w-full max-h-64 object-contain rounded-lg" />
+              preview.model_type === 'video' ? (
+                <video src={preview.preview_image_url} className="w-full max-h-64 object-contain rounded-lg" controls muted />
+              ) : (
+                <img src={preview.preview_image_url} alt="" className="w-full max-h-64 object-contain rounded-lg" />
+              )
             )}
             <div>
               <h3 className="text-lg font-semibold text-white">{preview.title}</h3>
