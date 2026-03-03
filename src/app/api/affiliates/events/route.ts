@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     }
 
     const limit = parseInt(searchParams.get('limit') || '50')
-    const events = await getAffiliateEvents(affiliate.$id, limit)
+    const events = await getAffiliateEvents(affiliate.id, limit)
 
     return NextResponse.json({ events })
   } catch (error: any) {

@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/use-auth'
-import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
-import { Query } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,13 +27,15 @@ export default function DashboardPage() {
   const fetchRecent = async () => {
     if (!user) return
     try {
-      const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('userId', user.$id),
-        Query.equal('status', 'completed'),
-        Query.orderDesc('$createdAt'),
-        Query.limit(6),
-      ])
-      setRecentGenerations(result.documents as unknown as Generation[])
+      const { data, error } = await supabase
+        .from('generations')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(6)
+      if (error) throw error
+      setRecentGenerations((data || []) as Generation[])
     } catch (err) {
       console.error('Failed to fetch generations:', err)
     } finally {
@@ -47,9 +48,9 @@ export default function DashboardPage() {
 
   const handleDeleteGeneration = async (gen: Generation) => {
     if (!user) return
-    setDeletingId(gen.$id)
+    setDeletingId(gen.id)
     try {
-      const res = await fetch(`/api/generations?id=${gen.$id}&userId=${user.$id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/generations?id=${gen.id}&userId=${user.id}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
         addToast(err.error || 'Failed to delete', 'error')
@@ -73,8 +74,8 @@ export default function DashboardPage() {
     { href: '/studio/text-to-speech', label: 'Text to Speech', desc: 'AI voice generation', icon: Volume2, gradient: 'from-primary-500 to-accent-400' },
   ]
 
-  const tierLabel = profile?.subscriptionTier === 'enterprise' ? 'Pro Creator' : profile?.subscriptionTier === 'pro' ? 'Creator' : 'Free'
-  const creditsPercent = profile ? Math.min(100, Math.round((profile.creditsBalance / Math.max(profile.creditsMonthly || 50, 1)) * 100)) : 0
+  const tierLabel = profile?.subscription_tier === 'enterprise' ? 'Pro Creator' : profile?.subscription_tier === 'pro' ? 'Creator' : 'Free'
+  const creditsPercent = profile ? Math.min(100, Math.round((profile.credits_balance / Math.max(profile.credits_monthly || 50, 1)) * 100)) : 0
 
   return (
     <div className="space-y-8 relative">
@@ -106,7 +107,7 @@ export default function DashboardPage() {
                 </Badge>
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-white">
-                Welcome back, <span className="gradient-text">{profile?.fullName || user?.name || 'Creator'}</span>
+                Welcome back, <span className="gradient-text">{profile?.full_name || user?.user_metadata?.full_name || 'Creator'}</span>
               </h1>
               <p className="text-gray-400 mt-2 text-lg">What will you create today?</p>
             </div>
@@ -127,7 +128,7 @@ export default function DashboardPage() {
                 <Coins className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-5 w-5 text-primary-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">{profile?.creditsBalance?.toLocaleString() ?? 0}</p>
+                <p className="text-2xl font-bold text-white">{profile?.credits_balance?.toLocaleString() ?? 0}</p>
                 <p className="text-xs text-gray-500">credits remaining</p>
               </div>
             </div>
@@ -138,10 +139,10 @@ export default function DashboardPage() {
       {/* ---- Stats row ---- */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 relative">
         {[
-          { label: 'Credits Balance', value: profile?.creditsBalance?.toLocaleString() ?? '0', icon: Coins, color: 'text-primary-400', bg: 'bg-primary-500/10', ring: 'ring-primary-500/20' },
-          { label: 'Total Generations', value: profile?.totalGenerations?.toString() ?? '0', icon: TrendingUp, color: 'text-accent-400', bg: 'bg-accent-500/10', ring: 'ring-accent-500/20' },
-          { label: 'Images Created', value: profile?.totalImages?.toString() ?? '0', icon: ImageIcon, color: 'text-primary-300', bg: 'bg-primary-500/10', ring: 'ring-primary-500/20' },
-          { label: 'Videos Created', value: profile?.totalVideos?.toString() ?? '0', icon: Video, color: 'text-accent-300', bg: 'bg-accent-500/10', ring: 'ring-accent-500/20' },
+          { label: 'Credits Balance', value: profile?.credits_balance?.toLocaleString() ?? '0', icon: Coins, color: 'text-primary-400', bg: 'bg-primary-500/10', ring: 'ring-primary-500/20' },
+          { label: 'Total Generations', value: profile?.total_generations?.toString() ?? '0', icon: TrendingUp, color: 'text-accent-400', bg: 'bg-accent-500/10', ring: 'ring-accent-500/20' },
+          { label: 'Images Created', value: profile?.total_images?.toString() ?? '0', icon: ImageIcon, color: 'text-primary-300', bg: 'bg-primary-500/10', ring: 'ring-primary-500/20' },
+          { label: 'Videos Created', value: profile?.total_videos?.toString() ?? '0', icon: Video, color: 'text-accent-300', bg: 'bg-accent-500/10', ring: 'ring-accent-500/20' },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -191,7 +192,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ---- Plan + upgrade banner ---- */}
-      {profile?.subscriptionTier === 'free' && (
+      {profile?.subscription_tier === 'free' && (
         <div className="relative overflow-hidden rounded-xl border border-primary-500/20">
           <div className="absolute inset-0 bg-gradient-to-r from-primary-900/30 via-nyx-surface to-accent-900/20" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,_var(--tw-gradient-stops))] from-primary-500/10 via-transparent to-transparent" />
@@ -249,13 +250,13 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {recentGenerations.map((gen) => (
-              <div key={gen.$id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5">
+              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5">
                 <div className="aspect-video bg-nyx-border relative overflow-hidden">
-                  {gen.outputUrl ? (
+                  {gen.output_url ? (
                     gen.type.includes('video') ? (
-                      <video src={gen.outputUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted />
+                      <video src={gen.output_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted />
                     ) : (
-                      <img src={gen.outputUrl} alt={gen.prompt || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={gen.output_url} alt={gen.prompt || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     )
                   ) : (
                     <div className="flex items-center justify-center h-full">
@@ -266,14 +267,14 @@ export default function DashboardPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   {/* Delete button */}
                   <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {confirmDeleteId === gen.$id ? (
+                    {confirmDeleteId === gen.id ? (
                       <div className="flex items-center gap-1 bg-black/70 rounded-lg px-2 py-1">
                         <button
                           onClick={() => handleDeleteGeneration(gen)}
-                          disabled={deletingId === gen.$id}
+                          disabled={deletingId === gen.id}
                           className="text-[10px] font-medium text-red-400 hover:text-red-300"
                         >
-                          {deletingId === gen.$id ? '...' : 'Delete'}
+                          {deletingId === gen.id ? '...' : 'Delete'}
                         </button>
                         <button
                           onClick={() => setConfirmDeleteId(null)}
@@ -284,7 +285,7 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <button
-                        onClick={() => setConfirmDeleteId(gen.$id)}
+                        onClick={() => setConfirmDeleteId(gen.id)}
                         className="p-1.5 rounded-lg bg-black/50 hover:bg-red-500/20 transition-colors"
                         title="Delete generation"
                       >
@@ -299,7 +300,7 @@ export default function DashboardPage() {
                     <Badge variant="outline">{gen.type}</Badge>
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {formatRelativeDate(gen.$createdAt)}
+                      {formatRelativeDate(gen.created_at)}
                     </span>
                   </div>
                 </div>

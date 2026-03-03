@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
@@ -11,27 +10,29 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const type = searchParams.get('type')
 
-    const { databases } = createAdminClient()
-    const queries = [
-      Query.equal('status', 'completed'),
-      Query.orderDesc('$createdAt'),
-      Query.limit(limit),
-      Query.offset(page * limit),
-    ]
+    const supabase = createAdminClient()
+    let query = supabase
+      .from('generations')
+      .select('*', { count: 'exact' })
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .range(page * limit, page * limit + limit - 1)
 
     if (type === 'image') {
-      queries.push(Query.contains('type', 'image'))
+      query = query.ilike('type', '%image%')
     } else if (type === 'video') {
-      queries.push(Query.contains('type', 'video'))
+      query = query.ilike('type', '%video%')
     }
 
-    const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, queries)
+    const { data, count, error } = await query
+
+    if (error) throw error
 
     return NextResponse.json({
-      generations: result.documents,
-      total: result.total,
+      generations: data,
+      total: count,
       page,
-      totalPages: Math.ceil(result.total / limit),
+      totalPages: Math.ceil((count || 0) / limit),
     })
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })

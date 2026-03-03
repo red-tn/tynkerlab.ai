@@ -19,9 +19,9 @@ export default function PricingPage() {
   const [annual, setAnnual] = useState(false)
   const [loading, setLoading] = useState(false)
   const { user, profile } = useAuth()
-  const { balance } = useCredits(user?.$id)
+  const { balance } = useCredits(user?.id)
   const router = useRouter()
-  const tierName = getTierDisplayName(profile?.subscriptionTier)
+  const tierName = getTierDisplayName(profile?.subscription_tier)
 
   const handleTierSelect = async (tier: TierConfig) => {
     if (tier.monthlyPrice === 0) {
@@ -42,7 +42,7 @@ export default function PricingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId,
-          userId: user.$id,
+          userId: user.id,
           userEmail: user.email,
           mode: 'subscription',
         }),
@@ -72,7 +72,7 @@ export default function PricingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId: pack.priceId,
-          userId: user.$id,
+          userId: user.id,
           userEmail: user.email,
           mode: 'payment',
         }),
@@ -134,7 +134,7 @@ export default function PricingPage() {
               tier={tier}
               annual={annual}
               onSelect={handleTierSelect}
-              currentTier={profile?.subscriptionTier}
+              currentTier={profile?.subscription_tier}
               loading={loading}
             />
           ))}

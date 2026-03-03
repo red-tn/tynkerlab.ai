@@ -62,7 +62,7 @@ function SettingSlider({ label, value, onChange, min, max, step = 1, tooltip, di
 
 export default function TextToSpeechPage() {
   const { user, profile } = useAuth()
-  const { balance, refetch: refetchCredits } = useCredits(user?.$id)
+  const { balance, refetch: refetchCredits } = useCredits(user?.id)
 
   const [familyId, setFamilyId] = useState('kokoro')
   const [voice, setVoice] = useState('af_alloy')
@@ -98,7 +98,7 @@ export default function TextToSpeechPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.$id,
+          userId: user.id,
           familyId,
           voice,
           input: text.trim(),
@@ -151,8 +151,8 @@ export default function TextToSpeechPage() {
             onVoiceModeChange={setVoiceMode}
             voiceSettings={settings}
             disabled={generating}
-            subscriptionTier={profile?.subscriptionTier}
-            userId={user?.$id}
+            subscriptionTier={profile?.subscription_tier}
+            userId={user?.id}
             onCustomVoiceSelected={(cv) => {
               // Apply custom voice settings to the settings panel
               if (cv.settings) {

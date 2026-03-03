@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function DELETE(request: Request) {
   try {
@@ -11,23 +11,31 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'id and userId are required' }, { status: 400 })
     }
 
-    const { databases, storage } = createAdminClient()
+    const supabase = createAdminClient()
 
     // Fetch the generation to verify ownership and get file info
-    const gen = await databases.getDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, id)
+    const { data: gen, error: fetchError } = await supabase
+      .from('generations')
+      .select('*')
+      .eq('id', id)
+      .single()
 
-    if (gen.userId !== userId) {
+    if (fetchError || !gen) {
+      return NextResponse.json({ error: 'Generation not found' }, { status: 404 })
+    }
+
+    if (gen.user_id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // Try to delete the file from storage if it exists
-    const bucketId = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
-    if (gen.outputUrl) {
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_UPLOADS || 'uploads'
+    if (gen.output_url) {
       try {
-        // Extract file ID from URL: .../files/{fileId}/view?...
-        const match = gen.outputUrl.match(/\/files\/([^/]+)\//)
+        // Extract file path from Supabase storage URL: .../object/public/{bucket}/{path}
+        const match = gen.output_url.match(/\/object\/public\/[^/]+\/(.+)$/)
         if (match) {
-          await storage.deleteFile(bucketId, match[1])
+          await supabase.storage.from(bucket).remove([match[1]])
         }
       } catch {
         // File may already be deleted or URL format different — continue
@@ -35,7 +43,7 @@ export async function DELETE(request: Request) {
     }
 
     // Delete the generation document
-    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, id)
+    await supabase.from('generations').delete().eq('id', id)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

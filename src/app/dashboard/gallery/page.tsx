@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
-import { Query } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import type { Generation, PromptCategory } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,23 +57,27 @@ export default function GalleryPage() {
     if (!user) return
     setLoading(true)
     try {
-      const queries = [
-        Query.equal('userId', user.$id),
-        Query.equal('status', 'completed'),
-        Query.orderDesc('$createdAt'),
-        Query.limit(PAGE_SIZE),
-        Query.offset(page * PAGE_SIZE),
-      ]
+      const from = page * PAGE_SIZE
+      const to = from + PAGE_SIZE - 1
+
+      let query = supabase
+        .from('generations')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .range(from, to)
 
       if (filter === 'image') {
-        queries.push(Query.contains('type', 'image'))
+        query = query.ilike('type', '%image%')
       } else if (filter === 'video') {
-        queries.push(Query.contains('type', 'video'))
+        query = query.ilike('type', '%video%')
       }
 
-      const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, queries)
-      setGenerations(result.documents as unknown as Generation[])
-      setTotal(result.total)
+      const { data, count, error } = await query
+      if (error) throw error
+      setGenerations((data || []) as Generation[])
+      setTotal(count || 0)
     } catch (err) {
       console.error('Failed to fetch generations:', err)
     } finally {
@@ -88,28 +91,28 @@ export default function GalleryPage() {
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const handleDownload = async (gen: Generation) => {
-    if (!gen.outputUrl) return
+    if (!gen.output_url) return
     try {
-      const response = await fetch(gen.outputUrl)
+      const response = await fetch(gen.output_url)
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `tynkerlab-${gen.$id}.${gen.type.includes('video') ? 'mp4' : 'png'}`
+      a.download = `tynkerlab-${gen.id}.${gen.type.includes('video') ? 'mp4' : 'png'}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch {
-      window.open(gen.outputUrl, '_blank')
+      window.open(gen.output_url, '_blank')
     }
   }
 
   const handleDelete = async (gen: Generation) => {
     if (!user) return
-    setDeletingId(gen.$id)
+    setDeletingId(gen.id)
     try {
-      const res = await fetch(`/api/generations?id=${gen.$id}&userId=${user.$id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/generations?id=${gen.id}&userId=${user.id}`, { method: 'DELETE' })
       if (!res.ok) {
         const err = await res.json()
         addToast(err.error || 'Failed to delete', 'error')
@@ -152,12 +155,12 @@ export default function GalleryPage() {
               category: inspirationCategory,
               modelType,
               modelUsed: inspirationGen.model,
-              previewImageUrl: inspirationGen.outputUrl,
+              previewImageUrl: inspirationGen.output_url,
               isPublished: true,
               submissionStatus: 'approved',
-              submittedBy: user?.$id,
-              submitterName: profile?.fullName || 'Anonymous',
-              createdBy: profile?.fullName || 'Anonymous',
+              submittedBy: user?.id,
+              submitterName: profile?.full_name || 'Anonymous',
+              createdBy: profile?.full_name || 'Anonymous',
             }),
           })
           if (!res.ok) throw new Error('Failed to post')
@@ -172,7 +175,7 @@ export default function GalleryPage() {
               category: inspirationCategory,
               modelType,
               modelUsed: inspirationGen.model,
-              previewImageUrl: inspirationGen.outputUrl,
+              previewImageUrl: inspirationGen.output_url,
               isPublished: true,
               createdBy: 'Tynkerlab.ai Team',
             }),
@@ -190,9 +193,9 @@ export default function GalleryPage() {
             category: inspirationCategory,
             modelType: inspirationGen.type.includes('video') ? 'video' : 'image',
             modelUsed: inspirationGen.model,
-            previewImageUrl: inspirationGen.outputUrl,
-            userId: user?.$id,
-            userName: profile?.fullName || user?.name || 'Anonymous',
+            previewImageUrl: inspirationGen.output_url,
+            userId: user?.id,
+            userName: profile?.full_name || user?.user_metadata?.full_name || 'Anonymous',
           }),
         })
         if (!res.ok) throw new Error('Failed to submit')
@@ -250,11 +253,11 @@ export default function GalleryPage() {
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {generations.map((gen) => (
-              <div key={gen.$id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
+              <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
                 {gen.type.includes('video') ? (
-                  <video src={gen.outputUrl || ''} className="w-full aspect-square object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => (e.target as HTMLVideoElement).pause()} />
+                  <video src={gen.output_url || ''} className="w-full aspect-square object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => (e.target as HTMLVideoElement).pause()} />
                 ) : (
-                  <img src={gen.outputUrl || ''} alt={gen.prompt} className="w-full aspect-square object-cover" />
+                  <img src={gen.output_url || ''} alt={gen.prompt} className="w-full aspect-square object-cover" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-0 left-0 right-0 p-3">
@@ -266,7 +269,7 @@ export default function GalleryPage() {
                         ) : (
                           <ImageIcon className="h-3 w-3 text-primary-400" />
                         )}
-                        <span className="text-[10px] text-gray-400">{formatDate(gen.$createdAt)}</span>
+                        <span className="text-[10px] text-gray-400">{formatDate(gen.created_at)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         {isAdmin && (
@@ -280,14 +283,14 @@ export default function GalleryPage() {
                         <button onClick={() => handleDownload(gen)} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Download">
                           <Download className="h-3 w-3 text-white" />
                         </button>
-                        {confirmDeleteId === gen.$id ? (
+                        {confirmDeleteId === gen.id ? (
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => handleDelete(gen)}
-                              disabled={deletingId === gen.$id}
+                              disabled={deletingId === gen.id}
                               className="px-1.5 py-0.5 text-[10px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded transition-colors"
                             >
-                              {deletingId === gen.$id ? '...' : 'Delete'}
+                              {deletingId === gen.id ? '...' : 'Delete'}
                             </button>
                             <button
                               onClick={() => setConfirmDeleteId(null)}
@@ -298,7 +301,7 @@ export default function GalleryPage() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => setConfirmDeleteId(gen.$id)}
+                            onClick={() => setConfirmDeleteId(gen.id)}
                             className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/20 transition-colors"
                             title="Delete"
                           >
@@ -353,7 +356,7 @@ export default function GalleryPage() {
               <div className="rounded-lg overflow-hidden border border-nyx-border">
                 {inspirationGen.type.includes('video') ? (
                   <video
-                    src={inspirationGen.outputUrl || ''}
+                    src={inspirationGen.output_url || ''}
                     className="w-full aspect-video object-cover"
                     controls
                     muted
@@ -361,7 +364,7 @@ export default function GalleryPage() {
                   />
                 ) : (
                   <img
-                    src={inspirationGen.outputUrl || ''}
+                    src={inspirationGen.output_url || ''}
                     alt={inspirationGen.prompt}
                     className="w-full aspect-video object-cover"
                   />

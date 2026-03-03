@@ -48,7 +48,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (selectedUser) {
       setEditRole(selectedUser.role || 'user')
-      setEditTier(selectedUser.subscriptionTier || 'free')
+      setEditTier(selectedUser.subscription_tier || 'free')
       setShowCreditConfirm(false)
     }
   }, [selectedUser])
@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
       await adminFetch('/api/admin/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId: selectedUser.$id, ...updates }),
+        body: JSON.stringify({ profileId: selectedUser.id, ...updates }),
       })
       await fetchUsers()
       setSelectedUser(null)
@@ -73,9 +73,9 @@ export default function AdminUsersPage() {
 
   const handleDeleteUser = async (user: Profile) => {
     try {
-      const res = await adminFetch(`/api/admin/users?profileId=${user.$id}`, { method: 'DELETE' })
+      const res = await adminFetch(`/api/admin/users?profileId=${user.id}`, { method: 'DELETE' })
       if (res.ok) {
-        if (selectedUser?.$id === user.$id) setSelectedUser(null)
+        if (selectedUser?.id === user.id) setSelectedUser(null)
         await fetchUsers()
       }
     } catch (err) {
@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
   const handleSaveRoleTier = () => {
     const updates: Record<string, any> = {}
     if (editRole !== selectedUser?.role) updates.role = editRole
-    if (editTier !== (selectedUser?.subscriptionTier || 'free')) updates.subscriptionTier = editTier
+    if (editTier !== (selectedUser?.subscription_tier || 'free')) updates.subscriptionTier = editTier
     if (Object.keys(updates).length > 0) {
       handleUpdateUser(updates)
     }
@@ -94,7 +94,7 @@ export default function AdminUsersPage() {
 
   const roleTierChanged = selectedUser && (
     editRole !== (selectedUser.role || 'user') ||
-    editTier !== (selectedUser.subscriptionTier || 'free')
+    editTier !== (selectedUser.subscription_tier || 'free')
   )
 
   const totalPages = Math.ceil(total / 20)
@@ -131,7 +131,7 @@ export default function AdminUsersPage() {
           users={users}
           onSelect={setSelectedUser}
           onDelete={handleDeleteUser}
-          selectedId={selectedUser?.$id}
+          selectedId={selectedUser?.id}
         />
       )}
 
@@ -153,7 +153,7 @@ export default function AdminUsersPage() {
         <Dialog open onClose={() => setSelectedUser(null)} title="User Details" size="md">
           <div className="space-y-5">
             <div>
-              <p className="text-lg font-semibold text-white">{selectedUser.fullName}</p>
+              <p className="text-lg font-semibold text-white">{selectedUser.full_name}</p>
               <p className="text-sm text-gray-400">{selectedUser.email}</p>
             </div>
 
@@ -161,11 +161,11 @@ export default function AdminUsersPage() {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="p-3 rounded-lg bg-nyx-bg">
                 <p className="text-gray-500 text-xs mb-1">Credits</p>
-                <p className="text-white font-mono text-lg">{(selectedUser.creditsBalance || 0).toLocaleString()}</p>
+                <p className="text-white font-mono text-lg">{(selectedUser.credits_balance || 0).toLocaleString()}</p>
               </div>
               <div className="p-3 rounded-lg bg-nyx-bg">
                 <p className="text-gray-500 text-xs mb-1">Generations</p>
-                <p className="text-white text-lg">{selectedUser.totalGenerations || 0}</p>
+                <p className="text-white text-lg">{selectedUser.total_generations || 0}</p>
               </div>
             </div>
 

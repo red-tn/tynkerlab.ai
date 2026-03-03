@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/use-auth'
-import { account, storage, BUCKET_AVATARS } from '@/lib/appwrite/client'
-import { ID } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,7 +15,7 @@ import Link from 'next/link'
 export default function ProfilePage() {
   const { user, profile, signOut, refreshProfile } = useAuth()
   const { addToast } = useToast()
-  const { balance } = useCredits(user?.$id)
+  const { balance } = useCredits(user?.id)
   const [fullName, setFullName] = useState('')
   const [bio, setBio] = useState('')
   const [location, setLocation] = useState('')
@@ -27,7 +26,7 @@ export default function ProfilePage() {
   // Sync form state when profile loads (profile is null on first render)
   useEffect(() => {
     if (profile && !profileLoaded) {
-      setFullName(profile.fullName || '')
+      setFullName(profile.full_name || '')
       setBio(profile.bio || '')
       setLocation(profile.location || '')
       setWebsite(profile.website || '')
@@ -41,7 +40,7 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [savingPassword, setSavingPassword] = useState(false)
-  const isOAuthUser = user?.passwordUpdate === ''
+  const isOAuthUser = !user?.app_metadata?.provider || user?.app_metadata?.provider !== 'email'
 
   const handleSaveProfile = async () => {
     if (!profile) return
@@ -51,9 +50,9 @@ export default function ProfilePage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          profileId: profile.$id,
+          profileId: profile.id,
           data: {
-            fullName,
+            full_name: fullName,
             bio: bio || null,
             location: location || null,
             website: website || null,
@@ -64,7 +63,7 @@ export default function ProfilePage() {
         const err = await res.json()
         throw new Error(err.error || 'Failed to update profile')
       }
-      try { await account.updateName(fullName) } catch {}
+      try { await supabase.auth.updateUser({ data: { full_name: fullName } }) } catch {}
       await refreshProfile()
       addToast('Profile updated successfully', 'success')
     } catch (err: any) {
@@ -102,14 +101,16 @@ export default function ProfilePage() {
     if (!file || !profile) return
     setUploadingPhoto(true)
     try {
-      const uploaded = await storage.createFile(BUCKET_AVATARS, ID.unique(), file)
-      const fileUrl = storage.getFileView(BUCKET_AVATARS, uploaded.$id).toString()
+      const filePath = `avatars/${profile.user_id}/${crypto.randomUUID()}-${file.name}`
+      const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file)
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(filePath)
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          profileId: profile.$id,
-          data: { avatarUrl: fileUrl },
+          profileId: profile.id,
+          data: { avatar_url: publicUrl },
         }),
       })
       if (!res.ok) throw new Error('Failed to update avatar')
@@ -129,7 +130,7 @@ export default function ProfilePage() {
       await fetch('/api/profile', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.$id }),
+        body: JSON.stringify({ userId: user.id }),
       })
       await signOut()
     } catch (err: any) {
@@ -148,7 +149,7 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-6">
-            <Avatar src={profile?.avatarUrl} fallback={profile?.fullName || '?'} size="xl" />
+            <Avatar src={profile?.avatar_url} fallback={profile?.full_name || '?'} size="xl" />
             <div className="space-y-3 flex-1">
               <div className="flex gap-2">
                 <Input
@@ -279,11 +280,7 @@ export default function ProfilePage() {
               onClick={async () => {
                 setSavingPassword(true)
                 try {
-                  if (isOAuthUser) {
-                    await account.updatePassword(newPassword)
-                  } else {
-                    await account.updatePassword(newPassword, oldPassword)
-                  }
+                  await supabase.auth.updateUser({ password: newPassword })
                   setOldPassword('')
                   setNewPassword('')
                   setConfirmPassword('')
@@ -313,8 +310,8 @@ export default function ProfilePage() {
               <div>
                 <p className="text-xs text-gray-500">Member Since</p>
                 <p className="text-sm text-white">
-                  {profile?.$createdAt
-                    ? new Date(profile.$createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                  {profile?.created_at
+                    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
                     : '—'}
                 </p>
               </div>
@@ -323,14 +320,14 @@ export default function ProfilePage() {
               <Crown className="h-5 w-5 text-primary-400" />
               <div>
                 <p className="text-xs text-gray-500">Tier</p>
-                <p className="text-sm text-white">{profile?.subscriptionTier === 'enterprise' ? 'Pro Creator' : profile?.subscriptionTier === 'pro' ? 'Creator' : 'Free'}</p>
+                <p className="text-sm text-white">{profile?.subscription_tier === 'enterprise' ? 'Pro Creator' : profile?.subscription_tier === 'pro' ? 'Creator' : 'Free'}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 p-3 rounded-lg bg-nyx-bg">
               <ImageIcon className="h-5 w-5 text-gray-400" />
               <div>
                 <p className="text-xs text-gray-500">Total Generations</p>
-                <p className="text-sm text-white">{(profile?.totalGenerations || 0).toLocaleString()}</p>
+                <p className="text-sm text-white">{(profile?.total_generations || 0).toLocaleString()}</p>
               </div>
             </div>
             <Link href="/dashboard/credits" className="flex items-center gap-3 p-3 rounded-lg bg-nyx-bg hover:bg-white/5 transition-colors">

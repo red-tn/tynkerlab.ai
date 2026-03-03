@@ -1,14 +1,13 @@
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query, ID } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function getBalance(userId: string): Promise<number> {
-  const { databases } = createAdminClient()
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-    Query.equal('userId', userId),
-    Query.limit(1),
-  ])
-  if (result.documents.length === 0) return 0
-  return result.documents[0].creditsBalance || 0
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('profiles')
+    .select('credits_balance')
+    .eq('user_id', userId)
+    .single()
+  return data?.credits_balance || 0
 }
 
 export async function checkCredits(userId: string, amount: number): Promise<boolean> {
@@ -22,37 +21,22 @@ export async function deductCredits(
   description: string,
   referenceId: string
 ): Promise<boolean> {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
-  // Get current profile
-  const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-    Query.equal('userId', userId),
-    Query.limit(1),
-  ])
-
-  if (profiles.documents.length === 0) return false
-  const profile = profiles.documents[0]
-
-  if (profile.creditsBalance < amount) return false
-
-  const newBalance = profile.creditsBalance - amount
-
-  // Update balance
-  await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profile.$id, {
-    creditsBalance: newBalance,
+  // Use the atomic deduct_credits function for race-condition safety
+  const { data, error } = await supabase.rpc('deduct_credits', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_description: description,
+    p_reference_id: referenceId,
   })
 
-  // Create transaction record
-  await databases.createDocument(DATABASE_ID, COLLECTIONS.CREDIT_TRANSACTIONS, ID.unique(), {
-    userId,
-    amount: -amount,
-    type: 'generation_debit',
-    description,
-    referenceId,
-    balanceAfter: newBalance,
-  })
+  if (error) {
+    console.error('deductCredits error:', error)
+    return false
+  }
 
-  return true
+  return data === true
 }
 
 export async function addCredits(
@@ -62,34 +46,32 @@ export async function addCredits(
   referenceId?: string,
   type: string = 'admin_adjustment'
 ): Promise<void> {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
-  // Get current profile
-  const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-    Query.equal('userId', userId),
-    Query.limit(1),
-  ])
+  const { data: profile, error: fetchError } = await supabase
+    .from('profiles')
+    .select('id, credits_balance')
+    .eq('user_id', userId)
+    .single()
 
-  if (profiles.documents.length === 0) {
+  if (fetchError || !profile) {
     throw new Error('Profile not found')
   }
 
-  const profile = profiles.documents[0]
-  const newBalance = profile.creditsBalance + amount
+  const newBalance = profile.credits_balance + amount
 
-  // Update balance
-  await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profile.$id, {
-    creditsBalance: newBalance,
-  })
+  await supabase
+    .from('profiles')
+    .update({ credits_balance: newBalance })
+    .eq('id', profile.id)
 
-  // Create transaction record
-  await databases.createDocument(DATABASE_ID, COLLECTIONS.CREDIT_TRANSACTIONS, ID.unique(), {
-    userId,
+  await supabase.from('credit_transactions').insert({
+    user_id: userId,
     amount,
     type,
     description,
-    referenceId,
-    balanceAfter: newBalance,
+    reference_id: referenceId || null,
+    balance_after: newBalance,
   })
 }
 
@@ -103,11 +85,12 @@ export async function refundCredits(
 }
 
 export async function getTransactionHistory(userId: string, limit: number = 50) {
-  const { databases } = createAdminClient()
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.CREDIT_TRANSACTIONS, [
-    Query.equal('userId', userId),
-    Query.orderDesc('$createdAt'),
-    Query.limit(limit),
-  ])
-  return result.documents
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('credit_transactions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return data || []
 }

@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { createVideoJob, checkVideoStatus } from '@/lib/together/video'
 import { getModelById, getModelResolution, getVideoResolutionForQuality, getVideoCreditsForQuality } from '@/lib/together/models'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID, Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export const maxDuration = 60
 
@@ -59,26 +58,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Insufficient credits', required: creditsToCharge }, { status: 402 })
     }
 
-    const { databases } = createAdminClient()
-    const generationId = ID.unique()
+    const supabase = createAdminClient()
 
-    await databases.createDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
-      userId,
-      type: type || 'text-to-video',
-      model,
-      prompt: prompt.slice(0, 1500),
-      inputImageUrl: imageUrl || null,
-      width: validRes.w,
-      height: validRes.h,
-      creditsUsed: creditsToCharge,
-      status: 'processing',
-      aspectRatio: ar,
-      seed: seed || null,
-    })
+    const { data: genDoc, error: genInsertError } = await supabase
+      .from('generations')
+      .insert({
+        user_id: userId,
+        type: type || 'text-to-video',
+        model,
+        prompt: prompt.slice(0, 1500),
+        input_image_url: imageUrl || null,
+        width: validRes.w,
+        height: validRes.h,
+        credits_used: creditsToCharge,
+        status: 'processing',
+        aspect_ratio: ar,
+        seed: seed || null,
+      })
+      .select()
+      .single()
+
+    if (genInsertError || !genDoc) {
+      return NextResponse.json({ error: genInsertError?.message || 'Failed to create generation record' }, { status: 500 })
+    }
+
+    const generationId = genDoc.id
 
     const deducted = await deductCredits(userId, creditsToCharge, `${type || 'text-to-video'}: ${model} (${selectedQuality})`, generationId)
     if (!deducted) {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, { status: 'failed', errorMessage: 'Credit deduction failed' })
+      await supabase.from('generations').update({ status: 'failed', error_message: 'Credit deduction failed' }).eq('id', generationId)
       return NextResponse.json({ error: 'Failed to deduct credits' }, { status: 402 })
     }
 
@@ -96,9 +104,9 @@ export async function POST(request: Request) {
         cameraMotion: cameraMotion || undefined,
       })
 
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
-        togetherJobId: job.id,
-      })
+      await supabase.from('generations').update({
+        together_job_id: job.id,
+      }).eq('id', generationId)
 
       return NextResponse.json({ jobId: job.id, generationId })
     } catch (genError: any) {
@@ -107,9 +115,9 @@ export async function POST(request: Request) {
       if (isContentModerationError(errorMsg)) {
         errorMsg = 'Invalid content detected. The generated content was flagged and rejected by the model\'s content moderation system. Try rephrasing your prompt or using a different model.'
       }
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
-        status: 'failed', errorMessage: errorMsg.slice(0, 1500),
-      })
+      await supabase.from('generations').update({
+        status: 'failed', error_message: errorMsg.slice(0, 1500),
+      }).eq('id', generationId)
       return NextResponse.json({ error: errorMsg }, { status: 500 })
     }
   } catch (error: any) {
@@ -126,19 +134,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'jobId is required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
     // Check if we already marked this job done (avoid re-polling Together)
-    const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-      Query.equal('togetherJobId', jobId), Query.limit(1),
-    ])
-    if (existing.documents[0]) {
-      const gen = existing.documents[0]
-      if (gen.status === 'completed' && gen.outputUrl) {
-        return NextResponse.json({ status: 'completed', url: gen.outputUrl })
+    const { data: gen } = await supabase
+      .from('generations')
+      .select('*')
+      .eq('together_job_id', jobId)
+      .limit(1)
+      .single()
+
+    if (gen) {
+      if (gen.status === 'completed' && gen.output_url) {
+        return NextResponse.json({ status: 'completed', url: gen.output_url })
       }
       if (gen.status === 'failed') {
-        return NextResponse.json({ status: 'failed', error: gen.errorMessage || 'Video generation failed' })
+        return NextResponse.json({ status: 'failed', error: gen.error_message || 'Video generation failed' })
       }
     }
 
@@ -151,21 +162,28 @@ export async function GET(request: Request) {
       const videoUrl = status.videoUrl
 
       // Update generation record + user stats (non-blocking, don't wait)
-      if (existing.documents[0]) {
-        const gen = existing.documents[0]
-        databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
-          status: 'completed', outputUrl: videoUrl, completedAt: new Date().toISOString(),
-        }).catch(() => {})
-        databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-          Query.equal('userId', gen.userId), Query.limit(1),
-        ]).then(profiles => {
-          if (profiles.documents[0]) {
-            const p = profiles.documents[0]
-            databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, p.$id, {
-              totalGenerations: (p.totalGenerations || 0) + 1,
-              totalVideos: (p.totalVideos || 0) + 1,
-              lastActiveAt: new Date().toISOString(),
-            }).catch(() => {})
+      if (gen) {
+        Promise.resolve(
+          supabase.from('generations').update({
+            status: 'completed', output_url: videoUrl, completed_at: new Date().toISOString(),
+          }).eq('id', gen.id)
+        ).catch(() => {})
+
+        Promise.resolve(
+          supabase.from('profiles')
+            .select('id, total_generations, total_videos, last_active_at')
+            .eq('user_id', gen.user_id)
+            .limit(1)
+            .single()
+        ).then(({ data: profile }) => {
+          if (profile) {
+            Promise.resolve(
+              supabase.from('profiles').update({
+                total_generations: (profile.total_generations || 0) + 1,
+                total_videos: (profile.total_videos || 0) + 1,
+                last_active_at: new Date().toISOString(),
+              }).eq('id', profile.id)
+            ).catch(() => {})
           }
         }).catch(() => {})
       }
@@ -178,12 +196,11 @@ export async function GET(request: Request) {
       if (isContentModerationError(errorMsg)) {
         errorMsg = 'Invalid content detected. The generated content was flagged and rejected by the model\'s content moderation system. Try rephrasing your prompt or using a different model.'
       }
-      if (existing.documents[0]) {
-        const gen = existing.documents[0]
-        await refundCredits(gen.userId, gen.creditsUsed, 'Refund: video generation failed', gen.$id)
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
-          status: 'failed', errorMessage: errorMsg.slice(0, 1500),
-        })
+      if (gen) {
+        await refundCredits(gen.user_id, gen.credits_used, 'Refund: video generation failed', gen.id)
+        await supabase.from('generations').update({
+          status: 'failed', error_message: errorMsg.slice(0, 1500),
+        }).eq('id', gen.id)
       }
       return NextResponse.json({ status: 'failed', error: errorMsg })
     }
@@ -202,25 +219,26 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'jobId required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const generations = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-      Query.equal('togetherJobId', jobId), Query.limit(1),
-    ])
+    const supabase = createAdminClient()
+    const { data: gen } = await supabase
+      .from('generations')
+      .select('*')
+      .eq('together_job_id', jobId)
+      .limit(1)
+      .single()
 
-    if (!generations.documents[0]) {
+    if (!gen) {
       return NextResponse.json({ error: 'Generation not found' }, { status: 404 })
     }
 
-    const gen = generations.documents[0]
-
     // Only refund if not already completed or failed
     if (gen.status !== 'completed' && gen.status !== 'failed') {
-      await refundCredits(gen.userId, gen.creditsUsed, 'Refund: video generation cancelled', gen.$id)
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, gen.$id, {
+      await refundCredits(gen.user_id, gen.credits_used, 'Refund: video generation cancelled', gen.id)
+      await supabase.from('generations').update({
         status: 'failed',
-        errorMessage: 'Generation cancelled — credits refunded',
-      })
-      return NextResponse.json({ refunded: true, amount: gen.creditsUsed })
+        error_message: 'Generation cancelled — credits refunded',
+      }).eq('id', gen.id)
+      return NextResponse.json({ refunded: true, amount: gen.credits_used })
     }
 
     return NextResponse.json({ refunded: false, reason: `Generation status is ${gen.status}` })

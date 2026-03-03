@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 /**
@@ -10,31 +9,40 @@ import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 export async function POST(request: Request) {
   try {
     await requireAdmin(request)
-    const { databases, storage } = createAdminClient()
-    const bucketId = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
+    const supabase = createAdminClient()
+    const bucketId = 'uploads'
     let deletedCount = 0
     let cleanedCount = 0
 
     // 1. Delete all failed generations
     let hasMore = true
     while (hasMore) {
-      const failed = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('status', 'failed'),
-        Query.limit(100),
-      ])
-      if (failed.documents.length === 0) {
+      const { data: failed, error } = await supabase
+        .from('generations')
+        .select('*')
+        .eq('status', 'failed')
+        .limit(100)
+
+      if (error) throw error
+      if (!failed || failed.length === 0) {
         hasMore = false
         break
       }
-      for (const doc of failed.documents) {
+      for (const doc of failed) {
         // Try to delete associated storage file if it exists
-        if (doc.outputUrl) {
+        if (doc.output_url) {
           try {
-            const fileId = doc.outputUrl.split('/files/')[1]?.split('/')[0]
-            if (fileId) await storage.deleteFile(bucketId, fileId)
+            const fileId = doc.output_url.split('/files/')[1]?.split('/')[0]
+              || doc.output_url.split('/object/public/')[1]
+            if (fileId) await supabase.storage.from(bucketId).remove([fileId])
           } catch {}
         }
-        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, doc.$id)
+        const { error: delError } = await supabase
+          .from('generations')
+          .delete()
+          .eq('id', doc.id)
+
+        if (delError) throw delError
         deletedCount++
       }
     }
@@ -43,20 +51,28 @@ export async function POST(request: Request) {
     const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
     hasMore = true
     while (hasMore) {
-      const stuck = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('status', 'processing'),
-        Query.lessThan('$createdAt', cutoff),
-        Query.limit(100),
-      ])
-      if (stuck.documents.length === 0) {
+      const { data: stuck, error } = await supabase
+        .from('generations')
+        .select('*')
+        .eq('status', 'processing')
+        .lt('created_at', cutoff)
+        .limit(100)
+
+      if (error) throw error
+      if (!stuck || stuck.length === 0) {
         hasMore = false
         break
       }
-      for (const doc of stuck.documents) {
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, doc.$id, {
-          status: 'failed',
-          errorMessage: 'Cleaned up: generation timed out',
-        })
+      for (const doc of stuck) {
+        const { error: updateError } = await supabase
+          .from('generations')
+          .update({
+            status: 'failed',
+            error_message: 'Cleaned up: generation timed out',
+          })
+          .eq('id', doc.id)
+
+        if (updateError) throw updateError
         // Note: these will be cleaned up in the next cleanup run as failed
         cleanedCount++
       }
@@ -65,17 +81,25 @@ export async function POST(request: Request) {
     // 3. Clean up stuck "pending" generations older than 15 minutes
     hasMore = true
     while (hasMore) {
-      const pending = await databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('status', 'pending'),
-        Query.lessThan('$createdAt', cutoff),
-        Query.limit(100),
-      ])
-      if (pending.documents.length === 0) {
+      const { data: pending, error } = await supabase
+        .from('generations')
+        .select('*')
+        .eq('status', 'pending')
+        .lt('created_at', cutoff)
+        .limit(100)
+
+      if (error) throw error
+      if (!pending || pending.length === 0) {
         hasMore = false
         break
       }
-      for (const doc of pending.documents) {
-        await databases.deleteDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, doc.$id)
+      for (const doc of pending) {
+        const { error: delError } = await supabase
+          .from('generations')
+          .delete()
+          .eq('id', doc.id)
+
+        if (delError) throw delError
         deletedCount++
       }
     }
@@ -99,31 +123,29 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     await requireAdmin(request)
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
     const cutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
 
-    const [failed, stuckProcessing, stuckPending] = await Promise.all([
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('status', 'failed'),
-        Query.limit(1),
-      ]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('status', 'processing'),
-        Query.lessThan('$createdAt', cutoff),
-        Query.limit(1),
-      ]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.equal('status', 'pending'),
-        Query.lessThan('$createdAt', cutoff),
-        Query.limit(1),
-      ]),
+    const [failedResult, stuckProcessingResult, stuckPendingResult] = await Promise.all([
+      supabase.from('generations').select('*', { count: 'exact', head: true })
+        .eq('status', 'failed'),
+      supabase.from('generations').select('*', { count: 'exact', head: true })
+        .eq('status', 'processing')
+        .lt('created_at', cutoff),
+      supabase.from('generations').select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .lt('created_at', cutoff),
     ])
 
+    const failedCount = failedResult.count ?? 0
+    const stuckProcessingCount = stuckProcessingResult.count ?? 0
+    const stuckPendingCount = stuckPendingResult.count ?? 0
+
     return NextResponse.json({
-      failedCount: failed.total,
-      stuckProcessingCount: stuckProcessing.total,
-      stuckPendingCount: stuckPending.total,
-      totalCleanable: failed.total + stuckProcessing.total + stuckPending.total,
+      failedCount,
+      stuckProcessingCount,
+      stuckPendingCount,
+      totalCleanable: failedCount + stuckProcessingCount + stuckPendingCount,
     })
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })

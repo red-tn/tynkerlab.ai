@@ -142,7 +142,7 @@ export default function AdminPromptsPage() {
     if (!confirm('Delete this prompt?')) return
     try {
       await adminFetch(`/api/admin/prompts?id=${id}`, { method: 'DELETE' })
-      if (flyout?.$id === id) setFlyout(null)
+      if (flyout?.id === id) setFlyout(null)
       fetchPrompts()
     } catch (err) {
       console.error(err)
@@ -150,16 +150,16 @@ export default function AdminPromptsPage() {
   }
 
   const handleEdit = (prompt: Prompt) => {
-    setEditingId(prompt.$id)
+    setEditingId(prompt.id)
     setForm({
       title: prompt.title,
-      promptText: prompt.promptText,
+      promptText: prompt.prompt_text,
       category: prompt.category,
-      modelType: prompt.modelType,
-      modelUsed: prompt.modelUsed || '',
-      previewImageUrl: prompt.previewImageUrl || '',
-      isFeatured: prompt.isFeatured,
-      isPublished: prompt.isPublished,
+      modelType: prompt.model_type,
+      modelUsed: prompt.model_used || '',
+      previewImageUrl: prompt.preview_image_url || '',
+      isFeatured: prompt.is_featured,
+      isPublished: prompt.is_published,
     })
     setShowDialog(true)
   }
@@ -169,7 +169,7 @@ export default function AdminPromptsPage() {
       await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: prompt.$id, isFeatured: !prompt.isFeatured }),
+        body: JSON.stringify({ id: prompt.id, isFeatured: !prompt.is_featured }),
       })
       fetchPrompts()
     } catch (err) {
@@ -182,7 +182,7 @@ export default function AdminPromptsPage() {
       await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: prompt.$id, isPublished: !prompt.isPublished }),
+        body: JSON.stringify({ id: prompt.id, isPublished: !prompt.is_published }),
       })
       fetchPrompts()
     } catch (err) {
@@ -196,9 +196,9 @@ export default function AdminPromptsPage() {
   }
 
   const filtered = prompts.filter(p => {
-    if (filter === 'featured') return p.isFeatured
-    if (filter === 'image') return p.modelType === 'image'
-    if (filter === 'video') return p.modelType === 'video'
+    if (filter === 'featured') return p.is_featured
+    if (filter === 'image') return p.model_type === 'image'
+    if (filter === 'video') return p.model_type === 'video'
     return true
   })
 
@@ -212,7 +212,7 @@ export default function AdminPromptsPage() {
             <div>
               <h1 className="text-2xl font-bold text-white">Prompts</h1>
               <p className="text-sm text-gray-400 mt-1">
-                Manage curated prompts for the gallery &middot; {prompts.length} total &middot; {prompts.filter(p => p.isFeatured).length} featured
+                Manage curated prompts for the gallery &middot; {prompts.length} total &middot; {prompts.filter(p => p.is_featured).length} featured
               </p>
             </div>
             <Button onClick={() => { setEditingId(null); setForm(EMPTY_FORM); setShowDialog(true) }}>
@@ -233,7 +233,7 @@ export default function AdminPromptsPage() {
                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                {f === 'all' ? 'All' : f === 'featured' ? `Featured (${prompts.filter(p => p.isFeatured).length})` : f.charAt(0).toUpperCase() + f.slice(1)}
+                {f === 'all' ? 'All' : f === 'featured' ? `Featured (${prompts.filter(p => p.is_featured).length})` : f.charAt(0).toUpperCase() + f.slice(1)}
               </button>
             ))}
           </div>
@@ -246,28 +246,28 @@ export default function AdminPromptsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filtered.map((prompt) => {
-                const model = getModelInfo(prompt.modelUsed)
+                const model = getModelInfo(prompt.model_used)
                 return (
                   <div
-                    key={prompt.$id}
-                    onClick={() => setFlyout(flyout?.$id === prompt.$id ? null : prompt)}
+                    key={prompt.id}
+                    onClick={() => setFlyout(flyout?.id === prompt.id ? null : prompt)}
                     className={`group relative rounded-xl border bg-nyx-surface overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-primary-500/5 ${
-                      flyout?.$id === prompt.$id
+                      flyout?.id === prompt.id
                         ? 'border-primary-500/50 ring-1 ring-primary-500/20'
                         : 'border-nyx-border hover:border-nyx-border-bright'
                     }`}
                   >
                     {/* Preview image */}
                     <div className="aspect-video bg-nyx-bg relative overflow-hidden">
-                      {prompt.previewImageUrl ? (
-                        prompt.modelType === 'video' ? (
-                          <video src={prompt.previewImageUrl} className="w-full h-full object-cover" muted />
+                      {prompt.preview_image_url ? (
+                        prompt.model_type === 'video' ? (
+                          <video src={prompt.preview_image_url} className="w-full h-full object-cover" muted />
                         ) : (
-                          <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          <img src={prompt.preview_image_url} alt={prompt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         )
                       ) : (
                         <div className="flex items-center justify-center h-full">
-                          {prompt.modelType === 'video' ? (
+                          {prompt.model_type === 'video' ? (
                             <Video className="h-8 w-8 text-gray-700" />
                           ) : (
                             <ImageIcon className="h-8 w-8 text-gray-700" />
@@ -276,18 +276,18 @@ export default function AdminPromptsPage() {
                       )}
                       {/* Overlay badges */}
                       <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                        {prompt.isFeatured && (
+                        {prompt.is_featured && (
                           <span className="px-2 py-0.5 rounded-full bg-yellow-500/90 text-[10px] font-bold text-black flex items-center gap-1">
                             <Star className="h-2.5 w-2.5" /> FEATURED
                           </span>
                         )}
-                        {!prompt.isPublished && (
+                        {!prompt.is_published && (
                           <span className="px-2 py-0.5 rounded-full bg-gray-700/90 text-[10px] font-medium text-gray-300">DRAFT</span>
                         )}
                       </div>
                       <div className="absolute top-2 right-2">
-                        <Badge variant={prompt.modelType === 'video' ? 'info' : 'default'} className="text-[10px]">
-                          {prompt.modelType}
+                        <Badge variant={prompt.model_type === 'video' ? 'info' : 'default'} className="text-[10px]">
+                          {prompt.model_type}
                         </Badge>
                       </div>
                     </div>
@@ -295,7 +295,7 @@ export default function AdminPromptsPage() {
                     {/* Content */}
                     <div className="p-4">
                       <h3 className="text-sm font-semibold text-white truncate mb-1">{prompt.title}</h3>
-                      <p className="text-xs text-gray-500 line-clamp-2 mb-3">{prompt.promptText}</p>
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-3">{prompt.prompt_text}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           {model && (
@@ -306,7 +306,7 @@ export default function AdminPromptsPage() {
                           )}
                           <Badge variant="outline" className="text-[10px]">{prompt.category}</Badge>
                         </div>
-                        <span className="text-[10px] text-gray-600">{prompt.usageCount || 0} uses</span>
+                        <span className="text-[10px] text-gray-600">{prompt.usage_count || 0} uses</span>
                       </div>
                     </div>
 
@@ -315,16 +315,16 @@ export default function AdminPromptsPage() {
                       <button
                         onClick={(e) => { e.stopPropagation(); togglePublished(prompt) }}
                         className="p-1.5 rounded-lg bg-nyx-bg/80 backdrop-blur-sm hover:bg-success/20 text-gray-400 hover:text-success transition-colors"
-                        title={prompt.isPublished ? 'Unpublish' : 'Publish to Gallery'}
+                        title={prompt.is_published ? 'Unpublish' : 'Publish to Gallery'}
                       >
-                        {prompt.isPublished ? <EyeOff className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
+                        {prompt.is_published ? <EyeOff className="h-3.5 w-3.5" /> : <Globe className="h-3.5 w-3.5" />}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleFeatured(prompt) }}
                         className="p-1.5 rounded-lg bg-nyx-bg/80 backdrop-blur-sm hover:bg-yellow-500/20 text-gray-400 hover:text-yellow-400 transition-colors"
-                        title={prompt.isFeatured ? 'Unfeature' : 'Feature'}
+                        title={prompt.is_featured ? 'Unfeature' : 'Feature'}
                       >
-                        {prompt.isFeatured ? <StarOff className="h-3.5 w-3.5" /> : <Star className="h-3.5 w-3.5" />}
+                        {prompt.is_featured ? <StarOff className="h-3.5 w-3.5" /> : <Star className="h-3.5 w-3.5" />}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleEdit(prompt) }}
@@ -333,7 +333,7 @@ export default function AdminPromptsPage() {
                         <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(prompt.$id) }}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(prompt.id) }}
                         className="p-1.5 rounded-lg bg-nyx-bg/80 backdrop-blur-sm hover:bg-error/10 text-gray-400 hover:text-error transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -359,11 +359,11 @@ export default function AdminPromptsPage() {
 
           {/* Preview */}
           <div className="aspect-video bg-nyx-bg relative overflow-hidden">
-            {flyout.previewImageUrl ? (
-              flyout.modelType === 'video' ? (
-                <video src={flyout.previewImageUrl} className="w-full h-full object-cover" controls muted />
+            {flyout.preview_image_url ? (
+              flyout.model_type === 'video' ? (
+                <video src={flyout.preview_image_url} className="w-full h-full object-cover" controls muted />
               ) : (
-                <img src={flyout.previewImageUrl} alt={flyout.title} className="w-full h-full object-cover" />
+                <img src={flyout.preview_image_url} alt={flyout.title} className="w-full h-full object-cover" />
               )
             ) : (
               <div className="flex items-center justify-center h-full text-gray-600">
@@ -377,10 +377,10 @@ export default function AdminPromptsPage() {
             <div>
               <h2 className="text-lg font-bold text-white mb-2">{flyout.title}</h2>
               <div className="flex flex-wrap gap-1.5">
-                <Badge variant={flyout.modelType === 'video' ? 'info' : 'default'}>{flyout.modelType}</Badge>
+                <Badge variant={flyout.model_type === 'video' ? 'info' : 'default'}>{flyout.model_type}</Badge>
                 <Badge variant="outline">{flyout.category}</Badge>
-                {flyout.isFeatured && <Badge variant="warning">Featured</Badge>}
-                {flyout.isPublished ? (
+                {flyout.is_featured && <Badge variant="warning">Featured</Badge>}
+                {flyout.is_published ? (
                   <Badge variant="success">Published</Badge>
                 ) : (
                   <Badge variant="default">Draft</Badge>
@@ -390,7 +390,7 @@ export default function AdminPromptsPage() {
 
             {/* Engine / Model */}
             {(() => {
-              const model = getModelInfo(flyout.modelUsed)
+              const model = getModelInfo(flyout.model_used)
               if (!model) return null
               return (
                 <div>
@@ -411,25 +411,25 @@ export default function AdminPromptsPage() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Prompt</label>
                 <button
-                  onClick={() => navigator.clipboard.writeText(flyout.promptText)}
+                  onClick={() => navigator.clipboard.writeText(flyout.prompt_text)}
                   className="text-[10px] text-primary-400 hover:text-primary-300 flex items-center gap-1"
                 >
                   <Copy className="h-3 w-3" /> Copy
                 </button>
               </div>
               <div className="p-3 rounded-lg bg-nyx-bg border border-nyx-border text-sm text-gray-300 leading-relaxed max-h-48 overflow-y-auto">
-                {flyout.promptText}
+                {flyout.prompt_text}
               </div>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-lg bg-nyx-bg border border-nyx-border text-center">
-                <p className="text-lg font-bold text-white">{flyout.usageCount || 0}</p>
+                <p className="text-lg font-bold text-white">{flyout.usage_count || 0}</p>
                 <p className="text-[10px] text-gray-500">Total Uses</p>
               </div>
               <div className="p-3 rounded-lg bg-nyx-bg border border-nyx-border text-center">
-                <p className="text-lg font-bold text-white">{flyout.sortOrder || 0}</p>
+                <p className="text-lg font-bold text-white">{flyout.sort_order || 0}</p>
                 <p className="text-[10px] text-gray-500">Sort Order</p>
               </div>
             </div>
@@ -440,8 +440,8 @@ export default function AdminPromptsPage() {
                 <Edit2 className="h-3.5 w-3.5 mr-1.5" /> Edit
               </Button>
               <Button variant="secondary" className="flex-1" onClick={() => toggleFeatured(flyout)}>
-                {flyout.isFeatured ? <StarOff className="h-3.5 w-3.5 mr-1.5" /> : <Star className="h-3.5 w-3.5 mr-1.5" />}
-                {flyout.isFeatured ? 'Unfeature' : 'Feature'}
+                {flyout.is_featured ? <StarOff className="h-3.5 w-3.5 mr-1.5" /> : <Star className="h-3.5 w-3.5 mr-1.5" />}
+                {flyout.is_featured ? 'Unfeature' : 'Feature'}
               </Button>
             </div>
             <div className="flex gap-2">
@@ -450,10 +450,10 @@ export default function AdminPromptsPage() {
                 className="flex-1"
                 onClick={() => togglePublished(flyout)}
               >
-                {flyout.isPublished ? <EyeOff className="h-3.5 w-3.5 mr-1.5" /> : <Globe className="h-3.5 w-3.5 mr-1.5" />}
-                {flyout.isPublished ? 'Unpublish' : 'Publish'}
+                {flyout.is_published ? <EyeOff className="h-3.5 w-3.5 mr-1.5" /> : <Globe className="h-3.5 w-3.5 mr-1.5" />}
+                {flyout.is_published ? 'Unpublish' : 'Publish'}
               </Button>
-              {flyout.isPublished && (
+              {flyout.is_published && (
                 <a
                   href="/prompts"
                   target="_blank"
@@ -467,7 +467,7 @@ export default function AdminPromptsPage() {
             <Button
               variant="ghost"
               className="w-full text-error hover:bg-error/10"
-              onClick={() => handleDelete(flyout.$id)}
+              onClick={() => handleDelete(flyout.id)}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete Prompt
             </Button>

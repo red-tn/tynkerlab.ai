@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { StatsCard } from '@/components/admin/stats-card'
 import { ChartWrapper } from '@/components/admin/chart-wrapper'
-import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
-import { Query } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import { Eye, Users, Clock, MousePointer } from 'lucide-react'
 
 const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart), { ssr: false })
@@ -27,21 +26,24 @@ export default function AdminAnalyticsPage() {
     const fetchData = async () => {
       try {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        const views = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PAGE_VIEWS, [
-          Query.greaterThan('$createdAt', thirtyDaysAgo),
-          Query.limit(5000),
-        ])
+        const { data: views, count, error } = await supabase
+          .from('page_views')
+          .select('*', { count: 'exact' })
+          .gt('created_at', thirtyDaysAgo)
+          .limit(5000)
 
-        setTotalViews(views.total)
+        if (error) throw error
+
+        setTotalViews(count || 0)
 
         // Count unique users
-        const userSet = new Set(views.documents.map((d: any) => d.userId || d.sessionId))
+        const userSet = new Set((views || []).map((d: any) => d.user_id || d.session_id))
         setUniqueUsers(userSet.size)
 
         // Group by day
         const byDay: Record<string, number> = {}
-        for (const v of views.documents) {
-          const day = (v as any).$createdAt?.slice(0, 10)
+        for (const v of views || []) {
+          const day = (v as any).created_at?.slice(0, 10)
           if (day) byDay[day] = (byDay[day] || 0) + 1
         }
 
@@ -53,7 +55,7 @@ export default function AdminAnalyticsPage() {
 
         // Group by path for top pages
         const byPath: Record<string, number> = {}
-        for (const v of views.documents) {
+        for (const v of views || []) {
           const path = (v as any).path || '/'
           byPath[path] = (byPath[path] || 0) + 1
         }

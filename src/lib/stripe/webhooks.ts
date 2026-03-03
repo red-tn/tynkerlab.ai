@@ -1,6 +1,5 @@
 import Stripe from 'stripe'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID, Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getTierByPriceId, getPackByPriceId } from './products'
 import { addCredits } from '@/lib/credits'
 
@@ -8,7 +7,7 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
   const userId = session.metadata?.userId
   if (!userId) return
 
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
   if (session.mode === 'subscription') {
     const subscription = await getStripeSubscription(session.subscription as string) as any
@@ -19,30 +18,40 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
 
     if (tier) {
       // Create subscription record
-      await databases.createDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, ID.unique(), {
-        userId,
-        tier: tier.id,
-        status: 'active',
-        stripeCustomerId: session.customer as string,
-        stripeSubscriptionId: subscription.id,
-        stripePriceId: priceId,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000).toISOString(),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-        cancelAtPeriodEnd: false,
-      })
+      const { error: subError } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: userId,
+          tier: tier.id,
+          status: 'active',
+          stripe_customer_id: session.customer as string,
+          stripe_subscription_id: subscription.id,
+          stripe_price_id: priceId,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          cancel_at_period_end: false,
+        })
+
+      if (subError) throw subError
 
       // Add monthly credits
       await addCredits(userId, tier.credits, `${tier.name} subscription credits`)
 
       // Update profile
-      const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-        Query.equal('userId', userId), Query.limit(1),
-      ])
-      if (profiles.documents[0]) {
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profiles.documents[0].$id, {
-          subscriptionTier: tier.id,
-          subscriptionStatus: 'active',
-        })
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .limit(1)
+
+      if (profiles && profiles[0]) {
+        await supabase
+          .from('profiles')
+          .update({
+            subscription_tier: tier.id,
+            subscription_status: 'active',
+          })
+          .eq('id', profiles[0].id)
       }
     }
   } else if (session.mode === 'payment') {
@@ -52,14 +61,18 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
     const pack = getPackByPriceId(priceId || '')
 
     if (pack) {
-      await databases.createDocument(DATABASE_ID, COLLECTIONS.CREDIT_PACK_PURCHASES, ID.unique(), {
-        userId,
-        packId: pack.id,
-        credits: pack.credits,
-        amountPaid: pack.price * 100,
-        currency: 'usd',
-        stripePaymentIntentId: session.payment_intent as string,
-      })
+      const { error: packError } = await supabase
+        .from('credit_pack_purchases')
+        .insert({
+          user_id: userId,
+          pack_id: pack.id,
+          credits: pack.credits,
+          amount_paid: pack.price * 100,
+          currency: 'usd',
+          stripe_payment_intent_id: session.payment_intent as string,
+        })
+
+      if (packError) throw packError
 
       await addCredits(userId, pack.credits, `Credit pack: ${pack.name} (${pack.credits} credits)`)
     }
@@ -67,49 +80,63 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
 }
 
 export async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
   const sub = subscription as any
   const priceId = sub.items.data[0]?.price.id
 
-  const subs = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-    Query.equal('stripeSubscriptionId', subscription.id), Query.limit(1),
-  ])
+  const { data: subs } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('stripe_subscription_id', subscription.id)
+    .limit(1)
 
-  if (subs.documents[0]) {
+  if (subs && subs[0]) {
     const tier = getTierByPriceId(priceId || '')
-    await databases.updateDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, subs.documents[0].$id, {
-      status: sub.status === 'active' ? 'active' : sub.status,
-      tier: tier?.id || subs.documents[0].tier,
-      stripePriceId: priceId,
-      currentPeriodStart: new Date(sub.current_period_start * 1000).toISOString(),
-      currentPeriodEnd: new Date(sub.current_period_end * 1000).toISOString(),
-      cancelAtPeriodEnd: sub.cancel_at_period_end,
-    })
+    await supabase
+      .from('subscriptions')
+      .update({
+        status: sub.status === 'active' ? 'active' : sub.status,
+        tier: tier?.id || subs[0].tier,
+        stripe_price_id: priceId,
+        current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: sub.cancel_at_period_end,
+      })
+      .eq('id', subs[0].id)
   }
 }
 
 export async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
-  const subs = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-    Query.equal('stripeSubscriptionId', subscription.id), Query.limit(1),
-  ])
+  const { data: subs } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('stripe_subscription_id', subscription.id)
+    .limit(1)
 
-  if (subs.documents[0]) {
-    const userId = subs.documents[0].userId
-    await databases.updateDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, subs.documents[0].$id, {
-      status: 'canceled',
-    })
+  if (subs && subs[0]) {
+    const userId = subs[0].user_id
+    await supabase
+      .from('subscriptions')
+      .update({ status: 'canceled' })
+      .eq('id', subs[0].id)
 
     // Downgrade profile to free
-    const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-      Query.equal('userId', userId), Query.limit(1),
-    ])
-    if (profiles.documents[0]) {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profiles.documents[0].$id, {
-        subscriptionTier: 'free',
-        subscriptionStatus: 'canceled',
-      })
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .limit(1)
+
+    if (profiles && profiles[0]) {
+      await supabase
+        .from('profiles')
+        .update({
+          subscription_tier: 'free',
+          subscription_status: 'canceled',
+        })
+        .eq('id', profiles[0].id)
     }
   }
 }
@@ -120,40 +147,49 @@ export async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   if (inv.billing_reason !== 'subscription_cycle') return
 
   const subscriptionId = inv.subscription as string
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
-  const subs = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-    Query.equal('stripeSubscriptionId', subscriptionId), Query.limit(1),
-  ])
+  const { data: subs } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('stripe_subscription_id', subscriptionId)
+    .limit(1)
 
-  if (subs.documents[0]) {
-    const tier = getTierByPriceId(subs.documents[0].stripePriceId)
+  if (subs && subs[0]) {
+    const tier = getTierByPriceId(subs[0].stripe_price_id)
     if (tier) {
-      await addCredits(subs.documents[0].userId, tier.credits, `Monthly renewal: ${tier.name}`)
+      await addCredits(subs[0].user_id, tier.credits, `Monthly renewal: ${tier.name}`)
     }
   }
 }
 
 export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   const subscriptionId = (invoice as any).subscription as string
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
-  const subs = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-    Query.equal('stripeSubscriptionId', subscriptionId), Query.limit(1),
-  ])
+  const { data: subs } = await supabase
+    .from('subscriptions')
+    .select('*')
+    .eq('stripe_subscription_id', subscriptionId)
+    .limit(1)
 
-  if (subs.documents[0]) {
-    await databases.updateDocument(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, subs.documents[0].$id, {
-      status: 'past_due',
-    })
+  if (subs && subs[0]) {
+    await supabase
+      .from('subscriptions')
+      .update({ status: 'past_due' })
+      .eq('id', subs[0].id)
 
-    const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-      Query.equal('userId', subs.documents[0].userId), Query.limit(1),
-    ])
-    if (profiles.documents[0]) {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profiles.documents[0].$id, {
-        subscriptionStatus: 'past_due',
-      })
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', subs[0].user_id)
+      .limit(1)
+
+    if (profiles && profiles[0]) {
+      await supabase
+        .from('profiles')
+        .update({ subscription_status: 'past_due' })
+        .eq('id', profiles[0].id)
     }
   }
 }

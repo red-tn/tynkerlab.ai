@@ -1,5 +1,4 @@
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import crypto from 'crypto'
 
 export function hashIP(ip: string): string {
@@ -15,14 +14,14 @@ export async function trackPageView(params: {
   ip?: string
 }) {
   try {
-    const { databases } = createAdminClient()
-    await databases.createDocument(DATABASE_ID, COLLECTIONS.PAGE_VIEWS, ID.unique(), {
+    const supabase = createAdminClient()
+    await supabase.from('page_views').insert({
       path: params.path,
-      userId: params.userId || null,
-      isAdmin: params.isAdmin || false,
-      sessionId: params.sessionId || null,
+      user_id: params.userId || null,
+      is_admin: params.isAdmin || false,
+      session_id: params.sessionId || null,
       referrer: params.referrer || null,
-      ipHash: params.ip ? hashIP(params.ip) : null,
+      ip_hash: params.ip ? hashIP(params.ip) : null,
     })
   } catch (err) {
     // Silently fail — analytics shouldn't break the app
@@ -36,11 +35,11 @@ export async function trackEvent(params: {
   metadata?: Record<string, any>
 }) {
   try {
-    const { databases } = createAdminClient()
-    await databases.createDocument(DATABASE_ID, COLLECTIONS.ADMIN_ACTIVITY_LOG, ID.unique(), {
-      userId: params.userId || null,
+    const supabase = createAdminClient()
+    await supabase.from('admin_activity_log').insert({
+      admin_id: params.userId || 'system',
       action: params.event,
-      details: JSON.stringify(params.metadata || {}),
+      details: params.metadata || {},
     })
   } catch (err) {
     console.error('Event tracking error:', err)

@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   try {
     await requireAdmin(request)
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -14,48 +13,51 @@ export async function GET(request: Request) {
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
     // Fetch all data in parallel
-    const [profiles, subs, generations, prevGenerations, apiUsage, recentGens, recentSignups] = await Promise.all([
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [Query.limit(1)]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [Query.equal('status', 'active'), Query.limit(1)]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.greaterThan('$createdAt', thirtyDaysAgo.toISOString()), Query.limit(5000),
-      ]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.greaterThan('$createdAt', sixtyDaysAgo.toISOString()),
-        Query.lessThan('$createdAt', thirtyDaysAgo.toISOString()),
-        Query.limit(1),
-      ]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.API_USAGE_LOG, [
-        Query.greaterThan('$createdAt', twentyFourHoursAgo.toISOString()), Query.limit(1),
-      ]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.GENERATIONS, [
-        Query.orderDesc('$createdAt'), Query.limit(10),
-      ]),
-      databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-        Query.orderDesc('$createdAt'), Query.limit(5),
-      ]),
+    const [
+      profilesResult,
+      subsResult,
+      generationsResult,
+      prevGenerationsResult,
+      apiUsageResult,
+      recentGensResult,
+      recentSignupsResult,
+    ] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+      supabase.from('generations').select('*').gt('created_at', thirtyDaysAgo.toISOString()).limit(5000),
+      supabase.from('generations').select('*', { count: 'exact', head: true })
+        .gt('created_at', sixtyDaysAgo.toISOString())
+        .lt('created_at', thirtyDaysAgo.toISOString()),
+      supabase.from('api_usage_log').select('*', { count: 'exact', head: true })
+        .gt('created_at', twentyFourHoursAgo.toISOString()),
+      supabase.from('generations').select('*').order('created_at', { ascending: false }).limit(10),
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(5),
     ])
+
+    const generations = generationsResult.data || []
+    const generationsCount = generationsResult.count ?? generations.length
+    const prevGenerationsCount = prevGenerationsResult.count ?? 0
 
     // Build activity feed
     const recentActivity = [
-      ...recentSignups.documents.map((p: any) => ({
-        id: p.$id,
+      ...(recentSignupsResult.data || []).map((p: any) => ({
+        id: p.id,
         type: 'signup' as const,
-        message: `${p.fullName || 'New user'} signed up`,
-        timestamp: p.$createdAt,
+        message: `${p.full_name || 'New user'} signed up`,
+        timestamp: p.created_at,
       })),
-      ...recentGens.documents.map((g: any) => ({
-        id: g.$id,
+      ...(recentGensResult.data || []).map((g: any) => ({
+        id: g.id,
         type: 'generation' as const,
         message: `${g.type}: ${g.model?.split('/').pop() || 'unknown'}`,
-        timestamp: g.$createdAt,
+        timestamp: g.created_at,
       })),
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 15)
 
     // Build chart data (simplified — group generations by day)
     const gensByDay: Record<string, { images: number; videos: number }> = {}
-    for (const g of generations.documents) {
-      const day = (g as any).$createdAt?.slice(0, 10)
+    for (const g of generations) {
+      const day = (g as any).created_at?.slice(0, 10)
       if (!day) continue
       if (!gensByDay[day]) gensByDay[day] = { images: 0, videos: 0 }
       if ((g as any).type?.includes('video')) gensByDay[day].videos++
@@ -66,20 +68,20 @@ export async function GET(request: Request) {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, counts]) => ({ date: date.slice(5), ...counts }))
 
-    const totalCreditsUsed = generations.documents.reduce((sum: number, g: any) => sum + (g.creditsUsed || 0), 0)
+    const totalCreditsUsed = generations.reduce((sum: number, g: any) => sum + (g.credits_used || 0), 0)
 
     return NextResponse.json({
       stats: {
-        totalUsers: profiles.total,
-        activeSubscriptions: subs.total,
-        monthlyRevenue: subs.total * 20, // Simplified estimate
-        totalGenerations: generations.total,
+        totalUsers: profilesResult.count ?? 0,
+        activeSubscriptions: subsResult.count ?? 0,
+        monthlyRevenue: (subsResult.count ?? 0) * 20, // Simplified estimate
+        totalGenerations: generationsCount,
         creditsUsed: totalCreditsUsed,
-        apiCalls: apiUsage.total,
+        apiCalls: apiUsageResult.count ?? 0,
         usersChange: 12,
         subsChange: 5,
         revenueChange: 8,
-        generationsChange: Math.round(((generations.total - prevGenerations.total) / Math.max(prevGenerations.total, 1)) * 100),
+        generationsChange: Math.round(((generationsCount - prevGenerationsCount) / Math.max(prevGenerationsCount, 1)) * 100),
       },
       revenueChart: generationsChart.map(d => ({ date: d.date, revenue: (d.images * 2 + d.videos * 10) })),
       generationsChart,

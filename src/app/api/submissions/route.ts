@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
   try {
@@ -11,21 +10,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Title, prompt, and userId are required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROMPTS, ID.unique(), {
-      title,
-      promptText,
-      category: category || 'general',
-      modelType: modelType || 'image',
-      modelUsed: modelUsed || null,
-      previewImageUrl: previewImageUrl || null,
-      isPublished: false,
-      isFeatured: false,
-      usageCount: 0,
-      submissionStatus: 'pending',
-      submittedBy: userId,
-      submitterName: userName || 'Anonymous',
-    })
+    const supabase = createAdminClient()
+    const { data: doc, error } = await supabase
+      .from('prompts')
+      .insert({
+        title,
+        prompt_text: promptText,
+        category: category || 'general',
+        model_type: modelType || 'image',
+        model_used: modelUsed || null,
+        preview_image_url: previewImageUrl || null,
+        is_published: false,
+        is_featured: false,
+        usage_count: 0,
+        submission_status: 'pending',
+        submitted_by: userId,
+        submitter_name: userName || 'Anonymous',
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
     return NextResponse.json(doc)
   } catch (error: any) {

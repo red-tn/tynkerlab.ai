@@ -19,7 +19,7 @@ import { InfoTooltip } from '@/components/ui/info-tooltip'
 
 export default function ImageToImagePage() {
   const { user } = useAuth()
-  const { balance, refetch: refetchCredits } = useCredits(user?.$id)
+  const { balance, refetch: refetchCredits } = useCredits(user?.id)
   const { state, result, error, progress, generateImage, reset, isGenerating } = useGeneration()
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function ImageToImagePage() {
       seed: seed ? parseInt(seed) : undefined,
       imageUrl,
       type: 'image-to-image',
-      userId: user.$id,
+      userId: user.id,
       aspectRatio,
     } as any)
   }
@@ -100,7 +100,7 @@ export default function ImageToImagePage() {
             negativePrompt={negativePrompt}
             onNegativePromptChange={setNegativePrompt}
             disabled={isGenerating}
-            userId={user?.$id}
+            userId={user?.id}
           />
 
           <AspectRatioPicker

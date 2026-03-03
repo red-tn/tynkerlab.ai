@@ -24,7 +24,7 @@ export default function AffiliateDashboardPage() {
     if (!user) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/affiliates?userId=${user.$id}`)
+      const res = await fetch(`/api/affiliates?userId=${user.id}`)
       if (res.ok) {
         const data = await res.json()
         setEnrolled(data.enrolled)
@@ -39,7 +39,7 @@ export default function AffiliateDashboardPage() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { fetchData() }, [user?.$id])
+  useEffect(() => { fetchData() }, [user?.id])
 
   const handleEnroll = async () => {
     if (!user) return
@@ -48,7 +48,7 @@ export default function AffiliateDashboardPage() {
       const res = await fetch('/api/affiliates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.$id }),
+        body: JSON.stringify({ userId: user.id }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -142,10 +142,10 @@ export default function AffiliateDashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Clicks', value: affiliate.totalClicks || 0, icon: MousePointerClick, color: 'text-primary-400', bg: 'bg-primary-500/10' },
-          { label: 'Signups', value: affiliate.totalSignups || 0, icon: UserPlus, color: 'text-accent-400', bg: 'bg-accent-500/10' },
-          { label: 'Conversions', value: affiliate.totalConversions || 0, icon: TrendingUp, color: 'text-primary-300', bg: 'bg-primary-500/10' },
-          { label: 'Pending Earnings', value: `$${(affiliate.pendingBalance || 0).toFixed(2)}`, icon: DollarSign, color: 'text-green-400', bg: 'bg-green-500/10' },
+          { label: 'Total Clicks', value: affiliate.total_clicks || 0, icon: MousePointerClick, color: 'text-primary-400', bg: 'bg-primary-500/10' },
+          { label: 'Signups', value: affiliate.total_signups || 0, icon: UserPlus, color: 'text-accent-400', bg: 'bg-accent-500/10' },
+          { label: 'Conversions', value: affiliate.total_conversions || 0, icon: TrendingUp, color: 'text-primary-300', bg: 'bg-primary-500/10' },
+          { label: 'Pending Earnings', value: `$${(affiliate.pending_balance || 0).toFixed(2)}`, icon: DollarSign, color: 'text-green-400', bg: 'bg-green-500/10' },
         ].map((stat) => (
           <div key={stat.label} className="bg-nyx-surface/80 border border-nyx-border rounded-xl p-4">
             <div className="flex items-center gap-3">
@@ -165,16 +165,16 @@ export default function AffiliateDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-nyx-surface border border-nyx-border rounded-xl p-5">
           <p className="text-sm text-gray-400">Total Earned</p>
-          <p className="text-2xl font-bold text-white">${(affiliate.totalEarnings || 0).toFixed(2)}</p>
+          <p className="text-2xl font-bold text-white">${(affiliate.total_earnings || 0).toFixed(2)}</p>
         </div>
         <div className="bg-nyx-surface border border-nyx-border rounded-xl p-5">
           <p className="text-sm text-gray-400">Pending Balance</p>
-          <p className="text-2xl font-bold text-primary-400">${(affiliate.pendingBalance || 0).toFixed(2)}</p>
+          <p className="text-2xl font-bold text-primary-400">${(affiliate.pending_balance || 0).toFixed(2)}</p>
           <p className="text-xs text-gray-500 mt-1">Min. payout: $25.00</p>
         </div>
         <div className="bg-nyx-surface border border-nyx-border rounded-xl p-5">
           <p className="text-sm text-gray-400">Total Paid Out</p>
-          <p className="text-2xl font-bold text-green-400">${(affiliate.paidOut || 0).toFixed(2)}</p>
+          <p className="text-2xl font-bold text-green-400">${(affiliate.paid_out || 0).toFixed(2)}</p>
         </div>
       </div>
 
@@ -197,7 +197,7 @@ export default function AffiliateDashboardPage() {
               </thead>
               <tbody>
                 {events.map((event: any) => (
-                  <tr key={event.$id} className="border-b border-nyx-border/50 last:border-0">
+                  <tr key={event.id} className="border-b border-nyx-border/50 last:border-0">
                     <td className="px-4 py-3">
                       <Badge variant={event.type === 'commission' ? 'success' : event.type === 'payout' ? 'warning' : 'default'}>
                         {event.type}
@@ -205,7 +205,7 @@ export default function AffiliateDashboardPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-400 flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(event.createdAt).toLocaleDateString()}
+                      {new Date(event.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-mono">
                       {event.commission > 0 ? (

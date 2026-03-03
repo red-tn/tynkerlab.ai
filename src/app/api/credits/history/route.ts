@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -14,13 +13,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const queries = [
-      Query.equal('userId', userId),
-      Query.orderDesc('$createdAt'),
-      Query.limit(limit),
-      Query.offset(page * limit),
-    ]
+    const supabase = createAdminClient()
+    let query = supabase
+      .from('credit_transactions')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
 
     if (type && type !== 'all') {
       const typeMap: Record<string, string[]> = {
@@ -32,17 +30,27 @@ export async function GET(request: Request) {
       }
       const types = typeMap[type]
       if (types) {
-        queries.push(Query.equal('type', types))
+        query = query.in('type', types)
       }
     }
 
-    const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.CREDIT_TRANSACTIONS, queries)
+    const from = page * limit
+    const to = from + limit - 1
+    query = query.range(from, to)
+
+    const { data, count, error } = await query
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    const total = count || 0
 
     return NextResponse.json({
-      transactions: result.documents,
-      total: result.total,
+      transactions: data || [],
+      total,
       page,
-      totalPages: Math.ceil(result.total / limit),
+      totalPages: Math.ceil(total / limit),
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

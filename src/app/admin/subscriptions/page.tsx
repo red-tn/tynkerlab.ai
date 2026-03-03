@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
-import { Query } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import { StatsCard } from '@/components/admin/stats-card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatCurrency } from '@/lib/utils'
@@ -15,11 +14,13 @@ export default function AdminSubscriptionsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-          Query.orderDesc('$createdAt'),
-          Query.limit(50),
-        ])
-        setSubscriptions(result.documents)
+        const { data, error } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50)
+        if (error) throw error
+        setSubscriptions(data || [])
       } catch (err) {
         console.error(err)
       } finally {
@@ -66,8 +67,8 @@ export default function AdminSubscriptionsPage() {
             ) : subscriptions.length === 0 ? (
               <tr><td colSpan={5} className="text-center py-8 text-gray-500">No subscriptions yet</td></tr>
             ) : subscriptions.map((sub) => (
-              <tr key={sub.$id} className="border-b border-nyx-border last:border-0 hover:bg-white/[.02]">
-                <td className="px-4 py-3 text-white">{sub.userId}</td>
+              <tr key={sub.id} className="border-b border-nyx-border last:border-0 hover:bg-white/[.02]">
+                <td className="px-4 py-3 text-white">{sub.user_id}</td>
                 <td className="px-4 py-3">
                   <Badge variant={sub.tier === 'pro' ? 'success' : sub.tier === 'enterprise' ? 'info' : 'default'}>
                     {sub.tier === 'enterprise' ? 'Pro Creator' : sub.tier === 'pro' ? 'Creator' : sub.tier}
@@ -78,8 +79,8 @@ export default function AdminSubscriptionsPage() {
                     {sub.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 text-gray-400 text-xs">{sub.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : '-'}</td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(sub.$createdAt)}</td>
+                <td className="px-4 py-3 text-gray-400 text-xs">{sub.current_period_end ? formatDate(sub.current_period_end) : '-'}</td>
+                <td className="px-4 py-3 text-gray-500 text-xs">{formatDate(sub.created_at)}</td>
               </tr>
             ))}
           </tbody>

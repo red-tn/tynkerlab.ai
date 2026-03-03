@@ -1,5 +1,4 @@
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query, ID } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export const AFFILIATE_COMMISSION_RATE = 0.10
 export const COOKIE_DURATION_DAYS = 30
@@ -15,25 +14,27 @@ function generateCode(): string {
 }
 
 export async function getAffiliateByUserId(userId: string) {
-  const { databases } = createAdminClient()
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.AFFILIATES, [
-    Query.equal('userId', userId),
-    Query.limit(1),
-  ])
-  return result.documents[0] || null
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('affiliates')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+  return data
 }
 
 export async function getAffiliateByCode(code: string) {
-  const { databases } = createAdminClient()
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.AFFILIATES, [
-    Query.equal('code', code),
-    Query.limit(1),
-  ])
-  return result.documents[0] || null
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('affiliates')
+    .select('*')
+    .eq('code', code)
+    .single()
+  return data
 }
 
 export async function createAffiliate(userId: string) {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
   // Check if already enrolled
   const existing = await getAffiliateByUserId(userId)
@@ -49,116 +50,146 @@ export async function createAffiliate(userId: string) {
     attempts++
   }
 
-  return databases.createDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, ID.unique(), {
-    userId,
-    code,
-    status: 'active',
-    totalClicks: 0,
-    totalSignups: 0,
-    totalConversions: 0,
-    totalEarnings: 0,
-    pendingBalance: 0,
-    paidOut: 0,
-    createdAt: new Date().toISOString(),
-  })
+  const { data } = await supabase
+    .from('affiliates')
+    .insert({
+      user_id: userId,
+      code,
+      status: 'active',
+      total_clicks: 0,
+      total_signups: 0,
+      total_conversions: 0,
+      total_earnings: 0,
+      pending_balance: 0,
+      paid_out: 0,
+    })
+    .select()
+    .single()
+
+  return data
 }
 
 export async function recordClick(affiliateId: string) {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
-  // Increment clicks
-  const affiliate = await databases.getDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId)
-  await databases.updateDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId, {
-    totalClicks: (affiliate.totalClicks || 0) + 1,
-  })
+  const { data: affiliate } = await supabase
+    .from('affiliates')
+    .select('total_clicks')
+    .eq('id', affiliateId)
+    .single()
 
-  await databases.createDocument(DATABASE_ID, COLLECTIONS.AFFILIATE_EVENTS, ID.unique(), {
-    affiliateId,
+  await supabase
+    .from('affiliates')
+    .update({ total_clicks: (affiliate?.total_clicks || 0) + 1 })
+    .eq('id', affiliateId)
+
+  await supabase.from('affiliate_events').insert({
+    affiliate_id: affiliateId,
     type: 'click',
-    saleAmount: 0,
+    sale_amount: 0,
     commission: 0,
-    createdAt: new Date().toISOString(),
   })
 }
 
 export async function recordSignup(affiliateId: string, referredUserId: string) {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
 
-  const affiliate = await databases.getDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId)
-  await databases.updateDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId, {
-    totalSignups: (affiliate.totalSignups || 0) + 1,
-  })
+  const { data: affiliate } = await supabase
+    .from('affiliates')
+    .select('total_signups')
+    .eq('id', affiliateId)
+    .single()
 
-  await databases.createDocument(DATABASE_ID, COLLECTIONS.AFFILIATE_EVENTS, ID.unique(), {
-    affiliateId,
+  await supabase
+    .from('affiliates')
+    .update({ total_signups: (affiliate?.total_signups || 0) + 1 })
+    .eq('id', affiliateId)
+
+  await supabase.from('affiliate_events').insert({
+    affiliate_id: affiliateId,
     type: 'signup',
-    referredUserId,
-    saleAmount: 0,
+    referred_user_id: referredUserId,
+    sale_amount: 0,
     commission: 0,
-    createdAt: new Date().toISOString(),
   })
 }
 
 export async function recordCommission(affiliateId: string, orderId: string, saleAmount: number) {
-  const { databases } = createAdminClient()
+  const supabase = createAdminClient()
   const commission = saleAmount * AFFILIATE_COMMISSION_RATE
 
-  const affiliate = await databases.getDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId)
-  await databases.updateDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId, {
-    totalConversions: (affiliate.totalConversions || 0) + 1,
-    totalEarnings: (affiliate.totalEarnings || 0) + commission,
-    pendingBalance: (affiliate.pendingBalance || 0) + commission,
-  })
+  const { data: affiliate } = await supabase
+    .from('affiliates')
+    .select('total_conversions, total_earnings, pending_balance')
+    .eq('id', affiliateId)
+    .single()
 
-  await databases.createDocument(DATABASE_ID, COLLECTIONS.AFFILIATE_EVENTS, ID.unique(), {
-    affiliateId,
+  await supabase
+    .from('affiliates')
+    .update({
+      total_conversions: (affiliate?.total_conversions || 0) + 1,
+      total_earnings: (affiliate?.total_earnings || 0) + commission,
+      pending_balance: (affiliate?.pending_balance || 0) + commission,
+    })
+    .eq('id', affiliateId)
+
+  await supabase.from('affiliate_events').insert({
+    affiliate_id: affiliateId,
     type: 'commission',
-    orderId,
-    saleAmount,
+    order_id: orderId,
+    sale_amount: saleAmount,
     commission,
-    createdAt: new Date().toISOString(),
   })
 }
 
 export async function getAffiliateEvents(affiliateId: string, limit = 50) {
-  const { databases } = createAdminClient()
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.AFFILIATE_EVENTS, [
-    Query.equal('affiliateId', affiliateId),
-    Query.orderDesc('$createdAt'),
-    Query.limit(limit),
-  ])
-  return result.documents
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('affiliate_events')
+    .select('*')
+    .eq('affiliate_id', affiliateId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return data || []
 }
 
 export async function getAllAffiliates(limit = 100) {
-  const { databases } = createAdminClient()
-  const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.AFFILIATES, [
-    Query.orderDesc('$createdAt'),
-    Query.limit(limit),
-  ])
-  return result
+  const supabase = createAdminClient()
+  const { data, count } = await supabase
+    .from('affiliates')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  return { data: data || [], total: count || 0 }
 }
 
 export async function processPayout(affiliateId: string) {
-  const { databases } = createAdminClient()
-  const affiliate = await databases.getDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId)
+  const supabase = createAdminClient()
 
-  const amount = affiliate.pendingBalance || 0
+  const { data: affiliate } = await supabase
+    .from('affiliates')
+    .select('pending_balance, paid_out')
+    .eq('id', affiliateId)
+    .single()
+
+  const amount = affiliate?.pending_balance || 0
   if (amount < MIN_PAYOUT) {
     throw new Error(`Minimum payout is $${MIN_PAYOUT}. Current balance: $${amount.toFixed(2)}`)
   }
 
-  await databases.updateDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId, {
-    pendingBalance: 0,
-    paidOut: (affiliate.paidOut || 0) + amount,
-  })
+  await supabase
+    .from('affiliates')
+    .update({
+      pending_balance: 0,
+      paid_out: (affiliate?.paid_out || 0) + amount,
+    })
+    .eq('id', affiliateId)
 
-  await databases.createDocument(DATABASE_ID, COLLECTIONS.AFFILIATE_EVENTS, ID.unique(), {
-    affiliateId,
+  await supabase.from('affiliate_events').insert({
+    affiliate_id: affiliateId,
     type: 'payout',
-    saleAmount: 0,
+    sale_amount: 0,
     commission: amount,
-    createdAt: new Date().toISOString(),
   })
 
   return amount

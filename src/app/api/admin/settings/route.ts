@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID, Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
@@ -9,23 +8,32 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const key = searchParams.get('key')
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
     if (key) {
-      const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-        Query.equal('key', key),
-        Query.limit(1),
-      ])
-      if (result.documents.length > 0) {
-        return NextResponse.json(result.documents[0])
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .eq('key', key)
+        .limit(1)
+        .maybeSingle()
+
+      if (error) throw error
+
+      if (data) {
+        return NextResponse.json(data)
       }
       return NextResponse.json({ key, value: null })
     }
 
-    const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-      Query.limit(100),
-    ])
-    return NextResponse.json({ settings: result.documents })
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('*')
+      .limit(100)
+
+    if (error) throw error
+
+    return NextResponse.json({ settings: data })
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -41,31 +49,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'key is required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
     // Check if setting exists
-    const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-      Query.equal('key', key),
-      Query.limit(1),
-    ])
+    const { data: existing, error: fetchError } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', key)
+      .limit(1)
+      .maybeSingle()
 
-    if (existing.documents.length > 0) {
+    if (fetchError) throw fetchError
+
+    if (existing) {
       // Update
-      const doc = await databases.updateDocument(
-        DATABASE_ID,
-        COLLECTIONS.SITE_SETTINGS,
-        existing.documents[0].$id,
-        { value }
-      )
+      const { data: doc, error: updateError } = await supabase
+        .from('site_settings')
+        .update({ value })
+        .eq('id', existing.id)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
       return NextResponse.json(doc)
     } else {
       // Create
-      const doc = await databases.createDocument(
-        DATABASE_ID,
-        COLLECTIONS.SITE_SETTINGS,
-        ID.unique(),
-        { key, value }
-      )
+      const { data: doc, error: insertError } = await supabase
+        .from('site_settings')
+        .insert({ key, value })
+        .select()
+        .single()
+
+      if (insertError) throw insertError
       return NextResponse.json(doc)
     }
   } catch (error: any) {

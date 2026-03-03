@@ -26,7 +26,7 @@ export default function AdminSubmissionsPage() {
       if (res.ok) {
         const data = await res.json()
         // Filter to show pending submissions
-        const pending = data.prompts.filter((p: Prompt) => p.submissionStatus === 'pending')
+        const pending = data.prompts.filter((p: Prompt) => p.submission_status === 'pending')
         setSubmissions(pending)
         setTotal(pending.length)
       }
@@ -58,7 +58,7 @@ export default function AdminSubmissionsPage() {
       if (!res.ok) throw new Error('Failed to update')
       addToast(action === 'approve' ? 'Submission approved!' : 'Submission rejected', 'success')
       fetchSubmissions()
-      if (preview?.$id === id) setPreview(null)
+      if (preview?.id === id) setPreview(null)
     } catch (err: any) {
       addToast(err.message || 'Failed', 'error')
     } finally {
@@ -88,18 +88,18 @@ export default function AdminSubmissionsPage() {
       ) : (
         <div className="space-y-3">
           {submissions.map(sub => (
-            <div key={sub.$id} className="bg-nyx-surface border border-nyx-border rounded-xl p-4 flex items-start gap-4">
-              {sub.previewImageUrl && (
-                <img src={sub.previewImageUrl} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
+            <div key={sub.id} className="bg-nyx-surface border border-nyx-border rounded-xl p-4 flex items-start gap-4">
+              {sub.preview_image_url && (
+                <img src={sub.preview_image_url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-white">{sub.title}</p>
-                <p className="text-xs text-gray-400 line-clamp-2 mt-1">{sub.promptText}</p>
+                <p className="text-xs text-gray-400 line-clamp-2 mt-1">{sub.prompt_text}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="default" className="text-[10px]">{sub.category}</Badge>
-                  <span className="text-[10px] text-gray-500">by {sub.submitterName || 'Unknown'}</span>
+                  <span className="text-[10px] text-gray-500">by {sub.submitter_name || 'Unknown'}</span>
                   <span className="text-[10px] text-gray-600">
-                    {new Date(sub.$createdAt).toLocaleDateString()}
+                    {new Date(sub.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
@@ -114,16 +114,16 @@ export default function AdminSubmissionsPage() {
                 <Button
                   variant="primary"
                   size="sm"
-                  loading={actionLoading === sub.$id}
-                  onClick={() => handleAction(sub.$id, 'approve')}
+                  loading={actionLoading === sub.id}
+                  onClick={() => handleAction(sub.id, 'approve')}
                 >
                   <Check className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="danger"
                   size="sm"
-                  loading={actionLoading === sub.$id}
-                  onClick={() => handleAction(sub.$id, 'reject')}
+                  loading={actionLoading === sub.id}
+                  onClick={() => handleAction(sub.id, 'reject')}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -149,27 +149,27 @@ export default function AdminSubmissionsPage() {
       {preview && (
         <Dialog open onClose={() => setPreview(null)} title="Submission Preview" size="lg">
           <div className="space-y-4">
-            {preview.previewImageUrl && (
-              <img src={preview.previewImageUrl} alt="" className="w-full max-h-64 object-contain rounded-lg" />
+            {preview.preview_image_url && (
+              <img src={preview.preview_image_url} alt="" className="w-full max-h-64 object-contain rounded-lg" />
             )}
             <div>
               <h3 className="text-lg font-semibold text-white">{preview.title}</h3>
-              <p className="text-xs text-gray-500 mt-1">by {preview.submitterName || 'Unknown'}</p>
+              <p className="text-xs text-gray-500 mt-1">by {preview.submitter_name || 'Unknown'}</p>
             </div>
             <div className="p-3 rounded-lg bg-nyx-bg">
               <p className="text-xs text-gray-500 mb-1">Prompt</p>
-              <p className="text-sm text-gray-300">{preview.promptText}</p>
+              <p className="text-sm text-gray-300">{preview.prompt_text}</p>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="default">{preview.category}</Badge>
-              <Badge variant="info">{preview.modelType}</Badge>
-              {preview.modelUsed && <span className="text-xs text-gray-500">{preview.modelUsed}</span>}
+              <Badge variant="info">{preview.model_type}</Badge>
+              {preview.model_used && <span className="text-xs text-gray-500">{preview.model_used}</span>}
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="danger" onClick={() => handleAction(preview.$id, 'reject')} loading={actionLoading === preview.$id}>
+              <Button variant="danger" onClick={() => handleAction(preview.id, 'reject')} loading={actionLoading === preview.id}>
                 <X className="h-4 w-4 mr-1" /> Reject
               </Button>
-              <Button variant="primary" onClick={() => handleAction(preview.$id, 'approve')} loading={actionLoading === preview.$id}>
+              <Button variant="primary" onClick={() => handleAction(preview.id, 'approve')} loading={actionLoading === preview.id}>
                 <Check className="h-4 w-4 mr-1" /> Approve
               </Button>
             </div>

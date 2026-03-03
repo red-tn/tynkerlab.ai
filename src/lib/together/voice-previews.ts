@@ -1,24 +1,22 @@
 /**
  * Voice preview helpers — file IDs, URLs, and sample texts
- * for pre-generated voice previews stored in Appwrite storage.
+ * for pre-generated voice previews stored in Supabase storage.
  */
 
-const ENDPOINT = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!
-const PROJECT = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!
-const BUCKET = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
-/** Sanitize a voice ID into a valid Appwrite file ID (a-zA-Z0-9._-) */
+/** Sanitize a voice ID into a valid storage path */
 export function getVoicePreviewFileId(familyId: string, voiceId: string): string {
   const sanitized = `vp-${familyId}-${voiceId}`
     .replace(/\s+/g, '-')
     .replace(/[^a-zA-Z0-9._-]/g, '')
-  return sanitized.slice(0, 36) // Appwrite max 36 chars
+  return sanitized.slice(0, 36)
 }
 
-/** Build a public Appwrite storage URL for a voice preview file */
+/** Build a public Supabase storage URL for a voice preview file */
 export function getVoicePreviewUrl(familyId: string, voiceId: string): string {
   const fileId = getVoicePreviewFileId(familyId, voiceId)
-  return `${ENDPOINT}/storage/buckets/${BUCKET}/files/${fileId}/view?project=${PROJECT}`
+  return `${SUPABASE_URL}/storage/v1/object/public/uploads/${fileId}.mp3`
 }
 
 /** Short intro texts for each voice preview */

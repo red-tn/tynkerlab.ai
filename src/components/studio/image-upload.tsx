@@ -3,8 +3,7 @@
 import { useCallback, useState, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { cn } from '@/lib/utils'
-import { storage, BUCKET_UPLOADS } from '@/lib/appwrite/client'
-import { ID } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import { Upload, X, Loader2 } from 'lucide-react'
 
 interface ImageUploadProps {
@@ -71,9 +70,12 @@ export function ImageUpload({ onUpload, currentImage, onClear, disabled, onAspec
     img.src = objectUrl
 
     try {
-      const uploaded = await storage.createFile(BUCKET_UPLOADS, ID.unique(), file)
-      const url = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${BUCKET_UPLOADS}/files/${uploaded.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
-      onUpload(url)
+      const ext = file.name.split('.').pop() || 'png'
+      const path = `${crypto.randomUUID()}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('uploads').upload(path, file)
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
+      onUpload(publicUrl)
     } catch (err) {
       console.error('Upload failed:', err)
       setPreview(null)

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID, Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { generateSpeech, getTTSFamily, TTS_MODEL_FAMILIES } from '@/lib/together/tts'
 import { checkCredits, deductCredits } from '@/lib/credits'
 
@@ -36,19 +35,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
     const key = `custom_voices_${userId}`
 
-    const results = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-      Query.equal('key', key),
-      Query.limit(1),
-    ])
+    const { data } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', key)
+      .limit(1)
+      .single()
 
-    if (results.documents.length === 0) {
+    if (!data) {
       return NextResponse.json({ voices: [] })
     }
 
-    const voices: CustomVoice[] = JSON.parse(results.documents[0].value || '[]')
+    const voices: CustomVoice[] = data.value || []
     return NextResponse.json({ voices })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -137,26 +138,28 @@ export async function POST(request: Request) {
     }
 
     // Save to site_settings
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
     const key = `custom_voices_${userId}`
 
-    const results = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-      Query.equal('key', key),
-      Query.limit(1),
-    ])
+    const { data: existing } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', key)
+      .limit(1)
+      .single()
 
     let voices: CustomVoice[] = []
-    if (results.documents.length > 0) {
-      voices = JSON.parse(results.documents[0].value || '[]')
+    if (existing) {
+      voices = existing.value || []
       voices.push(newVoice)
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, results.documents[0].$id, {
-        value: JSON.stringify(voices),
-      })
+      await supabase.from('site_settings').update({
+        value: voices,
+      }).eq('id', existing.id)
     } else {
       voices = [newVoice]
-      await databases.createDocument(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, ID.unique(), {
+      await supabase.from('site_settings').insert({
         key,
-        value: JSON.stringify(voices),
+        value: voices,
       })
     }
 
@@ -176,19 +179,21 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'userId and voiceId required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
     const key = `custom_voices_${userId}`
 
-    const results = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-      Query.equal('key', key),
-      Query.limit(1),
-    ])
+    const { data: existing } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', key)
+      .limit(1)
+      .single()
 
-    if (results.documents.length === 0) {
+    if (!existing) {
       return NextResponse.json({ error: 'No custom voices found' }, { status: 404 })
     }
 
-    const voices: CustomVoice[] = JSON.parse(results.documents[0].value || '[]')
+    const voices: CustomVoice[] = existing.value || []
     const idx = voices.findIndex(v => v.id === voiceId)
     if (idx === -1) {
       return NextResponse.json({ error: 'Voice not found' }, { status: 404 })
@@ -201,9 +206,9 @@ export async function PATCH(request: Request) {
       voices[idx].name = newName.trim()
     }
 
-    await databases.updateDocument(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, results.documents[0].$id, {
-      value: JSON.stringify(voices),
-    })
+    await supabase.from('site_settings').update({
+      value: voices,
+    }).eq('id', existing.id)
 
     return NextResponse.json({ voice: voices[idx] })
   } catch (error: any) {
@@ -222,24 +227,26 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'userId and voiceId required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
     const key = `custom_voices_${userId}`
 
-    const results = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-      Query.equal('key', key),
-      Query.limit(1),
-    ])
+    const { data: existing } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', key)
+      .limit(1)
+      .single()
 
-    if (results.documents.length === 0) {
+    if (!existing) {
       return NextResponse.json({ error: 'No custom voices found' }, { status: 404 })
     }
 
-    let voices: CustomVoice[] = JSON.parse(results.documents[0].value || '[]')
+    let voices: CustomVoice[] = existing.value || []
     voices = voices.filter(v => v.id !== voiceId)
 
-    await databases.updateDocument(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, results.documents[0].$id, {
-      value: JSON.stringify(voices),
-    })
+    await supabase.from('site_settings').update({
+      value: voices,
+    }).eq('id', existing.id)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

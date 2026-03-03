@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID, Query, Permission, Role } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
@@ -10,16 +9,18 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '0')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    const { databases } = createAdminClient()
-    const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROMPTS, [
-      Query.orderDesc('$createdAt'),
-      Query.limit(limit),
-      Query.offset(page * limit),
-    ])
+    const supabase = createAdminClient()
+    const { data, count, error } = await supabase
+      .from('prompts')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(page * limit, page * limit + limit - 1)
+
+    if (error) throw error
 
     return NextResponse.json({
-      prompts: result.documents,
-      total: result.total,
+      prompts: data,
+      total: count,
     })
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
@@ -37,21 +38,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Title and prompt text are required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const doc = await databases.createDocument(DATABASE_ID, COLLECTIONS.PROMPTS, ID.unique(), {
-      title,
-      promptText,
-      category: category || 'general',
-      modelType: modelType || 'image',
-      isPublished: isPublished ?? true,
-      usageCount: 0,
-      ...(body.modelUsed ? { modelUsed: body.modelUsed } : {}),
-      ...(body.previewImageUrl ? { previewImageUrl: body.previewImageUrl } : {}),
-      ...(body.isFeatured !== undefined ? { isFeatured: body.isFeatured } : {}),
-      ...(body.createdBy ? { createdBy: body.createdBy } : {}),
-    }, [
-      Permission.read(Role.any()),
-    ])
+    const supabase = createAdminClient()
+    const { data: doc, error } = await supabase
+      .from('prompts')
+      .insert({
+        title,
+        prompt_text: promptText,
+        category: category || 'general',
+        model_type: modelType || 'image',
+        is_published: isPublished ?? true,
+        usage_count: 0,
+        ...(body.modelUsed ? { model_used: body.modelUsed } : {}),
+        ...(body.previewImageUrl ? { preview_image_url: body.previewImageUrl } : {}),
+        ...(body.isFeatured !== undefined ? { is_featured: body.isFeatured } : {}),
+        ...(body.createdBy ? { created_by: body.createdBy } : {}),
+      })
+      .select()
+      .single()
+
+    if (error) throw error
 
     return NextResponse.json(doc)
   } catch (error: any) {
@@ -70,10 +75,22 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const doc = await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROMPTS, id, updates, [
-      Permission.read(Role.any()),
-    ])
+    // Convert camelCase field names to snake_case for Supabase
+    const snakeUpdates: Record<string, any> = {}
+    for (const [key, value] of Object.entries(updates)) {
+      const snakeKey = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`)
+      snakeUpdates[snakeKey] = value
+    }
+
+    const supabase = createAdminClient()
+    const { data: doc, error } = await supabase
+      .from('prompts')
+      .update(snakeUpdates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
 
     return NextResponse.json(doc)
   } catch (error: any) {
@@ -92,8 +109,13 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROMPTS, id)
+    const supabase = createAdminClient()
+    const { error } = await supabase
+      .from('prompts')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

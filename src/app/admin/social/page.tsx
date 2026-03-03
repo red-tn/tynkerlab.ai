@@ -11,16 +11,16 @@ import {
 import { cn, formatDate } from '@/lib/utils'
 
 interface MediaItem {
-  $id: string
-  $createdAt: string
-  outputUrl?: string
-  previewImageUrl?: string
+  id: string
+  created_at: string
+  output_url?: string
+  preview_image_url?: string
   prompt?: string
-  promptText?: string
+  prompt_text?: string
   type?: string
-  modelType?: string
+  model_type?: string
   model?: string
-  modelUsed?: string
+  model_used?: string
 }
 
 const PLATFORMS = [
@@ -73,9 +73,9 @@ export default function AdminSocialPage() {
         const res = await adminFetch(`/api/admin/prompts?limit=100`)
         if (res.ok) {
           const data = await res.json()
-          let prompts = data.prompts.filter((p: any) => p.previewImageUrl)
-          if (filter === 'image') prompts = prompts.filter((p: any) => p.modelType === 'image')
-          if (filter === 'video') prompts = prompts.filter((p: any) => p.modelType === 'video')
+          let prompts = data.prompts.filter((p: any) => p.preview_image_url)
+          if (filter === 'image') prompts = prompts.filter((p: any) => p.model_type === 'image')
+          if (filter === 'video') prompts = prompts.filter((p: any) => p.model_type === 'video')
           setItems(prompts)
           setTotal(prompts.length)
         }
@@ -90,15 +90,15 @@ export default function AdminSocialPage() {
   useEffect(() => { fetchItems() }, [fetchItems])
 
   const getImageUrl = (item: MediaItem): string | null => {
-    return item.outputUrl || item.previewImageUrl || null
+    return item.output_url || item.preview_image_url || null
   }
 
   const getPromptText = (item: MediaItem): string => {
-    return item.prompt || item.promptText || ''
+    return item.prompt || item.prompt_text || ''
   }
 
   const getItemType = (item: MediaItem): string => {
-    return item.type || item.modelType || 'image'
+    return item.type || item.model_type || 'image'
   }
 
   const itemIsVideo = (item: MediaItem) => getItemType(item).includes('video')
@@ -254,12 +254,12 @@ export default function AdminSocialPage() {
             const isVid = itemIsVideo(item)
             return (
               <button
-                key={item.$id}
+                key={item.id}
                 type="button"
                 onClick={() => setSelected(item)}
                 className={cn(
                   'group relative rounded-lg border bg-nyx-surface overflow-hidden text-left transition-all',
-                  selected?.$id === item.$id
+                  selected?.id === item.id
                     ? 'border-primary-500/50 ring-1 ring-primary-500/20'
                     : 'border-nyx-border hover:border-nyx-border-bright'
                 )}

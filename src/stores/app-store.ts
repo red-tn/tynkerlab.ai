@@ -1,11 +1,11 @@
 import { create } from 'zustand'
-import type { Models } from 'appwrite'
+import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
 
 interface UserSlice {
-  user: Models.User<Models.Preferences> | null
+  user: User | null
   profile: Profile | null
-  setUser: (user: Models.User<Models.Preferences> | null) => void
+  setUser: (user: User | null) => void
   setProfile: (profile: Profile | null) => void
 }
 

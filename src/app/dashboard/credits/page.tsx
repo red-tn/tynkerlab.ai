@@ -27,17 +27,17 @@ const TYPE_BADGES: Record<string, { label: string; variant: 'default' | 'success
 }
 
 interface Transaction {
-  $id: string
-  $createdAt: string
+  id: string
+  created_at: string
   amount: number
   type: string
   description: string
-  balanceAfter?: number
+  balance_after?: number
 }
 
 export default function CreditsPage() {
   const { user } = useAuth()
-  const { balance } = useCredits(user?.$id)
+  const { balance } = useCredits(user?.id)
   const [filter, setFilter] = useState('all')
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [total, setTotal] = useState(0)
@@ -47,10 +47,10 @@ export default function CreditsPage() {
   const totalPages = Math.ceil(total / 20)
 
   useEffect(() => {
-    if (!user?.$id) return
+    if (!user?.id) return
     setLoading(true)
     const params = new URLSearchParams({
-      userId: user.$id,
+      userId: user.id,
       page: page.toString(),
       limit: '20',
     })
@@ -64,7 +64,7 @@ export default function CreditsPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [user?.$id, filter, page])
+  }, [user?.id, filter, page])
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -146,9 +146,9 @@ export default function CreditsPage() {
               transactions.map(tx => {
                 const badge = TYPE_BADGES[tx.type] || { label: tx.type, variant: 'default' as const }
                 return (
-                  <tr key={tx.$id} className="border-b border-nyx-border/50 last:border-0">
+                  <tr key={tx.id} className="border-b border-nyx-border/50 last:border-0">
                     <td className="px-4 py-3 text-sm text-gray-400 whitespace-nowrap">
-                      {new Date(tx.$createdAt).toLocaleDateString('en-US', {
+                      {new Date(tx.created_at).toLocaleDateString('en-US', {
                         month: 'short', day: 'numeric', year: 'numeric',
                         hour: '2-digit', minute: '2-digit',
                       })}
@@ -166,7 +166,7 @@ export default function CreditsPage() {
                       {tx.amount > 0 ? '+' : ''}{tx.amount}
                     </td>
                     <td className="px-4 py-3 text-sm font-mono text-right text-gray-400 whitespace-nowrap">
-                      {tx.balanceAfter != null ? tx.balanceAfter.toLocaleString() : '—'}
+                      {tx.balance_after != null ? tx.balance_after.toLocaleString() : '—'}
                     </td>
                   </tr>
                 )

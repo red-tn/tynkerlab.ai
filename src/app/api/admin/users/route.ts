@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { addCredits } from '@/lib/credits'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
@@ -12,24 +11,26 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '0')
     const limit = parseInt(searchParams.get('limit') || '20')
 
-    const { databases } = createAdminClient()
-    const queries = [
-      Query.orderDesc('$createdAt'),
-      Query.limit(limit),
-      Query.offset(page * limit),
-    ]
+    const supabase = createAdminClient()
+    let query = supabase
+      .from('profiles')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(page * limit, page * limit + limit - 1)
 
     if (search) {
-      queries.push(Query.search('fullName', search))
+      query = query.ilike('full_name', `%${search}%`)
     }
 
-    const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, queries)
+    const { data, count, error } = await query
+
+    if (error) throw error
 
     return NextResponse.json({
-      users: result.documents,
-      total: result.total,
+      users: data,
+      total: count,
       page,
-      totalPages: Math.ceil(result.total / limit),
+      totalPages: Math.ceil((count || 0) / limit),
     })
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
@@ -46,15 +47,26 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'profileId is required' }, { status: 400 })
     }
 
-    const { databases, users } = createAdminClient()
-    const profile = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROFILES, profileId)
+    const supabase = createAdminClient()
+    const { data: profile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', profileId)
+      .single()
+
+    if (fetchError) throw fetchError
 
     // Delete the profile document
-    await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILES, profileId)
+    const { error: deleteError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', profileId)
 
-    // Try to delete the Appwrite auth user too
+    if (deleteError) throw deleteError
+
+    // Try to delete the auth user too
     try {
-      await users.delete(profile.userId)
+      await supabase.auth.admin.deleteUser(profile.user_id)
     } catch {
       // User may already be deleted or not exist
     }
@@ -76,38 +88,56 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'profileId is required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const profile = await databases.getDocument(DATABASE_ID, COLLECTIONS.PROFILES, profileId)
+    const supabase = createAdminClient()
+    const { data: profile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', profileId)
+      .single()
+
+    if (fetchError) throw fetchError
 
     const updates: Record<string, any> = {}
 
     if (role !== undefined) updates.role = role
     if (suspended !== undefined) updates.suspended = suspended
-    if (subscriptionTier !== undefined) updates.subscriptionTier = subscriptionTier
+    if (subscriptionTier !== undefined) updates.subscription_tier = subscriptionTier
 
     if (Object.keys(updates).length > 0) {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profileId, updates)
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', profileId)
+
+      if (updateError) throw updateError
     }
 
     if (credits !== undefined && credits !== 0) {
       if (credits > 0) {
-        await addCredits(profile.userId, credits, `Admin: credit adjustment`)
+        await addCredits(profile.user_id, credits, `Admin: credit adjustment`)
       } else {
         // For negative adjustments, deduct balance and log transaction
-        const currentBalance = profile.creditsBalance || 0
+        const currentBalance = profile.credits_balance || 0
         const newBalance = Math.max(0, currentBalance + credits)
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profileId, {
-          creditsBalance: newBalance,
-        })
+        const { error: balanceError } = await supabase
+          .from('profiles')
+          .update({ credits_balance: newBalance })
+          .eq('id', profileId)
+
+        if (balanceError) throw balanceError
+
         // Create transaction record for the negative adjustment
-        const { ID } = await import('node-appwrite')
-        await databases.createDocument(DATABASE_ID, COLLECTIONS.CREDIT_TRANSACTIONS, ID.unique(), {
-          userId: profile.userId,
-          amount: credits,
-          type: 'admin_adjustment',
-          description: 'Admin: credit adjustment',
-          balanceAfter: newBalance,
-        })
+        const { error: txError } = await supabase
+          .from('credit_transactions')
+          .insert({
+            user_id: profile.user_id,
+            amount: credits,
+            type: 'admin_adjustment',
+            description: 'Admin: credit adjustment',
+            balance_after: newBalance,
+          })
+
+        if (txError) throw txError
       }
     }
 

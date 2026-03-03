@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
-import { Query } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Toggle } from '@/components/ui/toggle'
@@ -29,18 +28,21 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-          Query.limit(10),
-        ])
+        const { data, error } = await supabase
+          .from('site_settings')
+          .select('*')
+          .limit(10)
+        if (error) throw error
         const mapped: Record<string, any> = {}
-        for (const doc of result.documents) {
-          mapped[(doc as any).key] = (doc as any).value
+        for (const doc of data || []) {
+          // value is jsonb so no JSON.parse needed
+          mapped[doc.key] = doc.value
         }
         setSettings({
-          maintenanceMode: mapped.maintenanceMode === 'true',
-          registrationEnabled: mapped.registrationEnabled !== 'false',
-          freeCredits: parseInt(mapped.freeCredits) || 50,
-          maxGenerationsPerMinute: parseInt(mapped.maxGenerationsPerMinute) || 10,
+          maintenanceMode: mapped.maintenanceMode === true,
+          registrationEnabled: mapped.registrationEnabled !== false,
+          freeCredits: typeof mapped.freeCredits === 'number' ? mapped.freeCredits : 50,
+          maxGenerationsPerMinute: typeof mapped.maxGenerationsPerMinute === 'number' ? mapped.maxGenerationsPerMinute : 10,
         })
       } catch (err) {
         console.error('Failed to fetch settings:', err)
@@ -53,21 +55,21 @@ export default function AdminSettingsPage() {
     setSaving(true)
     try {
       const entries = [
-        { key: 'maintenanceMode', value: settings.maintenanceMode.toString() },
-        { key: 'registrationEnabled', value: settings.registrationEnabled.toString() },
-        { key: 'freeCredits', value: settings.freeCredits.toString() },
-        { key: 'maxGenerationsPerMinute', value: settings.maxGenerationsPerMinute.toString() },
+        { key: 'maintenanceMode', value: settings.maintenanceMode },
+        { key: 'registrationEnabled', value: settings.registrationEnabled },
+        { key: 'freeCredits', value: settings.freeCredits },
+        { key: 'maxGenerationsPerMinute', value: settings.maxGenerationsPerMinute },
       ]
 
       for (const entry of entries) {
-        const existing = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-          Query.equal('key', entry.key), Query.limit(1),
-        ])
-        if (existing.documents[0]) {
-          await databases.updateDocument(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, existing.documents[0].$id, {
-            value: entry.value,
-          })
-        }
+        // Upsert: update existing row by key, or insert if not found
+        const { error } = await supabase
+          .from('site_settings')
+          .upsert(
+            { key: entry.key, value: entry.value },
+            { onConflict: 'key' }
+          )
+        if (error) throw error
       }
 
       setSaved(true)

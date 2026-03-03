@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { databases, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/client'
-import { Query } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import type { Prompt } from '@/types/database'
 import { ALL_MODELS } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
@@ -32,25 +31,28 @@ export default function PromptsPage() {
     const fetchPrompts = async () => {
       setLoading(true)
       try {
-        const queries = [
-          Query.equal('isPublished', true),
-          Query.orderDesc('usageCount'),
-          Query.limit(50),
-        ]
+        let query = supabase
+          .from('prompts')
+          .select('*')
+          .eq('is_published', true)
+          .order('usage_count', { ascending: false })
+          .limit(50)
+
         if (category !== 'All') {
-          queries.push(Query.equal('category', category.toLowerCase()))
+          query = query.eq('category', category.toLowerCase())
         }
         if (search) {
-          queries.push(Query.search('title', search))
+          query = query.ilike('title', `%${search}%`)
         }
 
-        const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROMPTS, queries)
-        let docs = result.documents as unknown as Prompt[]
+        const { data, error } = await query
+        if (error) throw error
+        let docs = (data || []) as Prompt[]
 
         if (tab === 'creators') {
-          docs = docs.filter(p => p.submissionStatus === 'approved')
+          docs = docs.filter(p => p.submission_status === 'approved')
         } else {
-          docs = docs.filter(p => !p.submissionStatus || p.submissionStatus === 'admin')
+          docs = docs.filter(p => !p.submission_status || p.submission_status === 'admin')
         }
         setPrompts(docs)
       } catch (err) {
@@ -63,8 +65,8 @@ export default function PromptsPage() {
   }, [category, search, tab])
 
   const handleCopy = (prompt: Prompt) => {
-    navigator.clipboard.writeText(prompt.promptText)
-    setCopiedId(prompt.$id)
+    navigator.clipboard.writeText(prompt.prompt_text)
+    setCopiedId(prompt.id)
     setTimeout(() => setCopiedId(null), 2000)
   }
 
@@ -169,31 +171,31 @@ export default function PromptsPage() {
           /* Image-first gallery grid */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {prompts.map((prompt) => {
-              const model = getModelInfo(prompt.modelUsed)
+              const model = getModelInfo(prompt.model_used)
               return (
                 <div
-                  key={prompt.$id}
+                  key={prompt.id}
                   className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 hover:-translate-y-0.5"
                 >
                   {/* Image area */}
                   <div className="aspect-square bg-nyx-bg relative overflow-hidden">
-                    {prompt.previewImageUrl ? (
-                      prompt.modelType === 'video' ? (
+                    {prompt.preview_image_url ? (
+                      prompt.model_type === 'video' ? (
                         <video
-                          src={prompt.previewImageUrl}
+                          src={prompt.preview_image_url}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           muted autoPlay loop playsInline
                         />
                       ) : (
                         <img
-                          src={prompt.previewImageUrl}
+                          src={prompt.preview_image_url}
                           alt={prompt.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       )
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        {prompt.modelType === 'video'
+                        {prompt.model_type === 'video'
                           ? <Video className="h-10 w-10 text-gray-700" />
                           : <ImageIcon className="h-10 w-10 text-gray-700" />
                         }
@@ -202,27 +204,27 @@ export default function PromptsPage() {
 
                     {/* Type badge (top right) */}
                     <div className="absolute top-2 right-2">
-                      <Badge variant={prompt.modelType === 'video' ? 'info' : 'default'} className="text-[9px] backdrop-blur-sm">
-                        {prompt.modelType}
+                      <Badge variant={prompt.model_type === 'video' ? 'info' : 'default'} className="text-[9px] backdrop-blur-sm">
+                        {prompt.model_type}
                       </Badge>
                     </div>
 
                     {/* Hover overlay with prompt text + copy */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                      <p className="text-xs text-gray-200 line-clamp-4 mb-3 leading-relaxed">{prompt.promptText}</p>
+                      <p className="text-xs text-gray-200 line-clamp-4 mb-3 leading-relaxed">{prompt.prompt_text}</p>
                       <div className="flex gap-2">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleCopy(prompt) }}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-[11px] font-medium text-white backdrop-blur-sm transition-colors"
                         >
-                          {copiedId === prompt.$id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                          {copiedId === prompt.$id ? 'Copied!' : 'Copy'}
+                          {copiedId === prompt.id ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                          {copiedId === prompt.id ? 'Copied!' : 'Copy'}
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            const type = prompt.modelType === 'video' ? 'text-to-video' : 'text-to-image'
-                            window.location.href = `/studio/${type}?prompt=${encodeURIComponent(prompt.promptText)}`
+                            const type = prompt.model_type === 'video' ? 'text-to-video' : 'text-to-image'
+                            window.location.href = `/studio/${type}?prompt=${encodeURIComponent(prompt.prompt_text)}`
                           }}
                           className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-primary-500/20 hover:bg-primary-500/30 text-[11px] font-medium text-primary-300 backdrop-blur-sm transition-colors"
                         >
@@ -245,10 +247,10 @@ export default function PromptsPage() {
                         </span>
                       )}
                     </div>
-                    {tab === 'creators' && prompt.submitterName && (
+                    {tab === 'creators' && prompt.submitter_name && (
                       <div className="flex items-center gap-1.5 mt-2">
                         <Badge variant="outline" className="text-[9px] border-accent-500/30 text-accent-400">Creator</Badge>
-                        <span className="text-xs text-gray-400">{prompt.submitterName}</span>
+                        <span className="text-xs text-gray-400">{prompt.submitter_name}</span>
                       </div>
                     )}
                   </div>

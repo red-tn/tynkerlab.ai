@@ -137,36 +137,36 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {featured.slice(0, 8).map((prompt) => (
               <div
-                key={prompt.$id}
+                key={prompt.id}
                 className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 hover:-translate-y-0.5"
               >
                 <div className="aspect-square bg-nyx-bg relative overflow-hidden">
-                  {prompt.previewImageUrl ? (
-                    prompt.modelType === 'video' ? (
-                      <video src={prompt.previewImageUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted autoPlay loop playsInline />
+                  {prompt.preview_image_url ? (
+                    prompt.model_type === 'video' ? (
+                      <video src={prompt.preview_image_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted autoPlay loop playsInline />
                     ) : (
-                      <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={prompt.preview_image_url} alt={prompt.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     )
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      {prompt.modelType === 'video' ? <Video className="h-8 w-8 text-gray-700" /> : <ImageIcon className="h-8 w-8 text-gray-700" />}
+                      {prompt.model_type === 'video' ? <Video className="h-8 w-8 text-gray-700" /> : <ImageIcon className="h-8 w-8 text-gray-700" />}
                     </div>
                   )}
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                    <p className="text-xs text-gray-200 line-clamp-3 mb-2">{prompt.promptText}</p>
+                    <p className="text-xs text-gray-200 line-clamp-3 mb-2">{prompt.prompt_text}</p>
                     <button
-                      onClick={(e) => { e.stopPropagation(); copyPrompt(prompt.$id, prompt.promptText) }}
+                      onClick={(e) => { e.stopPropagation(); copyPrompt(prompt.id, prompt.prompt_text) }}
                       className="inline-flex items-center gap-1 text-[10px] text-primary-300 hover:text-primary-200 font-medium"
                     >
                       <Copy className="h-3 w-3" />
-                      {copied === prompt.$id ? 'Copied!' : 'Copy Prompt'}
+                      {copied === prompt.id ? 'Copied!' : 'Copy Prompt'}
                     </button>
                   </div>
                   {/* Type badge */}
                   <div className="absolute top-2 right-2">
-                    <Badge variant={prompt.modelType === 'video' ? 'info' : 'default'} className="text-[9px]">
-                      {prompt.modelType}
+                    <Badge variant={prompt.model_type === 'video' ? 'info' : 'default'} className="text-[9px]">
+                      {prompt.model_type}
                     </Badge>
                   </div>
                 </div>

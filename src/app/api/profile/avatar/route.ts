@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query, ID } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getTogetherClient } from '@/lib/together/client'
 
 export async function POST(request: Request) {
@@ -27,29 +26,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 })
     }
 
-    // Download the image and upload to Appwrite Storage
-    const { storage, databases } = createAdminClient()
+    // Download the image and upload to Supabase Storage
+    const supabase = createAdminClient()
     const imageResponse = await fetch(imageUrl)
     const imageBuffer = await imageResponse.arrayBuffer()
-    const file = await storage.createFile(
-      'avatars',
-      ID.unique(),
-      new File([Buffer.from(imageBuffer)], 'avatar.png', { type: 'image/png' })
-    )
+    const filePath = `avatar-${userId}-${Date.now()}.png`
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, Buffer.from(imageBuffer), { contentType: 'image/png' })
 
-    const avatarUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/avatars/files/${file.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+    if (uploadError) {
+      return NextResponse.json({ error: uploadError.message }, { status: 500 })
+    }
+
+    const { data: { publicUrl: avatarUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath)
 
     // Update profile with new avatar
     if (userId) {
-      const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-        Query.equal('userId', userId),
-      ])
-      if (profiles.documents[0]) {
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, profiles.documents[0].$id, {
-          avatarUrl,
-          avatarPrompt: prompt,
+      await supabase
+        .from('profiles')
+        .update({
+          avatar_url: avatarUrl,
+          avatar_prompt: prompt,
         })
-      }
+        .eq('user_id', userId)
     }
 
     return NextResponse.json({ avatarUrl })

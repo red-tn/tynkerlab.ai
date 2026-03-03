@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { generateImage, generateImageFromImage } from '@/lib/together/image'
 import { getModelById, getModelResolution } from '@/lib/together/models'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID, Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 // Allow up to 2 minutes for image generation + storage upload (Vercel)
 export const maxDuration = 120
@@ -42,28 +41,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Insufficient credits', required: modelData.credits }, { status: 402 })
     }
 
-    const { databases } = createAdminClient()
-    const generationId = ID.unique()
+    const supabase = createAdminClient()
 
-    await databases.createDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
-      userId,
-      type: type || 'text-to-image',
-      model,
-      prompt: prompt.slice(0, 1500),
-      negativePrompt: negativePrompt || null,
-      inputImageUrl: imageUrl || null,
-      width: safeWidth,
-      height: safeHeight,
-      steps: steps || modelData.defaultSteps || null,
-      seed: seed || null,
-      creditsUsed: modelData.credits,
-      status: 'processing',
-      aspectRatio: aspectRatio || '1:1',
-    })
+    const { data: genDoc, error: genInsertError } = await supabase
+      .from('generations')
+      .insert({
+        user_id: userId,
+        type: type || 'text-to-image',
+        model,
+        prompt: prompt.slice(0, 1500),
+        negative_prompt: negativePrompt || null,
+        input_image_url: imageUrl || null,
+        width: safeWidth,
+        height: safeHeight,
+        steps: steps || modelData.defaultSteps || null,
+        seed: seed || null,
+        credits_used: modelData.credits,
+        status: 'processing',
+        aspect_ratio: aspectRatio || '1:1',
+      })
+      .select()
+      .single()
+
+    if (genInsertError || !genDoc) {
+      return NextResponse.json({ error: genInsertError?.message || 'Failed to create generation record' }, { status: 500 })
+    }
+
+    const generationId = genDoc.id
 
     const deducted = await deductCredits(userId, modelData.credits, `${type || 'text-to-image'}: ${model}`, generationId)
     if (!deducted) {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, { status: 'failed', errorMessage: 'Credit deduction failed' })
+      await supabase.from('generations').update({ status: 'failed', error_message: 'Credit deduction failed' }).eq('id', generationId)
       return NextResponse.json({ error: 'Failed to deduct credits' }, { status: 402 })
     }
 
@@ -72,46 +80,49 @@ export async function POST(request: Request) {
         ? await generateImageFromImage({ model, prompt, negativePrompt, width: safeWidth, height: safeHeight, steps, seed, imageUrl })
         : await generateImage({ model, prompt, negativePrompt, width: safeWidth, height: safeHeight, steps, seed })
 
-      // Store in Appwrite Storage
-      const { storage } = createAdminClient()
+      // Store in Supabase Storage
       const imageResponse = await fetch(result.url)
       const imageBuffer = await imageResponse.arrayBuffer()
-      const bucketId = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
-      const file = await storage.createFile(
-        bucketId,
-        ID.unique(),
-        new File([Buffer.from(imageBuffer)], `gen-${generationId}.png`, { type: 'image/png' })
-      )
+      const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_UPLOADS || 'uploads'
+      const filePath = `gen-${generationId}.png`
+      await supabase.storage
+        .from(bucket)
+        .upload(filePath, Buffer.from(imageBuffer), { contentType: 'image/png' })
 
-      const outputUrl = `${process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT}/storage/buckets/${bucketId}/files/${file.$id}/view?project=${process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID}`
+      const { data: { publicUrl: outputUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath)
 
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
+      await supabase.from('generations').update({
         status: 'completed',
-        outputUrl,
-        completedAt: new Date().toISOString(),
-      })
+        output_url: outputUrl,
+        completed_at: new Date().toISOString(),
+      }).eq('id', generationId)
 
       // Update user stats
-      const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-        Query.equal('userId', userId), Query.limit(1),
-      ])
-      if (profiles.documents[0]) {
-        const p = profiles.documents[0]
-        await databases.updateDocument(DATABASE_ID, COLLECTIONS.PROFILES, p.$id, {
-          totalGenerations: (p.totalGenerations || 0) + 1,
-          totalImages: (p.totalImages || 0) + 1,
-          lastActiveAt: new Date().toISOString(),
-        })
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, total_generations, total_images, last_active_at')
+        .eq('user_id', userId)
+        .limit(1)
+        .single()
+
+      if (profile) {
+        await supabase.from('profiles').update({
+          total_generations: (profile.total_generations || 0) + 1,
+          total_images: (profile.total_images || 0) + 1,
+          last_active_at: new Date().toISOString(),
+        }).eq('id', profile.id)
       }
 
       // Log API usage
-      await databases.createDocument(DATABASE_ID, COLLECTIONS.API_USAGE_LOG, ID.unique(), {
-        userId,
+      await supabase.from('api_usage_log').insert({
+        user_id: userId,
         endpoint: 'images/generations',
         model,
-        requestType: type || 'text-to-image',
-        latencyMs: Date.now() - startTime,
-        statusCode: 200,
+        request_type: type || 'text-to-image',
+        latency_ms: Date.now() - startTime,
+        status_code: 200,
       })
 
       return NextResponse.json({ url: outputUrl, seed: result.seed, width: result.width, height: result.height, generationId })
@@ -124,13 +135,13 @@ export async function POST(request: Request) {
         errorMsg = `${modelData.displayName} does not support image-to-image on this provider. Try a Kontext, SeedEdit, or Qwen Image Edit model instead.`
       }
 
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.GENERATIONS, generationId, {
-        status: 'failed', errorMessage: errorMsg.slice(0, 1500),
-      })
+      await supabase.from('generations').update({
+        status: 'failed', error_message: errorMsg.slice(0, 1500),
+      }).eq('id', generationId)
 
-      await databases.createDocument(DATABASE_ID, COLLECTIONS.API_USAGE_LOG, ID.unique(), {
-        userId, endpoint: 'images/generations', model, requestType: type || 'text-to-image',
-        latencyMs: Date.now() - startTime, statusCode: 500, error: errorMsg,
+      await supabase.from('api_usage_log').insert({
+        user_id: userId, endpoint: 'images/generations', model, request_type: type || 'text-to-image',
+        latency_ms: Date.now() - startTime, status_code: 500, error: errorMsg,
       })
 
       return NextResponse.json({ error: errorMsg }, { status: 500 })

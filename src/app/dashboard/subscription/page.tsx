@@ -12,10 +12,10 @@ import { Coins, CreditCard, ExternalLink, Zap } from 'lucide-react'
 
 export default function SubscriptionPage() {
   const { user, profile } = useAuth()
-  const { balance } = useCredits(user?.$id)
+  const { balance } = useCredits(user?.id)
   const [loading, setLoading] = useState(false)
 
-  const currentTier = TIERS.find(t => t.id === (profile?.subscriptionTier || 'free')) || TIERS[0]
+  const currentTier = TIERS.find(t => t.id === (profile?.subscription_tier || 'free')) || TIERS[0]
 
   const handleManageBilling = async () => {
     if (!user) return
@@ -24,7 +24,7 @@ export default function SubscriptionPage() {
       const res = await fetch('/api/stripe/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.$id }),
+        body: JSON.stringify({ userId: user.id }),
       })
       const data = await res.json()
       if (data.url) {
@@ -56,8 +56,8 @@ export default function SubscriptionPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl font-bold text-white">{currentTier.name}</span>
-              <Badge variant={profile?.subscriptionStatus === 'active' ? 'success' : 'default'}>
-                {profile?.subscriptionStatus || 'free'}
+              <Badge variant={profile?.subscription_status === 'active' ? 'success' : 'default'}>
+                {profile?.subscription_status || 'free'}
               </Badge>
             </div>
             <p className="text-sm text-gray-400">{currentTier.description}</p>

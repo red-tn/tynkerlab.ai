@@ -34,15 +34,15 @@ export function UserTable({ users, onSelect, onDelete, selectedId }: UserTablePr
         <tbody>
           {users.map((user) => (
             <tr
-              key={user.$id}
+              key={user.id}
               className={`border-b border-nyx-border last:border-0 transition-colors
-                ${selectedId === user.$id ? 'bg-primary-500/5' : 'hover:bg-white/[.02]'}`}
+                ${selectedId === user.id ? 'bg-primary-500/5' : 'hover:bg-white/[.02]'}`}
             >
               <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(user)}>
                 <div className="flex items-center gap-3">
-                  <Avatar fallback={user.fullName?.charAt(0) || 'U'} src={user.avatarUrl || undefined} size="sm" />
+                  <Avatar fallback={user.full_name?.charAt(0) || 'U'} src={user.avatar_url || undefined} size="sm" />
                   <div>
-                    <p className="text-white font-medium">{user.fullName || 'Unknown'}</p>
+                    <p className="text-white font-medium">{user.full_name || 'Unknown'}</p>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                 </div>
@@ -52,16 +52,16 @@ export function UserTable({ users, onSelect, onDelete, selectedId }: UserTablePr
                   {user.role}
                 </Badge>
               </td>
-              <td className="px-4 py-3 text-white font-mono cursor-pointer" onClick={() => onSelect(user)}>{(user.creditsBalance || 0).toLocaleString()}</td>
+              <td className="px-4 py-3 text-white font-mono cursor-pointer" onClick={() => onSelect(user)}>{(user.credits_balance || 0).toLocaleString()}</td>
               <td className="px-4 py-3 cursor-pointer" onClick={() => onSelect(user)}>
-                <Badge variant={user.subscriptionTier === 'pro' ? 'success' : user.subscriptionTier === 'enterprise' ? 'info' : 'outline'}>
-                  {user.subscriptionTier === 'enterprise' ? 'Pro Creator' : user.subscriptionTier === 'pro' ? 'Creator' : 'Free'}
+                <Badge variant={user.subscription_tier === 'pro' ? 'success' : user.subscription_tier === 'enterprise' ? 'info' : 'outline'}>
+                  {user.subscription_tier === 'enterprise' ? 'Pro Creator' : user.subscription_tier === 'pro' ? 'Creator' : 'Free'}
                 </Badge>
               </td>
-              <td className="px-4 py-3 text-gray-400 cursor-pointer" onClick={() => onSelect(user)}>{(user.totalGenerations || 0).toLocaleString()}</td>
-              <td className="px-4 py-3 text-gray-500 text-xs cursor-pointer" onClick={() => onSelect(user)}>{formatDate(user.$createdAt)}</td>
+              <td className="px-4 py-3 text-gray-400 cursor-pointer" onClick={() => onSelect(user)}>{(user.total_generations || 0).toLocaleString()}</td>
+              <td className="px-4 py-3 text-gray-500 text-xs cursor-pointer" onClick={() => onSelect(user)}>{formatDate(user.created_at)}</td>
               <td className="px-3 py-3">
-                {confirmId === user.$id ? (
+                {confirmId === user.id ? (
                   <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => { e.stopPropagation(); onDelete(user); setConfirmId(null) }}
@@ -78,7 +78,7 @@ export function UserTable({ users, onSelect, onDelete, selectedId }: UserTablePr
                   </div>
                 ) : (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmId(user.$id) }}
+                    onClick={(e) => { e.stopPropagation(); setConfirmId(user.id) }}
                     className="p-1.5 rounded-md text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     title="Delete user"
                   >

@@ -25,7 +25,7 @@ import { Sparkles, Monitor } from 'lucide-react'
 
 export default function TextToVideoPage() {
   const { user } = useAuth()
-  const { balance, refetch: refetchCredits } = useCredits(user?.$id)
+  const { balance, refetch: refetchCredits } = useCredits(user?.id)
   const { state, result, error, progress, progressPercent, progressNote, generateVideo, cancel, reset, isGenerating } = useGeneration()
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function TextToVideoPage() {
       prompt: prompt.trim(),
       negativePrompt: negativePrompt.trim() || undefined,
       type: 'text-to-video',
-      userId: user.$id,
+      userId: user.id,
       duration: parseInt(duration),
       aspectRatio,
       quality,
@@ -115,7 +115,7 @@ export default function TextToVideoPage() {
             onNegativePromptChange={setNegativePrompt}
             disabled={isGenerating}
             generationType="video"
-            userId={user?.$id}
+            userId={user?.id}
           />
 
           <AspectRatioPicker

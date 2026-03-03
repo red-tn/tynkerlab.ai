@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { account, databases, DATABASE_ID, COLLECTIONS, refreshJWT, clearJWT } from '@/lib/appwrite/client'
-import { Models, Query } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/types/database'
 
 interface AuthState {
-  user: Models.User<Models.Preferences> | null
+  user: User | null
   profile: Profile | null
   isLoading: boolean
   isAuthenticated: boolean
@@ -16,7 +16,7 @@ interface AuthState {
 }
 
 export function useAuth(): AuthState {
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -48,46 +48,42 @@ export function useAuth(): AuthState {
 
   const refreshProfile = useCallback(async () => {
     if (user) {
-      await fetchProfile(user.$id)
+      await fetchProfile(user.id)
     }
   }, [user, fetchProfile])
 
   useEffect(() => {
     const init = async () => {
-      // On mobile (Safari ITP), cross-origin cookies may be blocked and
-      // the SDK falls back to localStorage. A retry handles the rare case
-      // where the SDK needs an extra moment to restore the session.
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const currentUser = await account.get()
-          setUser(currentUser)
-          await fetchProfile(currentUser.$id, currentUser.email, currentUser.name)
-          // Extend JWT lifetime for mobile Safari session persistence
-          refreshJWT()
-          setIsLoading(false)
-          return
-        } catch {
-          if (attempt === 0) {
-            // Brief pause before retry — gives SDK time to read localStorage fallback
-            await new Promise(r => setTimeout(r, 500))
-          }
-        }
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (currentUser) {
+        setUser(currentUser)
+        await fetchProfile(
+          currentUser.id,
+          currentUser.email,
+          currentUser.user_metadata?.full_name || currentUser.user_metadata?.name
+        )
       }
-      // Both attempts failed — no valid session
-      setUser(null)
-      setProfile(null)
       setIsLoading(false)
     }
     init()
+
+    // Listen for auth state changes (sign in, sign out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user)
+        } else {
+          setUser(null)
+          setProfile(null)
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
   }, [fetchProfile])
 
   const signOut = useCallback(async () => {
-    try {
-      await account.deleteSession('current')
-    } catch {
-      // Session may already be expired
-    }
-    clearJWT()
+    await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
     window.location.href = '/login'

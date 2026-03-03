@@ -21,7 +21,7 @@ const tools = [
 export function Sidebar() {
   const pathname = usePathname()
   const { user } = useAuth()
-  const { balance } = useCredits(user?.$id)
+  const { balance } = useCredits(user?.id)
   const [collapsed, setCollapsed] = useState(false)
 
   return (

@@ -1,19 +1,15 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/appwrite/server'
-import { ID, Permission, Role } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 import { generateSpeech, TTS_MODEL_FAMILIES } from '@/lib/together/tts'
 import { getVoicePreviewFileId, VOICE_PREVIEW_TEXTS } from '@/lib/together/voice-previews'
 
 export async function POST(request: Request) {
   try {
-    // Verify admin via JWT header
-    const jwt = request.headers.get('x-appwrite-jwt')
-    if (!jwt) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireAdmin(request)
 
-    const { storage } = createAdminClient()
-    const bucketId = process.env.NEXT_PUBLIC_APPWRITE_BUCKET_UPLOADS!
+    const supabase = createAdminClient()
+    const bucketId = 'uploads'
 
     const results: { voice: string; status: string }[] = []
 
@@ -25,9 +21,11 @@ export async function POST(request: Request) {
 
         // Check if file already exists
         try {
-          await storage.getFile(bucketId, fileId)
-          results.push({ voice: `${family.id}/${voice.id}`, status: 'exists' })
-          continue
+          const { data, error } = await supabase.storage.from(bucketId).download(fileId)
+          if (data && !error) {
+            results.push({ voice: `${family.id}/${voice.id}`, status: 'exists' })
+            continue
+          }
         } catch {
           // File doesn't exist — generate it
         }
@@ -42,12 +40,11 @@ export async function POST(request: Request) {
             { type: 'audio/mpeg' }
           )
 
-          await storage.createFile(
-            bucketId,
-            fileId,
-            file,
-            [Permission.read(Role.any())]
-          )
+          const { error: uploadError } = await supabase.storage
+            .from(bucketId)
+            .upload(fileId, file)
+
+          if (uploadError) throw uploadError
 
           results.push({ voice: `${family.id}/${voice.id}`, status: 'created' })
         } catch (err: unknown) {
@@ -59,6 +56,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ results })
   } catch (error: unknown) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: (error as any).message }, { status: (error as any).status })
     const message = error instanceof Error ? error.message : 'Failed'
     return NextResponse.json({ error: message }, { status: 500 })
   }

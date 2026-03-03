@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
 import { getAffiliateByUserId, createAffiliate, getAffiliateEvents } from '@/lib/affiliates'
 
 export async function GET(request: Request) {
@@ -16,7 +14,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ enrolled: false }, { status: 200 })
     }
 
-    const events = await getAffiliateEvents(affiliate.$id, 20)
+    const events = await getAffiliateEvents(affiliate.id, 20)
 
     return NextResponse.json({
       enrolled: true,

@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { account, persistJWT } from '@/lib/appwrite/client'
+import { supabase } from '@/lib/supabase/client'
 import { Logo } from '@/components/brand/logo'
 
 function CallbackHandler() {
@@ -12,34 +12,37 @@ function CallbackHandler() {
   useEffect(() => {
     const redirect = searchParams.get('redirect') || '/dashboard'
 
-    // The Appwrite SDK automatically picks up the OAuth session
-    // from the URL hash/cookies set by Appwrite during the redirect.
-    // On mobile, cross-origin cookies may be blocked (Safari ITP),
-    // so we retry with backoff to give the SDK time to persist
-    // the session via localStorage fallback.
-    const checkSession = async (attempt = 0) => {
+    const handleCallback = async () => {
       try {
-        await account.get()
-        // Persist JWT for mobile Safari session persistence
-        try {
-          const jwt = await account.createJWT()
-          persistJWT(jwt.jwt)
-        } catch {}
-        // Session is valid — redirect to destination
+        // Supabase OAuth returns a code in the URL that needs to be exchanged
+        const code = searchParams.get('code')
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (error) throw error
+        }
+
+        // Verify we have a session
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('No session')
+
+        // Ensure profile exists
+        await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+          }),
+        })
+
         window.location.replace(redirect)
       } catch {
-        if (attempt < 5) {
-          setStatus(attempt > 1 ? 'Still working...' : 'Signing you in...')
-          setTimeout(() => checkSession(attempt + 1), 800 + attempt * 400)
-        } else {
-          // All retries exhausted
-          window.location.replace('/login?error=oauth_failed')
-        }
+        window.location.replace('/login?error=oauth_failed')
       }
     }
 
-    // Initial delay to let the SDK process the OAuth response
-    setTimeout(() => checkSession(0), 1000)
+    handleCallback()
   }, [searchParams])
 
   return (

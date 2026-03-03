@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { ID, Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function GET(request: Request) {
   try {
@@ -10,30 +9,34 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-      Query.equal('userId', userId),
-      Query.limit(1),
-    ])
+    const supabase = createAdminClient()
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .limit(1)
+      .single()
 
-    if (profiles.documents.length === 0) {
+    if (error || !profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    const profile = profiles.documents[0]
-
     // One-time migration: grant 50 credits to pre-existing free accounts with 0 credits
     if (
-      profile.creditsBalance === 0 &&
-      profile.creditsMonthly === 0 &&
-      profile.subscriptionTier === 'free'
+      profile.credits_balance === 0 &&
+      profile.credits_monthly === 0 &&
+      profile.subscription_tier === 'free'
     ) {
-      const updated = await databases.updateDocument(
-        DATABASE_ID,
-        COLLECTIONS.PROFILES,
-        profile.$id,
-        { creditsBalance: 50, creditsMonthly: 50 }
-      )
+      const { data: updated, error: updateError } = await supabase
+        .from('profiles')
+        .update({ credits_balance: 50, credits_monthly: 50 })
+        .eq('id', profile.id)
+        .select()
+        .single()
+
+      if (updateError) {
+        return NextResponse.json({ error: updateError.message }, { status: 500 })
+      }
       return NextResponse.json(updated)
     }
 
@@ -49,27 +52,30 @@ export async function POST(request: Request) {
     if (!userId) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
     // Create profile document
-    const profile = await databases.createDocument(
-      DATABASE_ID,
-      COLLECTIONS.PROFILES,
-      ID.unique(),
-      {
-        userId,
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: userId,
         email,
-        fullName: name,
+        full_name: name,
         role: 'user',
-        creditsBalance: 50,
-        creditsMonthly: 50,
-        subscriptionTier: 'free',
-        subscriptionStatus: 'inactive',
-        totalGenerations: 0,
-        totalImages: 0,
-        totalVideos: 0,
-      }
-    )
+        credits_balance: 50,
+        credits_monthly: 50,
+        subscription_tier: 'free',
+        subscription_status: 'inactive',
+        total_generations: 0,
+        total_images: 0,
+        total_videos: 0,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
     return NextResponse.json(profile)
   } catch (error: any) {
@@ -80,18 +86,22 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const updates = await request.json()
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
     if (!updates.profileId) {
       return NextResponse.json({ error: 'Profile ID required' }, { status: 400 })
     }
 
-    const profile = await databases.updateDocument(
-      DATABASE_ID,
-      COLLECTIONS.PROFILES,
-      updates.profileId,
-      updates.data
-    )
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .update(updates.data)
+      .eq('id', updates.profileId)
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
     return NextResponse.json(profile)
   } catch (error: any) {
@@ -101,19 +111,22 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { databases, users } = createAdminClient()
+    const supabase = createAdminClient()
     const { userId } = await request.json()
 
     // Delete profile document
-    const profiles = await databases.listDocuments(DATABASE_ID, COLLECTIONS.PROFILES, [
-      Query.equal('userId', userId),
-    ])
-    if (profiles.documents[0]) {
-      await databases.deleteDocument(DATABASE_ID, COLLECTIONS.PROFILES, profiles.documents[0].$id)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single()
+
+    if (profile) {
+      await supabase.from('profiles').delete().eq('id', profile.id)
     }
 
     // Delete auth user
-    await users.delete(userId)
+    await supabase.auth.admin.deleteUser(userId)
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

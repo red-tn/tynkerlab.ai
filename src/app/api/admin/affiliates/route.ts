@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getAllAffiliates, processPayout } from '@/lib/affiliates'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
@@ -13,14 +12,14 @@ export async function GET(request: Request) {
     let totalEarnings = 0
     let totalPending = 0
     let activeCount = 0
-    for (const a of result.documents) {
-      totalEarnings += a.totalEarnings || 0
-      totalPending += a.pendingBalance || 0
+    for (const a of result.data) {
+      totalEarnings += a.total_earnings || 0
+      totalPending += a.pending_balance || 0
       if (a.status === 'active') activeCount++
     }
 
     return NextResponse.json({
-      affiliates: result.documents,
+      affiliates: result.data,
       total: result.total,
       stats: { totalEarnings, totalPending, activeCount },
     })
@@ -38,7 +37,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'affiliateId required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
     if (action === 'payout') {
       const amount = await processPayout(affiliateId)
@@ -46,7 +45,12 @@ export async function PATCH(request: Request) {
     }
 
     if (status) {
-      await databases.updateDocument(DATABASE_ID, COLLECTIONS.AFFILIATES, affiliateId, { status })
+      const { error } = await supabase
+        .from('affiliates')
+        .update({ status })
+        .eq('id', affiliateId)
+
+      if (error) throw error
       return NextResponse.json({ success: true })
     }
 

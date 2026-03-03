@@ -52,7 +52,7 @@ export default function AdminHomepagePage() {
       if (res.ok) {
         const data = await res.json()
         setAllPrompts(data.prompts)
-        setFeaturedPrompts(data.prompts.filter((p: Prompt) => p.isFeatured && p.isPublished))
+        setFeaturedPrompts(data.prompts.filter((p: Prompt) => p.is_featured && p.is_published))
       }
     } catch (err) {
       console.error(err)
@@ -127,12 +127,12 @@ export default function AdminHomepagePage() {
   }, [tools])
 
   const toggleFeatured = async (prompt: Prompt) => {
-    setTogglingId(prompt.$id)
+    setTogglingId(prompt.id)
     try {
       const res = await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: prompt.$id, isFeatured: !prompt.isFeatured }),
+        body: JSON.stringify({ id: prompt.id, isFeatured: !prompt.is_featured }),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -164,14 +164,14 @@ export default function AdminHomepagePage() {
   }
 
   const moveFeatured = async (prompt: Prompt, direction: 'up' | 'down') => {
-    const idx = featuredPrompts.findIndex(p => p.$id === prompt.$id)
+    const idx = featuredPrompts.findIndex(p => p.id === prompt.id)
     if ((direction === 'up' && idx <= 0) || (direction === 'down' && idx >= featuredPrompts.length - 1)) return
-    const newOrder = direction === 'up' ? prompt.sortOrder + 1 : Math.max(0, prompt.sortOrder - 1)
+    const newOrder = direction === 'up' ? prompt.sort_order + 1 : Math.max(0, prompt.sort_order - 1)
     try {
       await adminFetch('/api/admin/prompts', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: prompt.$id, sortOrder: newOrder }),
+        body: JSON.stringify({ id: prompt.id, sortOrder: newOrder }),
       })
       await fetchPrompts()
     } catch {}
@@ -182,7 +182,7 @@ export default function AdminHomepagePage() {
     return ALL_MODELS.find(m => m.id === modelId)
   }
 
-  const nonFeatured = allPrompts.filter(p => !p.isFeatured && p.isPublished)
+  const nonFeatured = allPrompts.filter(p => !p.is_featured && p.is_published)
 
   return (
     <div className="space-y-6 p-6">
@@ -251,22 +251,22 @@ export default function AdminHomepagePage() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {featuredPrompts.map((prompt) => {
-                  const model = getModelInfo(prompt.modelUsed)
-                  const isToggling = togglingId === prompt.$id
-                  const isDeleting = deletingId === prompt.$id
-                  const isConfirmingDelete = confirmDeleteId === prompt.$id
+                  const model = getModelInfo(prompt.model_used)
+                  const isToggling = togglingId === prompt.id
+                  const isDeleting = deletingId === prompt.id
+                  const isConfirmingDelete = confirmDeleteId === prompt.id
                   return (
-                    <div key={prompt.$id} className="relative rounded-xl border border-yellow-500/20 bg-nyx-surface overflow-hidden group">
+                    <div key={prompt.id} className="relative rounded-xl border border-yellow-500/20 bg-nyx-surface overflow-hidden group">
                       <div className="aspect-video bg-nyx-bg relative overflow-hidden">
-                        {prompt.previewImageUrl ? (
-                          prompt.modelType === 'video' ? (
-                            <video src={prompt.previewImageUrl} className="w-full h-full object-cover" muted playsInline controls />
+                        {prompt.preview_image_url ? (
+                          prompt.model_type === 'video' ? (
+                            <video src={prompt.preview_image_url} className="w-full h-full object-cover" muted playsInline controls />
                           ) : (
-                            <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover" />
+                            <img src={prompt.preview_image_url} alt={prompt.title} className="w-full h-full object-cover" />
                           )
                         ) : (
                           <div className="flex items-center justify-center h-full">
-                            {prompt.modelType === 'video' ? <Video className="h-6 w-6 text-gray-700" /> : <ImageIcon className="h-6 w-6 text-gray-700" />}
+                            {prompt.model_type === 'video' ? <Video className="h-6 w-6 text-gray-700" /> : <ImageIcon className="h-6 w-6 text-gray-700" />}
                           </div>
                         )}
                         <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -291,7 +291,7 @@ export default function AdminHomepagePage() {
                             {isConfirmingDelete ? (
                               <div className="flex items-center gap-1">
                                 <button
-                                  onClick={() => deletePrompt(prompt.$id)}
+                                  onClick={() => deletePrompt(prompt.id)}
                                   disabled={isDeleting}
                                   className="px-1.5 py-0.5 text-[10px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded transition-colors"
                                 >
@@ -307,7 +307,7 @@ export default function AdminHomepagePage() {
                             ) : (
                               <>
                                 <button
-                                  onClick={() => setConfirmDeleteId(prompt.$id)}
+                                  onClick={() => setConfirmDeleteId(prompt.id)}
                                   className="text-gray-600 hover:text-red-400 transition-colors"
                                   title="Delete prompt"
                                 >
@@ -343,22 +343,22 @@ export default function AdminHomepagePage() {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {nonFeatured.map((prompt) => {
-                  const model = getModelInfo(prompt.modelUsed)
-                  const isToggling = togglingId === prompt.$id
-                  const isDeleting = deletingId === prompt.$id
-                  const isConfirmingDelete = confirmDeleteId === prompt.$id
+                  const model = getModelInfo(prompt.model_used)
+                  const isToggling = togglingId === prompt.id
+                  const isDeleting = deletingId === prompt.id
+                  const isConfirmingDelete = confirmDeleteId === prompt.id
                   return (
-                    <div key={prompt.$id} className="relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden group hover:border-nyx-border-bright transition-colors">
+                    <div key={prompt.id} className="relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden group hover:border-nyx-border-bright transition-colors">
                       <div className="aspect-video bg-nyx-bg relative overflow-hidden">
-                        {prompt.previewImageUrl ? (
-                          prompt.modelType === 'video' ? (
-                            <video src={prompt.previewImageUrl} className="w-full h-full object-cover" muted playsInline controls />
+                        {prompt.preview_image_url ? (
+                          prompt.model_type === 'video' ? (
+                            <video src={prompt.preview_image_url} className="w-full h-full object-cover" muted playsInline controls />
                           ) : (
-                            <img src={prompt.previewImageUrl} alt={prompt.title} className="w-full h-full object-cover" />
+                            <img src={prompt.preview_image_url} alt={prompt.title} className="w-full h-full object-cover" />
                           )
                         ) : (
                           <div className="flex items-center justify-center h-full">
-                            {prompt.modelType === 'video' ? <Video className="h-6 w-6 text-gray-700" /> : <ImageIcon className="h-6 w-6 text-gray-700" />}
+                            {prompt.model_type === 'video' ? <Video className="h-6 w-6 text-gray-700" /> : <ImageIcon className="h-6 w-6 text-gray-700" />}
                           </div>
                         )}
                       </div>
@@ -370,7 +370,7 @@ export default function AdminHomepagePage() {
                             {isConfirmingDelete ? (
                               <div className="flex items-center gap-1">
                                 <button
-                                  onClick={() => deletePrompt(prompt.$id)}
+                                  onClick={() => deletePrompt(prompt.id)}
                                   disabled={isDeleting}
                                   className="px-1.5 py-0.5 text-[10px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded transition-colors"
                                 >
@@ -386,7 +386,7 @@ export default function AdminHomepagePage() {
                             ) : (
                               <>
                                 <button
-                                  onClick={() => setConfirmDeleteId(prompt.$id)}
+                                  onClick={() => setConfirmDeleteId(prompt.id)}
                                   className="text-gray-600 hover:text-red-400 transition-colors"
                                   title="Delete prompt"
                                 >

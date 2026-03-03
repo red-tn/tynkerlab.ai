@@ -2,8 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react'
-import { storage, BUCKET_UPLOADS } from '@/lib/appwrite/client'
-import { ID } from 'appwrite'
+import { supabase } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 interface ImageDropZoneProps {
@@ -12,7 +11,7 @@ interface ImageDropZoneProps {
   className?: string
   label?: string
   compact?: boolean
-  /** Hint that the current value is a video (for Appwrite URLs without extensions) */
+  /** Hint that the current value is a video */
   isVideo?: boolean
 }
 
@@ -28,14 +27,17 @@ export function ImageDropZone({ value, onChange, className, label, compact, isVi
     setUploading(true)
     setError(null)
     try {
-      const uploaded = await storage.createFile(BUCKET_UPLOADS, ID.unique(), file)
-      const fileUrl = storage.getFileView(BUCKET_UPLOADS, uploaded.$id).toString()
+      const ext = file.name.split('.').pop() || 'bin'
+      const path = `${crypto.randomUUID()}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('uploads').upload(path, file)
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(path)
       setUploadedIsVideo(file.type.startsWith('video/'))
-      onChange(fileUrl)
+      onChange(publicUrl)
     } catch (err: any) {
       const msg = err?.message || 'Upload failed'
       console.error('Upload failed:', err)
-      setError(msg.includes('File size') ? `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Increase your bucket size limit in Appwrite Console.` : msg)
+      setError(msg.includes('File size') ? `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB).` : msg)
     } finally {
       setUploading(false)
     }

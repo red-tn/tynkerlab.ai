@@ -253,7 +253,7 @@ export function Navbar() {
                   <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nyx-surface border border-nyx-border">
                     <Coins className="h-4 w-4 text-primary-400" />
                     <span className="text-sm font-medium text-white">
-                      {profile.creditsBalance?.toLocaleString() ?? 0}
+                      {profile.credits_balance?.toLocaleString() ?? 0}
                     </span>
                   </div>
                 )}
@@ -264,15 +264,15 @@ export function Navbar() {
                   trigger={
                     <button className="flex items-center gap-2">
                       <Avatar
-                        src={profile?.avatarUrl}
-                        fallback={profile?.fullName || user?.name || '?'}
+                        src={profile?.avatar_url}
+                        fallback={profile?.full_name || user?.user_metadata?.full_name || '?'}
                         size="sm"
                       />
                     </button>
                   }
                 >
                   <div className="px-3 py-2 border-b border-nyx-border">
-                    <p className="text-sm font-medium text-white">{profile?.fullName || user?.name}</p>
+                    <p className="text-sm font-medium text-white">{profile?.full_name || user?.user_metadata?.full_name}</p>
                     <p className="text-xs text-gray-500">{user?.email}</p>
                     {isAdmin && <Badge variant="default" className="mt-1">Admin</Badge>}
                   </div>

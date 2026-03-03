@@ -63,7 +63,7 @@ export default function AdminAffiliatesPage() {
       const res = await adminFetch('/api/admin/affiliates', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ affiliateId: payoutTarget.$id, action: 'payout' }),
+        body: JSON.stringify({ affiliateId: payoutTarget.id, action: 'payout' }),
       })
       const data = await res.json()
       if (data.success) {
@@ -130,31 +130,31 @@ export default function AdminAffiliatesPage() {
             </thead>
             <tbody>
               {affiliates.map((a: any) => (
-                <tr key={a.$id} className="border-b border-nyx-border/50 last:border-0 hover:bg-nyx-surface-hover/50">
-                  <td className="px-4 py-3 text-sm text-gray-300 font-mono">{a.userId?.slice(0, 12)}...</td>
+                <tr key={a.id} className="border-b border-nyx-border/50 last:border-0 hover:bg-nyx-surface-hover/50">
+                  <td className="px-4 py-3 text-sm text-gray-300 font-mono">{a.user_id?.slice(0, 12)}...</td>
                   <td className="px-4 py-3 text-sm text-primary-400 font-mono">{a.code}</td>
                   <td className="px-4 py-3">
                     <Badge variant={a.status === 'active' ? 'success' : a.status === 'suspended' ? 'error' : 'warning'}>
                       {a.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-sm text-white">{a.totalClicks || 0}</td>
-                  <td className="px-4 py-3 text-sm text-white">{a.totalSignups || 0}</td>
-                  <td className="px-4 py-3 text-sm text-white">{a.totalConversions || 0}</td>
-                  <td className="px-4 py-3 text-sm text-green-400 font-mono">${(a.totalEarnings || 0).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-yellow-400 font-mono">${(a.pendingBalance || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-sm text-white">{a.total_clicks || 0}</td>
+                  <td className="px-4 py-3 text-sm text-white">{a.total_signups || 0}</td>
+                  <td className="px-4 py-3 text-sm text-white">{a.total_conversions || 0}</td>
+                  <td className="px-4 py-3 text-sm text-green-400 font-mono">${(a.total_earnings || 0).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-sm text-yellow-400 font-mono">${(a.pending_balance || 0).toFixed(2)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       {a.status === 'active' ? (
-                        <Button variant="ghost" size="sm" onClick={() => handleStatusChange(a.$id, 'suspended')} disabled={actionLoading}>
+                        <Button variant="ghost" size="sm" onClick={() => handleStatusChange(a.id, 'suspended')} disabled={actionLoading}>
                           <XCircle className="h-3.5 w-3.5 text-red-400" />
                         </Button>
                       ) : (
-                        <Button variant="ghost" size="sm" onClick={() => handleStatusChange(a.$id, 'active')} disabled={actionLoading}>
+                        <Button variant="ghost" size="sm" onClick={() => handleStatusChange(a.id, 'active')} disabled={actionLoading}>
                           <CheckCircle className="h-3.5 w-3.5 text-green-400" />
                         </Button>
                       )}
-                      {(a.pendingBalance || 0) >= 25 && (
+                      {(a.pending_balance || 0) >= 25 && (
                         <Button variant="ghost" size="sm" onClick={() => setPayoutTarget(a)} disabled={actionLoading}>
                           <Banknote className="h-3.5 w-3.5 text-yellow-400" />
                         </Button>
@@ -176,7 +176,7 @@ export default function AdminAffiliatesPage() {
               <Banknote className="h-6 w-6 text-yellow-400" />
               <div>
                 <p className="text-sm text-gray-400">Payout amount</p>
-                <p className="text-2xl font-bold text-white">${(payoutTarget.pendingBalance || 0).toFixed(2)}</p>
+                <p className="text-2xl font-bold text-white">${(payoutTarget.pending_balance || 0).toFixed(2)}</p>
               </div>
             </div>
             <p className="text-sm text-gray-400">

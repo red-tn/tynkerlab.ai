@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe/client'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
   try {
@@ -11,19 +10,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
-    const subs = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SUBSCRIPTIONS, [
-      Query.equal('userId', userId),
-      Query.equal('status', 'active'),
-      Query.limit(1),
-    ])
+    const supabase = createAdminClient()
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .limit(1)
+      .single()
 
-    if (!subs.documents[0]?.stripeCustomerId) {
+    if (!sub?.stripe_customer_id) {
       return NextResponse.json({ error: 'No active subscription found' }, { status: 404 })
     }
 
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: subs.documents[0].stripeCustomerId,
+      customer: sub.stripe_customer_id,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription`,
     })
 

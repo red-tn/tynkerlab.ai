@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  // Refresh Supabase auth session (rotates cookies)
+  const response = await updateSession(request)
+
   const { pathname } = request.nextUrl
 
   // Track page views asynchronously (fire-and-forget, never block)
@@ -21,7 +25,7 @@ export function middleware(request: NextRequest) {
     } catch {}
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {

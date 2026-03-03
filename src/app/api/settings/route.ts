@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient, DATABASE_ID, COLLECTIONS } from '@/lib/appwrite/server'
-import { Query } from 'node-appwrite'
+import { createAdminClient } from '@/lib/supabase/server'
 
 // Public read-only endpoint for site settings (no auth required).
 // Used by the homepage and other public pages to load settings like homepage_tools.
@@ -13,15 +12,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'key parameter is required' }, { status: 400 })
     }
 
-    const { databases } = createAdminClient()
+    const supabase = createAdminClient()
 
-    const result = await databases.listDocuments(DATABASE_ID, COLLECTIONS.SITE_SETTINGS, [
-      Query.equal('key', key),
-      Query.limit(1),
-    ])
+    const { data } = await supabase
+      .from('site_settings')
+      .select('*')
+      .eq('key', key)
+      .limit(1)
+      .single()
 
-    if (result.documents.length > 0) {
-      return NextResponse.json(result.documents[0])
+    if (data) {
+      return NextResponse.json(data)
     }
 
     return NextResponse.json({ key, value: null })
