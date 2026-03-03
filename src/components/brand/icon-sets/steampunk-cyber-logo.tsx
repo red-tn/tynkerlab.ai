@@ -15,12 +15,12 @@ interface LogoFullProps {
 }
 
 /**
- * Steampunk x Cyberpunk logo mark — Victorian laboratory flask with brass frame,
- * rivets, glowing cyan liquid, gear mechanism stopper, circuit traces, and steam wisps.
+ * Steampunk Cyber logo mark — same flask/nodes/gears/sparkles design as Neon Minimal,
+ * re-colored with brass, amber, cyan neon, and violet accents.
  */
 export function SteampunkLogo({ size = 32, className }: LogoProps) {
   const reactId = useId()
-  const id = `sp-logo-${reactId.replace(/:/g, '')}`
+  const id = `sp-${reactId.replace(/:/g, '')}`
 
   return (
     <svg
@@ -32,183 +32,92 @@ export function SteampunkLogo({ size = 32, className }: LogoProps) {
       className={cn('shrink-0', className)}
     >
       <defs>
-        <linearGradient id={`${id}-brass`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={`${id}-flask`} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#f59e0b" />
-          <stop offset="50%" stopColor="#d97706" />
-          <stop offset="100%" stopColor="#b45309" />
-        </linearGradient>
-        <linearGradient id={`${id}-neon`} x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#8b5cf6" />
-          <stop offset="50%" stopColor="#06b6d4" />
-          <stop offset="100%" stopColor="#06b6d4" />
-        </linearGradient>
-        <linearGradient id={`${id}-liquid`} x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.35" />
-        </linearGradient>
-        <radialGradient id={`${id}-glow`} cx="50%" cy="65%" r="40%">
-          <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id={`${id}-copper`} x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#d97706" />
           <stop offset="100%" stopColor="#b45309" />
         </linearGradient>
       </defs>
 
-      {/* Outer brass circle frame */}
-      <circle cx="32" cy="32" r="29" stroke={`url(#${id}-brass)`} strokeWidth="2.5" fill="none" />
-
-      {/* Background glow */}
-      <circle cx="32" cy="36" r="22" fill={`url(#${id}-glow)`} />
-
-      {/* Decorative rivets on the outer frame */}
-      <circle cx="32" cy="3.5" r="1.5" fill="#b45309" />
-      <circle cx="32" cy="60.5" r="1.5" fill="#b45309" />
-      <circle cx="3.5" cy="32" r="1.5" fill="#b45309" />
-      <circle cx="60.5" cy="32" r="1.5" fill="#b45309" />
-      <circle cx="11" cy="11" r="1.2" fill="#b45309" fillOpacity="0.7" />
-      <circle cx="53" cy="11" r="1.2" fill="#b45309" fillOpacity="0.7" />
-      <circle cx="11" cy="53" r="1.2" fill="#b45309" fillOpacity="0.7" />
-      <circle cx="53" cy="53" r="1.2" fill="#b45309" fillOpacity="0.7" />
-
-      {/* Flask body - brass frame */}
+      {/* Flask body */}
       <path
-        d="M24 20V28L18 44C17 47 19 50 22 50H42C45 50 47 47 46 44L40 28V20"
-        stroke={`url(#${id}-brass)`}
-        strokeWidth="2.5"
+        d="M25 14V24L14 48C13 51 15 54 18 54H46C49 54 51 51 50 48L39 24V14"
+        stroke={`url(#${id}-flask)`}
+        strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
       />
 
-      {/* Flask liquid fill */}
-      <path
-        d="M19.5 42L22 35L26 38L32 34L38 38L42 35L44.5 42C45.5 45 43.5 48.5 41 48.5H23C20.5 48.5 18.5 45 19.5 42Z"
-        fill={`url(#${id}-liquid)`}
-      />
+      {/* Flask top rim with dots */}
+      <line x1="23" y1="14" x2="41" y2="14" stroke={`url(#${id}-flask)`} strokeWidth="2.2" strokeLinecap="round" />
+      <circle cx="23" cy="14" r="1.8" fill="#b45309" />
+      <circle cx="41" cy="14" r="1.8" fill="#b45309" />
 
-      {/* Liquid surface wave - neon */}
+      {/* Internal network lines */}
+      <path d="M22 42L32 34L42 42" stroke="#d97706" strokeWidth="0.8" strokeOpacity="0.3" strokeLinecap="round" />
+      <path d="M27 38L32 34L37 38" stroke="#d97706" strokeWidth="0.8" strokeOpacity="0.25" strokeLinecap="round" />
+      <path d="M32 34V42" stroke="#d97706" strokeWidth="0.8" strokeOpacity="0.2" />
+
+      {/* Colored node circles */}
+      {/* Center node — cyan neon */}
+      <circle cx="32" cy="28" r="3" fill="#06b6d4" />
+      <circle cx="32" cy="28" r="1" fill="white" />
+      {/* Left pink node */}
+      <circle cx="24" cy="38" r="2.5" fill="#ec4899" />
+      <circle cx="24" cy="38" r="0.8" fill="white" />
+      {/* Right brass node */}
+      <circle cx="40" cy="36" r="2.8" fill="#d97706" />
+      <circle cx="40" cy="36" r="0.9" fill="white" />
+      {/* Bottom cyan node */}
+      <circle cx="32" cy="46" r="2.5" fill="#06b6d4" />
+      <circle cx="32" cy="46" r="0.8" fill="white" />
+      {/* Bottom-right pink */}
+      <circle cx="40" cy="46" r="2.2" fill="#ec4899" />
+      <circle cx="40" cy="46" r="0.7" fill="white" />
+      {/* Bottom-left violet */}
+      <circle cx="22" cy="46" r="1.8" fill="#8b5cf6" />
+      <circle cx="22" cy="46" r="0.6" fill="white" />
+
+      {/* Gear shapes (left side) — brass */}
       <path
-        d="M21 37C24 34 28 39 32 36C36 33 40 38 43 35"
-        stroke="#06b6d4"
-        strokeWidth="1.5"
+        d="M17 36L15.5 34.8L16.5 33L18.5 33.5L19.5 32L18.5 30.5L19.5 29L21 30L22 28.5L21.5 27L23 26.5L23.5 28L25 28L25.5 26.5L27 27L26 28.5L26.5 30L28 30.5L27 32"
+        stroke="#d97706"
+        strokeWidth="1"
         strokeLinecap="round"
-        strokeOpacity="0.7"
+        strokeLinejoin="round"
         fill="none"
+        opacity="0.8"
       />
-
-      {/* Flask top rim - brass */}
-      <line x1="22" y1="20" x2="42" y2="20" stroke={`url(#${id}-brass)`} strokeWidth="2.5" strokeLinecap="round" />
-
-      {/* Brass frame bands on flask */}
-      <path d="M20 38H44" stroke="#d97706" strokeWidth="0.8" strokeOpacity="0.3" />
-      <path d="M22 32H42" stroke="#d97706" strokeWidth="0.6" strokeOpacity="0.2" />
-
-      {/* Rivets on flask body */}
-      <circle cx="20.5" cy="38" r="1" fill="#b45309" fillOpacity="0.6" />
-      <circle cx="43.5" cy="38" r="1" fill="#b45309" fillOpacity="0.6" />
-      <circle cx="22" cy="48" r="0.8" fill="#b45309" fillOpacity="0.5" />
-      <circle cx="42" cy="48" r="0.8" fill="#b45309" fillOpacity="0.5" />
-
-      {/* Gear mechanism stopper/cap */}
-      <rect x="26" y="15" width="12" height="5" rx="1" stroke={`url(#${id}-brass)`} strokeWidth="1.8" fill="none" />
-
-      {/* Gear on stopper */}
-      <circle cx="32" cy="14" r="3.5" stroke="#d97706" strokeWidth="1.2" fill="none" />
-      <circle cx="32" cy="14" r="1.2" fill="#d97706" />
-      {/* Gear teeth */}
-      <line x1="32" y1="10" x2="32" y2="10.5" stroke="#d97706" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="32" y1="17.5" x2="32" y2="18" stroke="#d97706" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="28" y1="14" x2="28.5" y2="14" stroke="#d97706" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="35.5" y1="14" x2="36" y2="14" stroke="#d97706" strokeWidth="1.2" strokeLinecap="round" />
-      <line x1="29.5" y1="11.5" x2="29.8" y2="11.8" stroke="#d97706" strokeWidth="1" strokeLinecap="round" />
-      <line x1="34.2" y1="16.2" x2="34.5" y2="16.5" stroke="#d97706" strokeWidth="1" strokeLinecap="round" />
-      <line x1="29.5" y1="16.5" x2="29.8" y2="16.2" stroke="#d97706" strokeWidth="1" strokeLinecap="round" />
-      <line x1="34.2" y1="11.8" x2="34.5" y2="11.5" stroke="#d97706" strokeWidth="1" strokeLinecap="round" />
-
-      {/* Neon circuit traces running down the glass */}
+      <circle cx="21.5" cy="30" r="1.2" fill="#d97706" opacity="0.9" />
+      {/* Small cyan gear */}
       <path
-        d="M26 24L28 24L28 27L30 27L30 30"
-        stroke="#06b6d4"
-        strokeWidth="0.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeOpacity="0.6"
-      />
-      <path
-        d="M38 24L36 24L36 26L34 26L34 29"
-        stroke="#8b5cf6"
-        strokeWidth="0.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeOpacity="0.5"
-      />
-      {/* Circuit node dots */}
-      <circle cx="28" cy="24" r="0.8" fill="#06b6d4" fillOpacity="0.7" />
-      <circle cx="30" cy="30" r="0.8" fill="#06b6d4" fillOpacity="0.5" />
-      <circle cx="36" cy="24" r="0.8" fill="#8b5cf6" fillOpacity="0.6" />
-      <circle cx="34" cy="29" r="0.8" fill="#8b5cf6" fillOpacity="0.4" />
-
-      {/* Glowing bubbles in liquid */}
-      <circle cx="27" cy="43" r="1.8" fill="#06b6d4" fillOpacity="0.5" />
-      <circle cx="37" cy="45" r="1.3" fill="#06b6d4" fillOpacity="0.4" />
-      <circle cx="32" cy="41" r="1" fill="#8b5cf6" fillOpacity="0.4" />
-      <circle cx="25" cy="46" r="0.7" fill="#06b6d4" fillOpacity="0.3" />
-      <circle cx="39" cy="42" r="0.8" fill="#8b5cf6" fillOpacity="0.3" />
-
-      {/* AI spark / star inside flask */}
-      <path
-        d="M32 28L33.5 32L37.5 33L33.5 34L32 38L30.5 34L26.5 33L30.5 32Z"
+        d="M23 33.5L24.5 33L25.5 34L25 35.5L23.5 35.5Z"
         fill="#06b6d4"
-        fillOpacity="0.8"
+        opacity="0.8"
       />
 
-      {/* Steam wisps from the top */}
-      <path
-        d="M28 10C28 8 29 6.5 28.5 4.5C28 2.5 27 1"
-        stroke="#06b6d4"
-        strokeWidth="0.8"
-        strokeLinecap="round"
-        fill="none"
-        strokeOpacity="0.4"
-      />
-      <path
-        d="M36 10C36 8.5 37 7 36.5 5C36 3 35.5 2"
-        stroke="#8b5cf6"
-        strokeWidth="0.7"
-        strokeLinecap="round"
-        fill="none"
-        strokeOpacity="0.3"
-      />
-      <path
-        d="M32 10.5C32 9 32.8 7.5 32.3 6"
-        stroke="#06b6d4"
-        strokeWidth="0.6"
-        strokeLinecap="round"
-        fill="none"
-        strokeOpacity="0.25"
-      />
+      {/* Pink diagonal line (right side) */}
+      <line x1="43" y1="33" x2="47" y2="37" stroke="#ec4899" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="44" y1="35" x2="47" y2="35" stroke="#ec4899" strokeWidth="1" strokeLinecap="round" opacity="0.6" />
 
-      {/* Small decorative gears on outer frame */}
-      {/* Top-right gear */}
-      <circle cx="48" cy="16" r="2.5" stroke="#d97706" strokeWidth="0.8" fill="none" strokeOpacity="0.4" />
-      <circle cx="48" cy="16" r="0.7" fill="#d97706" fillOpacity="0.4" />
-      <line x1="48" y1="13.2" x2="48" y2="13.5" stroke="#d97706" strokeWidth="0.6" strokeLinecap="round" strokeOpacity="0.4" />
-      <line x1="48" y1="18.5" x2="48" y2="18.8" stroke="#d97706" strokeWidth="0.6" strokeLinecap="round" strokeOpacity="0.4" />
-
-      {/* Bottom-left gear */}
-      <circle cx="16" cy="48" r="2" stroke="#d97706" strokeWidth="0.7" fill="none" strokeOpacity="0.4" />
-      <circle cx="16" cy="48" r="0.6" fill="#d97706" fillOpacity="0.4" />
-      <line x1="16" y1="45.7" x2="16" y2="46" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" strokeOpacity="0.4" />
-      <line x1="16" y1="50" x2="16" y2="50.3" stroke="#d97706" strokeWidth="0.5" strokeLinecap="round" strokeOpacity="0.4" />
+      {/* Sparkle particles above flask */}
+      {/* Star 1 — brass */}
+      <path d="M28 9L28.5 7.5L30 7L28.5 6.5L28 5L27.5 6.5L26 7L27.5 7.5Z" fill="#d97706" opacity="0.8" />
+      {/* Star 2 — cyan neon */}
+      <path d="M34 7L34.4 5.8L35.5 5.5L34.4 5.2L34 4L33.6 5.2L32.5 5.5L33.6 5.8Z" fill="#06b6d4" opacity="0.9" />
+      {/* Star 3 — pink */}
+      <path d="M37 10L37.3 9L38.2 8.7L37.3 8.4L37 7.5L36.7 8.4L35.8 8.7L36.7 9Z" fill="#ec4899" opacity="0.7" />
+      {/* Tiny dot sparkles */}
+      <circle cx="31" cy="10" r="0.6" fill="#8b5cf6" opacity="0.6" />
+      <circle cx="25" cy="6" r="0.5" fill="#06b6d4" opacity="0.5" />
+      <circle cx="39" cy="6" r="0.4" fill="#d97706" opacity="0.5" />
     </svg>
   )
 }
 
 /**
- * Full Steampunk x Cyberpunk logo — brass flask mark + "Tynkerlab.ai" wordmark.
- * Brass/amber gradient for "Tynker", neutral for "lab", cyan-to-violet for ".ai".
+ * Full Steampunk Cyber logo — flask mark + "tynkerlab.ai" wordmark.
+ * Brass/amber "tynkerlab" + cyan-to-violet ".ai"
  */
 export function SteampunkLogoFull({ size = 32, className, showTagline = false }: LogoFullProps) {
   return (
@@ -216,20 +125,19 @@ export function SteampunkLogoFull({ size = 32, className, showTagline = false }:
       <SteampunkLogo size={size} />
       <div className="flex flex-col">
         <span className="font-bold tracking-tight leading-none" style={{ fontSize: size * 0.55 }}>
-          <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 bg-clip-text text-transparent">
-            Tynker
+          <span className="bg-gradient-to-r from-amber-400 to-amber-500 bg-clip-text text-transparent">
+            tynkerlab
           </span>
-          <span className="text-gray-200">lab</span>
           <span className="bg-gradient-to-r from-cyan-400 to-violet-400 bg-clip-text text-transparent">
             .ai
           </span>
         </span>
         {showTagline && (
           <span
-            className="text-gray-400 dark:text-gray-500 leading-none mt-0.5"
-            style={{ fontSize: size * 0.25 }}
+            className="text-gray-400 leading-none mt-0.5"
+            style={{ fontSize: size * 0.22 }}
           >
-            AI Creative Lab — Imagine, Generate, Create
+            Create Beyond Imagination
           </span>
         )}
       </div>
