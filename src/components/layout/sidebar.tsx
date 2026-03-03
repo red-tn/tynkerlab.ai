@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useCredits } from '@/hooks/use-credits'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
-import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, TextToSpeechIcon } from '@/components/brand/studio-icons'
+import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, TextToSpeechIcon } from '@/components/brand/dynamic-icons'
 import { Coins, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 

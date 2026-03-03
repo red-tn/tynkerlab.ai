@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import { AmbientBackground } from "@/components/ambient-background";
+import { BrandProvider } from "@/components/brand/brand-provider";
 import "./globals.css";
 
 export const dynamic = 'force-dynamic';
@@ -63,6 +64,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <AmbientBackground />
+        <BrandProvider />
         <ToastProvider>
           {children}
         </ToastProvider>

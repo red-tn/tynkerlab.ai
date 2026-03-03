@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
-import { LogoFull } from '@/components/brand/logo-full'
+import { LogoFull } from '@/components/brand/dynamic-icons'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownItem, DropdownSeparator } from '@/components/ui/dropdown-menu'
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import {
   TextToImageIcon, ImageToImageIcon, TextToVideoIcon,
   ImageToVideoIcon, TextToSpeechIcon,
-} from '@/components/brand/studio-icons'
+} from '@/components/brand/dynamic-icons'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import type { ModelCategory } from '@/lib/together/models'
 import {

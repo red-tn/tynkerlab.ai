@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Logo } from '@/components/brand/logo'
+import { Logo } from '@/components/brand/dynamic-icons'
 import {
   LayoutDashboard, Users, CreditCard, MessageSquare,
   Activity, BarChart3, Settings, ArrowLeft, Home, FileText, Volume2, Handshake, Inbox, Share2, Palette,

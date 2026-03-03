@@ -1,5 +1,7 @@
+'use client'
+
 import Link from 'next/link'
-import { LogoFull } from '@/components/brand/logo-full'
+import { LogoFull } from '@/components/brand/dynamic-icons'
 
 const footerLinks = {
   product: [
