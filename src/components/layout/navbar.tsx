@@ -17,7 +17,7 @@ import {
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import type { ModelCategory } from '@/lib/together/models'
 import {
-  Menu, X, ChevronDown, Wand2, ImageIcon, Video, Coins,
+  Menu, X, ChevronDown, Wand2, ImageIcon, Video, Coins, Crown,
   LayoutDashboard, User, CreditCard, LogOut, Shield, Image, Volume2, PenTool, UserCircle
 } from 'lucide-react'
 
@@ -252,13 +252,21 @@ export function Navbar() {
               <div className="h-8 w-20 rounded-lg bg-nyx-surface animate-pulse" />
             ) : isAuthenticated ? (
               <>
-                {/* Credits Display */}
+                {/* Plan Badge + Credits Display */}
                 {profile && (
-                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nyx-surface border border-nyx-border">
-                    <Coins className="h-4 w-4 text-primary-400" />
-                    <span className="text-sm font-medium text-white">
-                      {profile.credits_balance?.toLocaleString() ?? 0}
-                    </span>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Link href="/dashboard/subscription" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nyx-surface border border-nyx-border hover:border-nyx-borderBright transition-colors">
+                      <Crown className="h-3.5 w-3.5 text-primary-400" />
+                      <span className="text-xs font-medium text-gray-300">
+                        {profile.subscription_tier === 'enterprise' ? 'Pro Creator' : profile.subscription_tier === 'pro' ? 'Creator' : 'Free'}
+                      </span>
+                    </Link>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nyx-surface border border-nyx-border">
+                      <Coins className="h-4 w-4 text-primary-400" />
+                      <span className="text-sm font-medium text-white">
+                        {profile.credits_balance?.toLocaleString() ?? 0}
+                      </span>
+                    </div>
                   </div>
                 )}
 

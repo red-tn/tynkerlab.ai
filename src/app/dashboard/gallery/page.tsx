@@ -43,6 +43,9 @@ export default function GalleryPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // Detail dialog state
+  const [detailGen, setDetailGen] = useState<Generation | null>(null)
+
   // Post/Submit to Inspirations state
   const [inspirationGen, setInspirationGen] = useState<Generation | null>(null)
   const [inspirationTitle, setInspirationTitle] = useState('')
@@ -255,7 +258,7 @@ export default function GalleryPage() {
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {generations.map((gen) => (
-              <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
+              <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden cursor-pointer" onClick={() => setDetailGen(gen)}>
                 {gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
                   <video src={gen.output_url || ''} className="w-full aspect-square object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => (e.target as HTMLVideoElement).pause()} />
                 ) : (
@@ -275,27 +278,27 @@ export default function GalleryPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         {isAdmin && (
-                          <button onClick={() => openInspirationDialog(gen, 'admin')} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Post to Inspirations">
+                          <button onClick={(e) => { e.stopPropagation(); openInspirationDialog(gen, 'admin') }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Post to Inspirations">
                             <BookOpen className="h-3 w-3 text-primary-400" />
                           </button>
                         )}
-                        <button onClick={() => openInspirationDialog(gen, 'user')} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Submit to Inspirations">
+                        <button onClick={(e) => { e.stopPropagation(); openInspirationDialog(gen, 'user') }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Submit to Inspirations">
                           <Send className="h-3 w-3 text-accent-400" />
                         </button>
-                        <button onClick={() => handleDownload(gen)} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Download">
+                        <button onClick={(e) => { e.stopPropagation(); handleDownload(gen) }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Download">
                           <Download className="h-3 w-3 text-white" />
                         </button>
                         {confirmDeleteId === gen.id ? (
                           <div className="flex items-center gap-1">
                             <button
-                              onClick={() => handleDelete(gen)}
+                              onClick={(e) => { e.stopPropagation(); handleDelete(gen) }}
                               disabled={deletingId === gen.id}
                               className="px-1.5 py-0.5 text-[10px] font-medium bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded transition-colors"
                             >
                               {deletingId === gen.id ? '...' : 'Delete'}
                             </button>
                             <button
-                              onClick={() => setConfirmDeleteId(null)}
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
                               className="px-1.5 py-0.5 text-[10px] text-gray-400 hover:text-white rounded transition-colors"
                             >
                               No
@@ -303,7 +306,7 @@ export default function GalleryPage() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => setConfirmDeleteId(gen.id)}
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(gen.id) }}
                             className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/20 transition-colors"
                             title="Delete"
                           >
@@ -347,6 +350,97 @@ export default function GalleryPage() {
           )}
         </>
       )}
+
+      {/* Generation Detail Dialog */}
+      {detailGen && (() => {
+        const modelInfo = getModelById(detailGen.model)
+        return (
+          <Dialog open onClose={() => setDetailGen(null)} title="Generation Details" size="lg">
+            <div className="space-y-4">
+              {/* Preview */}
+              <div className="rounded-lg overflow-hidden border border-nyx-border bg-black">
+                {detailGen.type.includes('video') || detailGen.type === 'ugc-avatar' ? (
+                  <video src={detailGen.output_url || ''} className="w-full max-h-[400px] object-contain" controls muted autoPlay loop playsInline />
+                ) : (
+                  <img src={detailGen.output_url || ''} alt={detailGen.prompt || ''} className="w-full max-h-[400px] object-contain" />
+                )}
+              </div>
+
+              {/* Model info */}
+              {modelInfo && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-nyx-surface border border-nyx-border">
+                  <ModelCategoryIcon category={modelInfo.category} className="h-4 w-4" />
+                  <span className="text-sm font-medium text-white">{modelInfo.displayName}</span>
+                  <span className="text-xs text-gray-500">&middot;</span>
+                  <span className="text-xs text-gray-400">{modelInfo.categoryLabel}</span>
+                </div>
+              )}
+
+              {/* Prompt */}
+              {detailGen.prompt && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Prompt</label>
+                  <p className="text-sm text-gray-300 bg-nyx-bg border border-nyx-border rounded-lg p-3 whitespace-pre-wrap">{detailGen.prompt}</p>
+                </div>
+              )}
+
+              {/* Metadata grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Type</p>
+                  <p className="text-sm text-white font-medium mt-0.5">{detailGen.type}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Credits</p>
+                  <p className="text-sm text-white font-medium mt-0.5">{detailGen.credits_used}</p>
+                </div>
+                {detailGen.width && detailGen.height && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Resolution</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.width}&times;{detailGen.height}</p>
+                  </div>
+                )}
+                {detailGen.aspect_ratio && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Aspect Ratio</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.aspect_ratio}</p>
+                  </div>
+                )}
+                {detailGen.seed != null && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Seed</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.seed}</p>
+                  </div>
+                )}
+                {detailGen.steps != null && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Steps</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.steps}</p>
+                  </div>
+                )}
+                {detailGen.duration_seconds != null && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Duration</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.duration_seconds}s</p>
+                  </div>
+                )}
+                <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Created</p>
+                  <p className="text-sm text-white font-medium mt-0.5">{formatDate(detailGen.created_at)}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setDetailGen(null)}>Close</Button>
+                <Button variant="primary" onClick={() => handleDownload(detailGen)}>
+                  <Download className="h-4 w-4 mr-1.5" /> Download
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        )
+      })()}
 
       {/* Post/Submit to Inspirations Dialog */}
       {inspirationGen && (() => {

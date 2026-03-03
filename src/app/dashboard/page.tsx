@@ -11,9 +11,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatRelativeDate } from '@/lib/utils'
 import type { Generation } from '@/types/database'
 import { useToast } from '@/components/ui/toast'
+import { Dialog } from '@/components/ui/dialog'
+import { getModelById } from '@/lib/together/models'
+import { ModelCategoryIcon } from '@/components/studio/model-icons'
+import { formatDate } from '@/lib/utils'
 import {
   Wand2, ImageIcon, Video, Image, Volume2, Coins, TrendingUp,
-  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2, UserCircle
+  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2, UserCircle, Download
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -23,6 +27,25 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [detailGen, setDetailGen] = useState<Generation | null>(null)
+
+  const handleDownload = async (gen: Generation) => {
+    if (!gen.output_url) return
+    try {
+      const response = await fetch(gen.output_url)
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `tynkerlab-${gen.id}.${gen.type.includes('video') || gen.type === 'ugc-avatar' ? 'mp4' : 'png'}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch {
+      window.open(gen.output_url, '_blank')
+    }
+  }
 
   const fetchRecent = async () => {
     if (!user) return
@@ -252,7 +275,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {recentGenerations.map((gen) => (
-              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5">
+              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer" onClick={() => setDetailGen(gen)}>
                 <div className="aspect-video bg-nyx-border relative overflow-hidden">
                   {gen.output_url ? (
                     gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
@@ -267,19 +290,19 @@ export default function DashboardPage() {
                   )}
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  {/* Delete button */}
-                  <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Action buttons */}
+                  <div className="absolute top-2 left-2 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     {confirmDeleteId === gen.id ? (
                       <div className="flex items-center gap-1 bg-black/70 rounded-lg px-2 py-1">
                         <button
-                          onClick={() => handleDeleteGeneration(gen)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteGeneration(gen) }}
                           disabled={deletingId === gen.id}
                           className="text-[10px] font-medium text-red-400 hover:text-red-300"
                         >
                           {deletingId === gen.id ? '...' : 'Delete'}
                         </button>
                         <button
-                          onClick={() => setConfirmDeleteId(null)}
+                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
                           className="text-[10px] text-gray-400 hover:text-white"
                         >
                           Cancel
@@ -287,13 +310,23 @@ export default function DashboardPage() {
                       </div>
                     ) : (
                       <button
-                        onClick={() => setConfirmDeleteId(gen.id)}
+                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(gen.id) }}
                         className="p-1.5 rounded-lg bg-black/50 hover:bg-red-500/20 transition-colors"
                         title="Delete generation"
                       >
                         <Trash2 className="h-3.5 w-3.5 text-gray-400 hover:text-red-400" />
                       </button>
                     )}
+                  </div>
+                  {/* Download button */}
+                  <div className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDownload(gen) }}
+                      className="p-1.5 rounded-lg bg-black/50 hover:bg-white/20 transition-colors"
+                      title="Download"
+                    >
+                      <Download className="h-3.5 w-3.5 text-white" />
+                    </button>
                   </div>
                 </div>
                 <div className="p-3">
@@ -311,6 +344,97 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Generation Detail Dialog */}
+      {detailGen && (() => {
+        const modelInfo = getModelById(detailGen.model)
+        return (
+          <Dialog open onClose={() => setDetailGen(null)} title="Generation Details" size="lg">
+            <div className="space-y-4">
+              {/* Preview */}
+              <div className="rounded-lg overflow-hidden border border-nyx-border bg-black">
+                {detailGen.type.includes('video') || detailGen.type === 'ugc-avatar' ? (
+                  <video src={detailGen.output_url || ''} className="w-full max-h-[400px] object-contain" controls muted autoPlay loop playsInline />
+                ) : (
+                  <img src={detailGen.output_url || ''} alt={detailGen.prompt || ''} className="w-full max-h-[400px] object-contain" />
+                )}
+              </div>
+
+              {/* Model info */}
+              {modelInfo && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-nyx-surface border border-nyx-border">
+                  <ModelCategoryIcon category={modelInfo.category} className="h-4 w-4" />
+                  <span className="text-sm font-medium text-white">{modelInfo.displayName}</span>
+                  <span className="text-xs text-gray-500">&middot;</span>
+                  <span className="text-xs text-gray-400">{modelInfo.categoryLabel}</span>
+                </div>
+              )}
+
+              {/* Prompt */}
+              {detailGen.prompt && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Prompt</label>
+                  <p className="text-sm text-gray-300 bg-nyx-bg border border-nyx-border rounded-lg p-3 whitespace-pre-wrap">{detailGen.prompt}</p>
+                </div>
+              )}
+
+              {/* Metadata grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Type</p>
+                  <p className="text-sm text-white font-medium mt-0.5">{detailGen.type}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Credits</p>
+                  <p className="text-sm text-white font-medium mt-0.5">{detailGen.credits_used}</p>
+                </div>
+                {detailGen.width && detailGen.height && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Resolution</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.width}&times;{detailGen.height}</p>
+                  </div>
+                )}
+                {detailGen.aspect_ratio && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Aspect Ratio</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.aspect_ratio}</p>
+                  </div>
+                )}
+                {detailGen.seed != null && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Seed</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.seed}</p>
+                  </div>
+                )}
+                {detailGen.steps != null && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Steps</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.steps}</p>
+                  </div>
+                )}
+                {detailGen.duration_seconds != null && (
+                  <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">Duration</p>
+                    <p className="text-sm text-white font-medium mt-0.5">{detailGen.duration_seconds}s</p>
+                  </div>
+                )}
+                <div className="p-2.5 rounded-lg bg-nyx-bg border border-nyx-border">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Created</p>
+                  <p className="text-sm text-white font-medium mt-0.5">{formatDate(detailGen.created_at)}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setDetailGen(null)}>Close</Button>
+                <Button variant="primary" onClick={() => handleDownload(detailGen)}>
+                  <Download className="h-4 w-4 mr-1.5" /> Download
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        )
+      })()}
     </div>
   )
 }

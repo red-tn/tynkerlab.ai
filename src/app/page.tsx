@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, UGCAvatarIcon, PromptMakerIcon, TextToSpeechIcon } from '@/components/brand/dynamic-icons'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
+import { SupportedModelsSection } from '@/components/landing/supported-models-section'
 import { Sparkles, Zap, Shield, ArrowRight, Star, Palette, Film, Wand2, Layers, Globe, Heart, Code, ImageIcon, Video, Copy, Volume2 } from 'lucide-react'
 import type { Prompt } from '@/types/database'
 
@@ -93,7 +94,7 @@ export default function HomePage() {
         <div className="relative max-w-6xl mx-auto px-4 py-24 md:py-36 text-center">
           <Badge variant="default" className="mb-6 gradient-primary text-white px-4 py-1.5">
             <Sparkles className="h-3 w-3 mr-1.5" />
-            54 AI Models Available
+            56+ AI Models Available
           </Badge>
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
             Create Anything with
@@ -283,6 +284,9 @@ export default function HomePage() {
           })}
         </div>
       </section>
+
+      {/* Supported Models & Features */}
+      <SupportedModelsSection />
 
       {/* How It Works */}
       <section className="py-20">

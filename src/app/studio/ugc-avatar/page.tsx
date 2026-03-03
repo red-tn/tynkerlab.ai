@@ -7,6 +7,7 @@ import { useGeneration } from '@/hooks/use-generation'
 import { ImageUpload } from '@/components/studio/image-upload'
 import { AudioUpload } from '@/components/studio/audio-upload'
 import { AudioRecorder } from '@/components/studio/audio-recorder'
+import { TTSAudioSource } from '@/components/studio/ugc-avatar/tts-audio-source'
 import { UGCSettings } from '@/components/studio/ugc-avatar/ugc-settings'
 import { CreditCostDisplay } from '@/components/studio/credit-cost-display'
 import { GenerationResult } from '@/components/studio/generation-result'
@@ -127,10 +128,11 @@ export default function UGCAvatarPage() {
             )}
 
             {audioTab === 'tts' && (
-              <div className="rounded-lg border border-nyx-border bg-nyx-surface/50 p-4 text-center">
-                <Volume2 className="h-6 w-6 text-gray-500 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">Use the <a href="/studio/text-to-speech" className="text-primary-400 hover:text-primary-300">Text to Speech</a> tool to generate audio, then upload it here.</p>
-              </div>
+              <TTSAudioSource
+                userId={user?.id}
+                onAudioReady={handleAudioUpload}
+                disabled={isGenerating}
+              />
             )}
           </div>
 
