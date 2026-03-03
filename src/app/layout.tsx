@@ -25,6 +25,14 @@ export const metadata: Metadata = {
   keywords: ["AI image generation", "AI video generation", "text to image", "text to video", "FLUX", "Imagen", "Veo", "Sora"],
   authors: [{ name: "Tynkerlab.ai" }],
   creator: "Tynkerlab.ai",
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", type: "image/png" },
+    ],
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -32,11 +40,13 @@ export const metadata: Metadata = {
     siteName: "Tynkerlab.ai",
     title: "Tynkerlab.ai — AI-Powered Image & Video Generation",
     description: "Create Beyond Imagination — Generate stunning images and videos with the latest AI models.",
+    images: [{ url: "/og-image.png", width: 1024, height: 1024, alt: "Tynkerlab.ai" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Tynkerlab.ai — AI-Powered Image & Video Generation",
     description: "Create Beyond Imagination — Generate stunning images and videos with the latest AI models.",
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
