@@ -18,7 +18,7 @@ interface PromptInputProps {
 
 export function PromptInput({
   prompt, onPromptChange, negativePrompt, onNegativePromptChange,
-  maxLength = 5000, disabled, generationType = 'image', userId,
+  maxLength = 3000, disabled, generationType = 'image', userId,
 }: PromptInputProps) {
   const [showNegative, setShowNegative] = useState(false)
   const [enhanceMode, setEnhanceMode] = useState<'conservative' | 'aggressive'>('conservative')
