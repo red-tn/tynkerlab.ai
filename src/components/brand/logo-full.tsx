@@ -10,7 +10,8 @@ interface LogoFullProps {
 }
 
 /**
- * Full Tynkerlab.ai logo — lab flask mark + "Tynkerlab.ai" wordmark + optional tagline.
+ * Full Tynkerlab.ai logo — lab flask mark + "tynkerlab.ai" wordmark + optional tagline.
+ * Matches the brand lockup: white "tynkerlab" + cyan ".ai"
  */
 export function LogoFull({ size = 32, className, showTagline = false }: LogoFullProps) {
   return (
@@ -18,16 +19,15 @@ export function LogoFull({ size = 32, className, showTagline = false }: LogoFull
       <Logo size={size} />
       <div className="flex flex-col">
         <span className="font-bold tracking-tight leading-none" style={{ fontSize: size * 0.55 }}>
-          <span className="bg-gradient-to-r from-violet-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">Tynker</span>
-          <span className="text-gray-200">lab</span>
-          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">.ai</span>
+          <span className="text-white">tynkerlab</span>
+          <span className="text-cyan-400">.ai</span>
         </span>
         {showTagline && (
           <span
-            className="text-gray-400 dark:text-gray-500 leading-none mt-0.5"
-            style={{ fontSize: size * 0.25 }}
+            className="text-gray-400 leading-none mt-0.5"
+            style={{ fontSize: size * 0.22 }}
           >
-            AI Creative Lab — Imagine, Generate, Create
+            Create Beyond Imagination
           </span>
         )}
       </div>

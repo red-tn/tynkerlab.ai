@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { adminFetch } from '@/lib/admin-fetch'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -112,11 +112,17 @@ function LogoPreviewCard({
 }
 
 export default function AdminBrandPage() {
-  const { activeSetId, setActiveSet } = useBrand()
+  const { activeSetId, setActiveSet, init } = useBrand()
   const allSets = getAvailableIconSets()
   const [previewSetId, setPreviewSetId] = useState(activeSetId)
   const [previewSize, setPreviewSize] = useState<PreviewSize>(48)
   const [showCompare, setShowCompare] = useState(false)
+
+  // Load persisted active icon set from server on mount
+  useEffect(() => { init() }, [init])
+
+  // Sync preview to active set when it loads from server
+  useEffect(() => { setPreviewSetId(activeSetId) }, [activeSetId])
 
   const previewSet = ICON_SETS[previewSetId] || ICON_SETS['default']
 
