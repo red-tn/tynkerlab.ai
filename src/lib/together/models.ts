@@ -147,6 +147,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX.2 Pro — professional-grade image generation with excellent prompt following and image-to-image.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.2-dev',
@@ -161,6 +162,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX.2 Dev — development version of FLUX.2 with strong quality at a lower price point.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.2-flex',
@@ -175,6 +177,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX.2 Flex — flexible FLUX.2 variant optimized for varied aspect ratios and image-to-image.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.2-max',
@@ -190,6 +193,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX.2 Max — highest quality FLUX.2 model with 50-step default for maximum detail.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1.1-pro',
@@ -204,6 +208,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX 1.1 Pro — proven professional FLUX model with reliable quality and image-to-image support.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1-schnell',
@@ -220,6 +225,7 @@ const IMAGE_MODELS: AIModel[] = [
     badge: 'FAST',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1-dev',
@@ -235,6 +241,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX.1 Dev — open-weight FLUX model with 28-step default for quality text-to-image generation.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1-kontext-pro',
@@ -251,6 +258,7 @@ const IMAGE_MODELS: AIModel[] = [
     badge: 'POPULAR',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1-kontext-max',
@@ -266,6 +274,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX Kontext Max — highest quality context-aware editing with maximum detail for image-to-image.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1-kontext-dev',
@@ -281,6 +290,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX Kontext Dev — development context-aware model for affordable image-to-image editing.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1-krea-dev',
@@ -296,6 +306,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX.1 Krea Dev — Krea-tuned FLUX variant with 30-step default and image-to-image support.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'black-forest-labs/FLUX.1-canny-pro',
@@ -310,6 +321,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'FLUX.1 Canny Pro — edge-guided image generation using canny edge detection for structural control.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- ByteDance ----
@@ -326,6 +338,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'ByteDance Seedream 4.0 — latest generation image model with strong text rendering and image-to-image.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'ByteDance-Seed/Seedream-3.0',
@@ -340,6 +353,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'ByteDance Seedream 3.0 — reliable image generation with image-to-image at a great price.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'ByteDance/SeedEdit',
@@ -354,6 +368,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'ByteDance SeedEdit — specialized image editing model for precise modifications to existing images.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- Qwen / Alibaba ----
@@ -370,6 +385,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'Qwen Image — affordable text-to-image generation from Alibaba Qwen team.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'Qwen/Qwen-Image-Edit',
@@ -385,6 +401,7 @@ const IMAGE_MODELS: AIModel[] = [
     badge: 'CHEAPEST',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- Wan-AI ----
@@ -401,6 +418,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'Wan 2.6 Image — Wan-AI image generation with image-to-image support.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- Ideogram ----
@@ -417,6 +435,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'Ideogram 3.0 — excellent text rendering and typography in generated images.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- HiDream ----
@@ -433,6 +452,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'HiDream I1 Full — full-quality HiDream image generation at an affordable price.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'HiDream-ai/HiDream-I1-Dev',
@@ -447,6 +467,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'HiDream I1 Dev — development HiDream model balancing quality and speed.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'HiDream-ai/HiDream-I1-Fast',
@@ -461,6 +482,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'HiDream I1 Fast — speed-optimized HiDream model for rapid generation.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- RunDiffusion ----
@@ -477,6 +499,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'Juggernaut Pro — community-favorite FLUX fine-tune with photorealistic output.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'Rundiffusion/Juggernaut-Lightning-Flux',
@@ -491,6 +514,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'Juggernaut Lightning — ultra-fast Juggernaut variant for rapid photorealistic generation.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- Stability AI ----
@@ -507,6 +531,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'Stable Diffusion 3 Medium — Stability AI next-gen architecture with improved text and composition.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
   {
     id: 'stabilityai/stable-diffusion-xl-base-1.0',
@@ -521,6 +546,7 @@ const IMAGE_MODELS: AIModel[] = [
     description: 'SDXL Base 1.0 — widely-used Stable Diffusion XL base model for general image generation.',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 
   // ---- Lykon ----
@@ -538,6 +564,7 @@ const IMAGE_MODELS: AIModel[] = [
     badge: 'CHEAPEST',
     enabled: true,
     aspectRatios: DEFAULT_IMAGE_ASPECT_RATIOS,
+    supportsNegativePrompt: true,
   },
 ]
 
