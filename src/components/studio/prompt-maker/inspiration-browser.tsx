@@ -107,11 +107,22 @@ export function InspirationBrowser({ onSelect }: InspirationBrowserProps) {
                   className="group relative aspect-square rounded-lg border border-nyx-border bg-nyx-surface overflow-hidden hover:border-primary-500/30 transition-all text-left"
                 >
                   {prompt.preview_image_url ? (
-                    <img
-                      src={prompt.preview_image_url}
-                      alt={prompt.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    prompt.model_type === 'video' ? (
+                      <video
+                        src={prompt.preview_image_url}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={prompt.preview_image_url}
+                        alt={prompt.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    )
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       {prompt.model_type === 'video' ? (
