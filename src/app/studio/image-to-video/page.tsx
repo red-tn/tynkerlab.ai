@@ -129,6 +129,7 @@ export default function ImageToVideoPage() {
             disabled={isGenerating}
             generationType="video"
             userId={user?.id}
+            showNegativePrompt={modelData?.supportsNegativePrompt ?? false}
           />
 
           <AspectRatioPicker

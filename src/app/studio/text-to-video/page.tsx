@@ -116,6 +116,7 @@ export default function TextToVideoPage() {
             disabled={isGenerating}
             generationType="video"
             userId={user?.id}
+            showNegativePrompt={modelData?.supportsNegativePrompt ?? false}
           />
 
           <AspectRatioPicker

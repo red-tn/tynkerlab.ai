@@ -14,11 +14,13 @@ interface PromptInputProps {
   disabled?: boolean
   generationType?: 'image' | 'video' | 'tts'
   userId?: string
+  showNegativePrompt?: boolean
 }
 
 export function PromptInput({
   prompt, onPromptChange, negativePrompt, onNegativePromptChange,
   maxLength = 3000, disabled, generationType = 'image', userId,
+  showNegativePrompt = true,
 }: PromptInputProps) {
   const [showNegative, setShowNegative] = useState(false)
   const [enhanceMode, setEnhanceMode] = useState<'conservative' | 'aggressive'>('conservative')
@@ -184,29 +186,33 @@ export function PromptInput({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowNegative(!showNegative)}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors"
-      >
-        {showNegative ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        Negative Prompt
-        <InfoTooltip text="Describe what you DON'T want. E.g., 'blurry, low quality, watermark, text'." />
-      </button>
-      {showNegative && (
-        <textarea
-          value={negativePrompt}
-          onChange={(e) => onNegativePromptChange(e.target.value)}
-          placeholder="What to exclude from the generation..."
-          disabled={disabled}
-          rows={2}
-          className={cn(
-            'w-full rounded-lg bg-nyx-surface border border-nyx-border px-3 py-2 text-sm text-white',
-            'placeholder:text-gray-500 resize-none animate-slide-down',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500',
-            'disabled:opacity-50'
+      {showNegativePrompt && (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowNegative(!showNegative)}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            {showNegative ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            Negative Prompt
+            <InfoTooltip text="Describe what you DON'T want. E.g., 'blurry, low quality, watermark, text'." />
+          </button>
+          {showNegative && (
+            <textarea
+              value={negativePrompt}
+              onChange={(e) => onNegativePromptChange(e.target.value)}
+              placeholder="What to exclude from the generation..."
+              disabled={disabled}
+              rows={2}
+              className={cn(
+                'w-full rounded-lg bg-nyx-surface border border-nyx-border px-3 py-2 text-sm text-white',
+                'placeholder:text-gray-500 resize-none animate-slide-down',
+                'focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500',
+                'disabled:opacity-50'
+              )}
+            />
           )}
-        />
+        </>
       )}
     </div>
   )

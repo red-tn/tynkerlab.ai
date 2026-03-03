@@ -101,6 +101,7 @@ export default function ImageToImagePage() {
             onNegativePromptChange={setNegativePrompt}
             disabled={isGenerating}
             userId={user?.id}
+            showNegativePrompt={modelData?.supportsNegativePrompt ?? false}
           />
 
           <AspectRatioPicker
