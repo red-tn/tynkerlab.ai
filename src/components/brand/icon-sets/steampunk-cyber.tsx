@@ -77,7 +77,7 @@ export function SteampunkTextToImageIcon({ size = 24, className }: IconProps) {
       <line x1="11.2" y1="5" x2="11.5" y2="5" stroke="#d97706" strokeWidth="0.6" strokeLinecap="round" />
 
       {/* Steam wisp from top */}
-      <path d="M14.5 3.5C14.5 2.8 15 2.5 15.3 2C15.6 1.5 15.2 1" stroke="#06b6d4" strokeWidth="0.5" strokeLinecap="round" fill="none" strokeOpacity="0.5" />
+      <path d="M14.5 3.5C14.5 2.8 15 2.5 15.3 2C15.6 1.5 15.2 1 15.4 0.5" stroke="#06b6d4" strokeWidth="0.5" strokeLinecap="round" fill="none" strokeOpacity="0.5" />
       <path d="M15.8 3.2C15.8 2.6 16.2 2.3 16.4 1.9" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" fill="none" strokeOpacity="0.35" />
 
       {/* Flash/shutter button - neon accent */}
@@ -441,7 +441,7 @@ export function SteampunkUGCAvatarIcon({ size = 24, className }: IconProps) {
       <path d="M6 10H7L7.5 10.5" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" strokeOpacity="0.6" />
 
       {/* Steam wisp */}
-      <path d="M14 3C14 2.3 14.5 1.8 14.3 1" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" fill="none" strokeOpacity="0.4" />
+      <path d="M14 3C14 2.3 14.5 1.8 14.3 1.2" stroke="#06b6d4" strokeWidth="0.4" strokeLinecap="round" fill="none" strokeOpacity="0.4" />
     </svg>
   )
 }
