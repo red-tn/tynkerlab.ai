@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { account } from '@/lib/appwrite/client'
+import { account, persistJWT } from '@/lib/appwrite/client'
 import { OAuthProvider } from 'appwrite'
 import { Logo } from '@/components/brand/logo'
 import { Button } from '@/components/ui/button'
@@ -37,6 +37,12 @@ function LoginForm() {
     try {
       await account.createEmailPasswordSession(email, password)
       await account.get()
+      // Create a JWT and store it so the session persists across
+      // page loads on mobile Safari (where cross-origin cookies are blocked)
+      try {
+        const jwt = await account.createJWT()
+        persistJWT(jwt.jwt)
+      } catch {}
       // Use replace so the login page isn't in back-button history
       window.location.replace(redirect)
       return // Don't run finally — page is navigating away

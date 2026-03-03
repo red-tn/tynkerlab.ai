@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { account } from '@/lib/appwrite/client'
+import { account, persistJWT } from '@/lib/appwrite/client'
 import { ID, OAuthProvider } from 'appwrite'
 import { Logo } from '@/components/brand/logo'
 import { Button } from '@/components/ui/button'
@@ -42,6 +42,10 @@ function SignupForm() {
       await account.create(ID.unique(), email, password, name)
       await account.createEmailPasswordSession(email, password)
       await account.get()
+      try {
+        const jwt = await account.createJWT()
+        persistJWT(jwt.jwt)
+      } catch {}
 
       // Create profile via API route
       await fetch('/api/profile', {
