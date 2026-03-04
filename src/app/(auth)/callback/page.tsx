@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { Logo } from '@/components/brand/logo'
+import { Logo } from '@/components/brand/dynamic-icons'
 
 function CallbackHandler() {
   const searchParams = useSearchParams()

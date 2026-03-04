@@ -12,14 +12,14 @@ interface BrandStore {
 }
 
 export const useBrand = create<BrandStore>((set, get) => ({
-  activeSetId: 'default',
+  activeSetId: 'steampunk-amber',
   _initialized: false,
   setActiveSet: (id: string) => {
     if (ICON_SETS[id]) {
       set({ activeSetId: id })
     }
   },
-  getIcons: () => ICON_SETS[get().activeSetId] || ICON_SETS['default'],
+  getIcons: () => ICON_SETS[get().activeSetId] || ICON_SETS['steampunk-amber'],
   init: async () => {
     if (get()._initialized) return
     set({ _initialized: true })

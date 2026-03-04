@@ -99,15 +99,15 @@ export default function AdminAnalyticsPage() {
         <AreaChart data={pageViews}>
           <defs>
             <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+              <stop offset="5%" stopColor="var(--color-primary-500)" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="var(--color-primary-500)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e1e2e" />
           <XAxis dataKey="date" stroke="#6b7280" tick={{ fontSize: 11 }} />
           <YAxis stroke="#6b7280" tick={{ fontSize: 11 }} />
           <Tooltip contentStyle={{ backgroundColor: '#12121a', border: '1px solid #2a2a3e', borderRadius: 8, fontSize: 12 }} />
-          <Area type="monotone" dataKey="views" stroke="#7c3aed" fillOpacity={1} fill="url(#viewsGrad)" />
+          <Area type="monotone" dataKey="views" stroke="var(--color-primary-500)" fillOpacity={1} fill="url(#viewsGrad)" />
         </AreaChart>
       </ChartWrapper>
     </div>

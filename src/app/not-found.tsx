@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Logo } from '@/components/brand/logo'
+import { Logo } from '@/components/brand/dynamic-icons'
 import { Home, ArrowLeft } from 'lucide-react'
 
 export default function NotFound() {

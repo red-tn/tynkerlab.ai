@@ -1,4 +1,6 @@
-import { Logo } from '@/components/brand/logo'
+'use client'
+
+import { Logo } from '@/components/brand/dynamic-icons'
 
 export default function RootLoading() {
   return (

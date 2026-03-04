@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useBrand } from '@/hooks/use-brand'
 
 const DESKTOP_STAR_COUNT = 100
 const MOBILE_STAR_COUNT = 50
-const COLORS = ['#3b82f6', '#38bdf8', '#6366f1', '#8b5cf6', '#60a5fa', '#a78bfa']
 
 interface Star {
   x: number
@@ -19,6 +19,8 @@ interface Star {
 
 export function AmbientBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const icons = useBrand((s) => s.getIcons())
+  const colors = icons.colors.ambientStars
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -43,7 +45,7 @@ export function AmbientBackground() {
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         size: 0.8 + Math.random() * 1.5,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        color: colors[Math.floor(Math.random() * colors.length)],
         dx: (Math.random() - 0.5) * 0.15,
         dy: (Math.random() - 0.5) * 0.15,
         twinkleSpeed: 0.3 + Math.random() * 0.7,
@@ -93,7 +95,7 @@ export function AmbientBackground() {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', resize)
     }
-  }, [])
+  }, [colors])
 
   return (
     <div className="aurora-bg" aria-hidden="true">

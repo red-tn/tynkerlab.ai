@@ -7,8 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useBrand } from '@/hooks/use-brand'
 import { ICON_SETS, getAvailableIconSets, type IconSet } from '@/lib/brand'
-import { Check, Download, Palette, Eye, Grid3X3, LayoutGrid, Sparkles, Image as ImageIcon } from 'lucide-react'
-import Image from 'next/image'
+import { Check, Download, Palette, Eye, Grid3X3, Sparkles } from 'lucide-react'
 
 type PreviewSize = 20 | 28 | 48 | 64
 
@@ -126,7 +125,7 @@ export default function AdminBrandPage() {
   // Sync preview to active set when it loads from server
   useEffect(() => { setPreviewSetId(activeSetId) }, [activeSetId])
 
-  const previewSet = ICON_SETS[previewSetId] || ICON_SETS['default']
+  const previewSet = ICON_SETS[previewSetId] || ICON_SETS['steampunk-amber']
 
   const handleActivate = useCallback((id: string) => {
     setActiveSet(id)
@@ -414,88 +413,6 @@ export default function AdminBrandPage() {
         </>
       )}
 
-      {/* Brand Asset Gallery (PNG assets) */}
-      <div>
-        <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <ImageIcon className="h-4 w-4" />
-          Brand Assets
-        </h2>
-        <div className="space-y-6">
-          {/* Logos */}
-          <div>
-            <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Logo Lockups</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { src: '/brand/lockup-horizontal.png', label: 'Horizontal (Light)', bg: 'bg-white' },
-                { src: '/brand/lockup-horizontal-dark.png', label: 'Horizontal (Dark)', bg: 'bg-nyx-bg' },
-                { src: '/brand/lockup-stacked.png', label: 'Stacked (Light)', bg: 'bg-white' },
-                { src: '/brand/lockup-stacked-dark.png', label: 'Stacked (Dark)', bg: 'bg-nyx-bg' },
-              ].map(({ src, label, bg }) => (
-                <div key={src} className="group relative rounded-xl border border-nyx-border overflow-hidden">
-                  <div className={`${bg} p-6 flex items-center justify-center min-h-[120px]`}>
-                    <Image src={src} alt={label} width={300} height={150} className="object-contain max-h-[100px]" />
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2 bg-nyx-surface border-t border-nyx-border">
-                    <span className="text-xs text-gray-400">{label}</span>
-                    <a href={src} download className="p-1 rounded-md hover:bg-primary-500/10 transition-colors">
-                      <Download className="h-3 w-3 text-gray-400" />
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Icon Marks */}
-          <div>
-            <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Icon Marks</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { src: '/brand/app-icon.png', label: 'App Icon', bg: 'bg-nyx-bg' },
-                { src: '/brand/app-icon-dark.png', label: 'App Icon (Dark)', bg: 'bg-nyx-bg' },
-                { src: '/brand/icon-mark.png', label: 'Icon Mark', bg: 'bg-white' },
-                { src: '/brand/social-avatar.png', label: 'Social Avatar', bg: 'bg-nyx-bg' },
-              ].map(({ src, label, bg }) => (
-                <div key={src} className="group relative rounded-xl border border-nyx-border overflow-hidden">
-                  <div className={`${bg} p-4 flex items-center justify-center aspect-square`}>
-                    <Image src={src} alt={label} width={128} height={128} className="object-contain rounded-lg" />
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2 bg-nyx-surface border-t border-nyx-border">
-                    <span className="text-xs text-gray-400">{label}</span>
-                    <a href={src} download className="p-1 rounded-md hover:bg-primary-500/10 transition-colors">
-                      <Download className="h-3 w-3 text-gray-400" />
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Monochrome */}
-          <div>
-            <h3 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Monochrome Variants</h3>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { src: '/brand/mono-white.png', label: 'White', bg: 'bg-nyx-bg' },
-                { src: '/brand/mono-black.png', label: 'Black', bg: 'bg-white' },
-                { src: '/brand/mono-primary.png', label: 'Primary', bg: 'bg-nyx-bg' },
-              ].map(({ src, label, bg }) => (
-                <div key={src} className="group relative rounded-xl border border-nyx-border overflow-hidden">
-                  <div className={`${bg} p-4 flex items-center justify-center aspect-square`}>
-                    <Image src={src} alt={label} width={96} height={96} className="object-contain" />
-                  </div>
-                  <div className="flex items-center justify-between px-3 py-2 bg-nyx-surface border-t border-nyx-border">
-                    <span className="text-xs text-gray-400">{label}</span>
-                    <a href={src} download className="p-1 rounded-md hover:bg-primary-500/10 transition-colors">
-                      <Download className="h-3 w-3 text-gray-400" />
-                    </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

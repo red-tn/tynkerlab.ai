@@ -1,9 +1,11 @@
-export { Logo } from './logo'
-export { LogoFull } from './logo-full'
 export {
+  Logo,
+  LogoFull,
   TextToImageIcon,
   ImageToImageIcon,
   TextToVideoIcon,
   ImageToVideoIcon,
+  UGCAvatarIcon,
+  PromptMakerIcon,
   TextToSpeechIcon,
-} from './studio-icons'
+} from './dynamic-icons'

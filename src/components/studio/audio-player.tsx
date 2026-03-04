@@ -43,6 +43,7 @@ export function AudioPlayer({ src, mimeType = 'audio/mpeg', format = 'mp3', onDo
     ctx.clearRect(0, 0, w, h)
 
     const progress = duration > 0 ? currentTime / duration : 0
+    const glowRgb = getComputedStyle(document.documentElement).getPropertyValue('--glow-primary').trim() || '245, 158, 11'
 
     for (let i = 0; i < barCount; i++) {
       // Pseudo-random deterministic heights based on index
@@ -55,7 +56,7 @@ export function AudioPlayer({ src, mimeType = 'audio/mpeg', format = 'mp3', onDo
       const isPast = (i / barCount) <= progress
 
       ctx.fillStyle = isPast
-        ? 'rgba(59, 130, 246, 0.8)'
+        ? `rgba(${glowRgb}, 0.8)`
         : 'rgba(255, 255, 255, 0.15)'
 
       ctx.beginPath()

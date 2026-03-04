@@ -292,8 +292,8 @@ export default function DashboardPage() {
                     <circle cx="18" cy="18" r="15.5" fill="none" stroke="url(#credit-grad)" strokeWidth="3" strokeDasharray={`${creditsPercent} ${100 - creditsPercent}`} strokeLinecap="round" />
                     <defs>
                       <linearGradient id="credit-grad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" />
-                        <stop offset="100%" stopColor="#38bdf8" />
+                        <stop offset="0%" stopColor="var(--gradient-from)" />
+                        <stop offset="100%" stopColor="var(--gradient-to)" />
                       </linearGradient>
                     </defs>
                   </svg>
