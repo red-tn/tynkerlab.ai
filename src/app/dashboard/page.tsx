@@ -97,6 +97,17 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchRecent() }, [user])
 
+  // Check if daily credits already claimed today
+  useEffect(() => {
+    if (!user || profile?.subscription_tier !== 'free') return
+    fetch(`/api/credits/checkin?userId=${user.id}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.claimed) setCheckinClaimed(true)
+      })
+      .catch(() => {})
+  }, [user, profile?.subscription_tier])
+
   const handleDeleteGeneration = async (gen: Generation) => {
     if (!user) return
     setDeletingId(gen.id)

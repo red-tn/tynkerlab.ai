@@ -4,6 +4,30 @@ import { addCredits } from '@/lib/credits'
 
 const DAILY_CREDITS = 3
 
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('last_checkin_date')
+      .eq('user_id', userId)
+      .single()
+
+    const today = new Date().toISOString().split('T')[0]
+    const claimed = profile?.last_checkin_date === today
+
+    return NextResponse.json({ claimed })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { userId } = await request.json()
