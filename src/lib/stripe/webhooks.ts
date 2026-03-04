@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getTierByPriceId, getPackByPriceId } from './products'
 import { addCredits } from '@/lib/credits'
+import { getAffiliateByCode, getAffiliateByPromotionCodeId, recordCommission } from '@/lib/affiliates'
 
 export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId
@@ -53,6 +54,14 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
           })
           .eq('id', profiles[0].id)
       }
+
+      // Affiliate commission on initial subscription
+      attributeAffiliateCommission(
+        userId,
+        session.id,
+        session.amount_total || 0,
+        session,
+      ).catch(() => {})
     }
   } else if (session.mode === 'payment') {
     // One-time credit pack purchase
@@ -75,6 +84,14 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
       if (packError) throw packError
 
       await addCredits(userId, pack.credits, `Credit pack: ${pack.name} (${pack.credits} credits)`)
+
+      // Affiliate commission on credit pack purchase
+      attributeAffiliateCommission(
+        userId,
+        session.id,
+        session.amount_total || 0,
+        session,
+      ).catch(() => {})
     }
   }
 }
@@ -159,6 +176,13 @@ export async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     const tier = getTierByPriceId(subs[0].stripe_price_id)
     if (tier) {
       await addCredits(subs[0].user_id, tier.credits, `Monthly renewal: ${tier.name}`)
+
+      // Recurring affiliate commission
+      attributeAffiliateCommission(
+        subs[0].user_id,
+        inv.id,
+        inv.amount_paid || 0,
+      ).catch(() => {})
     }
   }
 }
@@ -190,6 +214,57 @@ export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
         .from('profiles')
         .update({ subscription_status: 'past_due' })
         .eq('id', profiles[0].id)
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Affiliate commission attribution
+// ---------------------------------------------------------------------------
+async function attributeAffiliateCommission(
+  userId: string,
+  orderId: string,
+  amountCents: number,
+  session?: Stripe.Checkout.Session | null,
+) {
+  if (amountCents <= 0) return
+  const saleAmount = amountCents / 100
+
+  const supabase = createAdminClient()
+
+  // Strategy 1: cookie-based — check profiles.referred_by
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('referred_by')
+    .eq('user_id', userId)
+    .single()
+
+  if (profile?.referred_by) {
+    const affiliate = await getAffiliateByCode(profile.referred_by)
+    if (affiliate && affiliate.status === 'active') {
+      await recordCommission(affiliate.id, orderId, saleAmount)
+      return
+    }
+  }
+
+  // Strategy 2: promo-code-based — check if session used a promotion code
+  if (session) {
+    try {
+      const { stripe } = await import('./client')
+      const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+        expand: ['total_details.breakdown'],
+      }) as any
+      const discount = fullSession.total_details?.breakdown?.discounts?.[0]
+      const promoCodeId = discount?.discount?.promotion_code
+      if (promoCodeId && typeof promoCodeId === 'string') {
+        const affiliate = await getAffiliateByPromotionCodeId(promoCodeId)
+        if (affiliate && affiliate.status === 'active') {
+          await recordCommission(affiliate.id, orderId, saleAmount)
+          return
+        }
+      }
+    } catch {
+      // Promo code lookup failed — not critical
     }
   }
 }

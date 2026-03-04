@@ -1,8 +1,10 @@
 import { createAdminClient } from '@/lib/supabase/server'
+import { getServerStripe } from '@/lib/stripe/client'
 
 export const AFFILIATE_COMMISSION_RATE = 0.10
 export const COOKIE_DURATION_DAYS = 30
 export const MIN_PAYOUT = 25
+export const AFFILIATE_COOKIE_NAME = 'tynk_affiliate_ref'
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
@@ -50,6 +52,39 @@ export async function createAffiliate(userId: string) {
     attempts++
   }
 
+  // Create Stripe promotion code for this affiliate
+  let stripePromotionCodeId: string | null = null
+  let stripeCouponId: string | null = null
+  try {
+    const stripe = getServerStripe()
+
+    // Find or create the shared affiliate coupon (10% off first payment)
+    const coupons = await stripe.coupons.list({ limit: 100 })
+    let coupon = coupons.data.find(
+      (c: any) => c.metadata?.affiliate_coupon === 'true' && c.valid
+    )
+    if (!coupon) {
+      coupon = await stripe.coupons.create({
+        percent_off: 10,
+        duration: 'once',
+        name: 'Affiliate 10% Off',
+        metadata: { affiliate_coupon: 'true' },
+      })
+    }
+    stripeCouponId = coupon.id
+
+    // Create a unique promotion code for this affiliate
+    const promoCode = await stripe.promotionCodes.create({
+      promotion: { type: 'coupon', coupon: coupon.id },
+      code: code.toUpperCase(),
+      metadata: { affiliate_user_id: userId },
+    })
+    stripePromotionCodeId = promoCode.id
+  } catch (err) {
+    // Stripe failure should not block enrollment
+    console.error('Failed to create Stripe promotion code for affiliate:', err)
+  }
+
   const { data } = await supabase
     .from('affiliates')
     .insert({
@@ -62,10 +97,22 @@ export async function createAffiliate(userId: string) {
       total_earnings: 0,
       pending_balance: 0,
       paid_out: 0,
+      stripe_promotion_code_id: stripePromotionCodeId,
+      stripe_coupon_id: stripeCouponId,
     })
     .select()
     .single()
 
+  return data
+}
+
+export async function getAffiliateByPromotionCodeId(promotionCodeId: string) {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('affiliates')
+    .select('*')
+    .eq('stripe_promotion_code_id', promotionCodeId)
+    .single()
   return data
 }
 
@@ -116,6 +163,18 @@ export async function recordSignup(affiliateId: string, referredUserId: string) 
 
 export async function recordCommission(affiliateId: string, orderId: string, saleAmount: number) {
   const supabase = createAdminClient()
+
+  // Dedup: check if commission already recorded for this order
+  const { data: existing } = await supabase
+    .from('affiliate_events')
+    .select('id')
+    .eq('affiliate_id', affiliateId)
+    .eq('order_id', orderId)
+    .eq('type', 'commission')
+    .limit(1)
+
+  if (existing && existing.length > 0) return // Already credited
+
   const commission = saleAmount * AFFILIATE_COMMISSION_RATE
 
   const { data: affiliate } = await supabase

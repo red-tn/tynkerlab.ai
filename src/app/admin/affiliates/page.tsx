@@ -120,10 +120,10 @@ export default function AdminAffiliatesPage() {
         </div>
       ) : (
         <div className="bg-nyx-surface border border-nyx-border rounded-xl overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+          <table className="w-full min-w-[1100px]">
             <thead>
               <tr className="border-b border-nyx-border">
-                {['User ID', 'Code', 'Status', 'Clicks', 'Signups', 'Conversions', 'Earnings', 'Pending', 'Actions'].map((h) => (
+                {['User ID', 'Code', 'Status', 'Payment', 'Promo', 'Clicks', 'Signups', 'Conversions', 'Earnings', 'Pending', 'Actions'].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase">{h}</th>
                 ))}
               </tr>
@@ -137,6 +137,20 @@ export default function AdminAffiliatesPage() {
                     <Badge variant={a.status === 'active' ? 'success' : a.status === 'suspended' ? 'error' : 'warning'}>
                       {a.status}
                     </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {a.payment_method ? (
+                      <span className="text-white capitalize">{a.payment_method}: <span className="text-gray-400">{a.payment_handle}</span></span>
+                    ) : (
+                      <span className="text-gray-600 italic">Not set</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {a.stripe_promotion_code_id ? (
+                      <Badge variant="default">{a.code?.toUpperCase()}</Badge>
+                    ) : (
+                      <span className="text-gray-600">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-white">{a.total_clicks || 0}</td>
                   <td className="px-4 py-3 text-sm text-white">{a.total_signups || 0}</td>
@@ -182,6 +196,18 @@ export default function AdminAffiliatesPage() {
             <p className="text-sm text-gray-400">
               Affiliate: <span className="text-white font-mono">{payoutTarget.code}</span>
             </p>
+            {payoutTarget.payment_method ? (
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-sm text-green-300">
+                  Pay via <span className="font-semibold capitalize">{payoutTarget.payment_method}</span>: <span className="font-mono">{payoutTarget.payment_handle}</span>
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+                <p className="text-xs text-red-300">No payment method set! Ask the affiliate to configure their payout info first.</p>
+              </div>
+            )}
             <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
               <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0" />
               <p className="text-xs text-yellow-300">This will mark the balance as paid. Process the actual payment separately.</p>

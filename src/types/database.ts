@@ -34,6 +34,7 @@ export interface Profile extends DbRow {
   bio: string | null
   location: string | null
   website: string | null
+  referred_by: string | null
 }
 
 export interface ProfileCreate {
@@ -60,6 +61,7 @@ export interface ProfileCreate {
   bio?: string | null
   location?: string | null
   website?: string | null
+  referred_by?: string | null
 }
 
 export type ProfileUpdate = Partial<Omit<ProfileCreate, 'user_id'>>
@@ -371,6 +373,10 @@ export interface Affiliate extends DbRow {
   total_earnings: number
   pending_balance: number
   paid_out: number
+  payment_method: string | null
+  payment_handle: string | null
+  stripe_promotion_code_id: string | null
+  stripe_coupon_id: string | null
 }
 
 export interface AffiliateEvent {

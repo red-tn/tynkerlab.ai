@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
+import type { Affiliate } from '@/types/database'
 import { LogoFull } from '@/components/brand/dynamic-icons'
 import { Button } from '@/components/ui/button'
 import { Avatar } from '@/components/ui/avatar'
@@ -18,7 +19,7 @@ import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import type { ModelCategory } from '@/lib/together/models'
 import {
   Menu, X, ChevronDown, Wand2, ImageIcon, Video, Coins, Crown,
-  LayoutDashboard, User, CreditCard, LogOut, Shield, Image, Volume2, PenTool, UserCircle
+  LayoutDashboard, User, CreditCard, LogOut, Shield, Image, Volume2, PenTool, UserCircle, DollarSign
 } from 'lucide-react'
 
 const studioLinks = [
@@ -88,6 +89,16 @@ export function Navbar() {
   const megaRef = useRef<HTMLDivElement>(null)
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const [affiliate, setAffiliate] = useState<Affiliate | null>(null)
+
+  useEffect(() => {
+    if (!isAuthenticated) { setAffiliate(null); return }
+    fetch('/api/affiliates')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.enrolled) setAffiliate(data.affiliate) })
+      .catch(() => {})
+  }, [isAuthenticated])
 
   const clearTimers = useCallback(() => {
     if (openTimer.current) { clearTimeout(openTimer.current); openTimer.current = null }
@@ -267,6 +278,14 @@ export function Navbar() {
                         {profile.credits_balance?.toLocaleString() ?? 0}
                       </span>
                     </div>
+                    {affiliate && (
+                      <Link href="/dashboard/affiliates" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-nyx-surface border border-nyx-border hover:border-green-500/40 transition-colors">
+                        <DollarSign className="h-3.5 w-3.5 text-green-400" />
+                        <span className="text-xs font-medium text-green-400">
+                          ${(affiliate.pending_balance || 0).toFixed(2)}
+                        </span>
+                      </Link>
+                    )}
                   </div>
                 )}
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
+import { getAffiliateByCode, recordSignup, AFFILIATE_COOKIE_NAME } from '@/lib/affiliates'
 
 export async function GET(request: Request) {
   try {
@@ -56,6 +58,10 @@ export async function POST(request: Request) {
     }
     const supabase = createAdminClient()
 
+    // Check for affiliate referral cookie
+    const cookieStore = await cookies()
+    const refCode = cookieStore.get(AFFILIATE_COOKIE_NAME)?.value || null
+
     // Create profile document
     const { data: profile, error } = await supabase
       .from('profiles')
@@ -72,12 +78,22 @@ export async function POST(request: Request) {
         total_images: 0,
         total_videos: 0,
         total_avatars: 0,
+        referred_by: refCode,
       })
       .select()
       .single()
 
     if (error) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    // Record affiliate signup event (fire-and-forget)
+    if (refCode) {
+      getAffiliateByCode(refCode).then((affiliate) => {
+        if (affiliate && affiliate.status === 'active') {
+          recordSignup(affiliate.id, userId).catch(() => {})
+        }
+      }).catch(() => {})
     }
 
     return NextResponse.json(profile)

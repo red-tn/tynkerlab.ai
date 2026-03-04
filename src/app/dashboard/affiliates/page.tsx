@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   Link2, Copy, Check, MousePointerClick, UserPlus, DollarSign,
-  TrendingUp, ArrowRight, Sparkles, Clock
+  TrendingUp, ArrowRight, Sparkles, Clock, Tag, Wallet, Save
 } from 'lucide-react'
 
 export default function AffiliateDashboardPage() {
@@ -19,6 +19,10 @@ export default function AffiliateDashboardPage() {
   const [affiliate, setAffiliate] = useState<any>(null)
   const [events, setEvents] = useState<any[]>([])
   const [copied, setCopied] = useState(false)
+  const [copiedPromo, setCopiedPromo] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('')
+  const [paymentHandle, setPaymentHandle] = useState('')
+  const [savingPayment, setSavingPayment] = useState(false)
 
   const fetchData = async () => {
     if (!user) return
@@ -30,6 +34,10 @@ export default function AffiliateDashboardPage() {
         setEnrolled(data.enrolled)
         setAffiliate(data.affiliate || null)
         setEvents(data.events || [])
+        if (data.affiliate) {
+          setPaymentMethod(data.affiliate.payment_method || '')
+          setPaymentHandle(data.affiliate.payment_handle || '')
+        }
       }
     } catch (err) {
       console.error(err)
@@ -74,6 +82,40 @@ export default function AffiliateDashboardPage() {
     setCopied(true)
     addToast('Referral link copied to clipboard!')
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const promoCode = affiliate?.code?.toUpperCase() || ''
+
+  const handleCopyPromo = () => {
+    navigator.clipboard.writeText(promoCode)
+    setCopiedPromo(true)
+    addToast('Promo code copied!')
+    setTimeout(() => setCopiedPromo(false), 2000)
+  }
+
+  const handleSavePayment = async () => {
+    if (!paymentMethod || !paymentHandle.trim()) {
+      addToast('Please select a method and enter your handle.', 'error')
+      return
+    }
+    setSavingPayment(true)
+    try {
+      const res = await fetch('/api/affiliates', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payment_method: paymentMethod, payment_handle: paymentHandle.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        addToast(data.error || 'Failed to save', 'error')
+      } else {
+        addToast('Payment method saved!')
+      }
+    } catch {
+      addToast('Failed to save payment method', 'error')
+    } finally {
+      setSavingPayment(false)
+    }
   }
 
   if (loading) {
@@ -137,6 +179,64 @@ export default function AffiliateDashboardPage() {
           </Button>
         </div>
         <p className="text-xs text-gray-500 mt-2">Share this link to earn 10% commission on every sale. 30-day cookie window.</p>
+      </div>
+
+      {/* Promo Code */}
+      {affiliate?.stripe_promotion_code_id && (
+        <div className="bg-nyx-surface border border-nyx-border rounded-xl p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Tag className="h-5 w-5 text-accent-400" />
+            <h2 className="text-lg font-semibold text-white">Discount Code</h2>
+          </div>
+          <div className="flex gap-2">
+            <input
+              readOnly
+              value={promoCode}
+              className="flex-1 px-4 py-2.5 rounded-lg bg-nyx-bg border border-nyx-border text-sm text-white font-mono tracking-widest"
+            />
+            <Button variant="secondary" onClick={handleCopyPromo}>
+              {copiedPromo ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copiedPromo ? 'Copied' : 'Copy'}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Your referrals get 10% off their first payment when they use this code at checkout.</p>
+        </div>
+      )}
+
+      {/* Payment Method */}
+      <div className="bg-nyx-surface border border-nyx-border rounded-xl p-6">
+        <div className="flex items-center gap-2 mb-3">
+          <Wallet className="h-5 w-5 text-green-400" />
+          <h2 className="text-lg font-semibold text-white">Payout Method</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-3 items-end">
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="px-3 py-2.5 rounded-lg bg-nyx-bg border border-nyx-border text-sm text-white"
+            >
+              <option value="">Select...</option>
+              <option value="venmo">Venmo</option>
+              <option value="paypal">PayPal</option>
+              <option value="zelle">Zelle</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 mb-1 block">Handle / Email</label>
+            <input
+              value={paymentHandle}
+              onChange={(e) => setPaymentHandle(e.target.value)}
+              placeholder={paymentMethod === 'zelle' ? 'email@example.com' : '@username'}
+              className="w-full px-4 py-2.5 rounded-lg bg-nyx-bg border border-nyx-border text-sm text-white"
+            />
+          </div>
+          <Button variant="primary" onClick={handleSavePayment} loading={savingPayment}>
+            <Save className="h-4 w-4 mr-1" /> Save
+          </Button>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">Set how you want to receive payouts (min $25). Payouts are processed manually by our team.</p>
       </div>
 
       {/* Stats */}
