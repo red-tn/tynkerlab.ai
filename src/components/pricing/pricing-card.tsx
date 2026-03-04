@@ -38,13 +38,13 @@ export function PricingCard({ tier, annual, onSelect, currentTier, loading }: Pr
     )}>
       {/* Badges */}
       {isCurrent ? (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <Badge variant="success" className="px-3 py-1 text-xs font-semibold shadow-lg">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
+          <span className="inline-flex items-center rounded-full bg-[#0a0a0f] px-3 py-1 text-xs font-semibold shadow-lg border border-green-500/40 text-green-400">
             <Crown className="h-3 w-3 mr-1" /> Your Plan
-          </Badge>
+          </span>
         </div>
       ) : tier.badge ? (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
           <Badge variant="default" className="gradient-primary text-white px-3 py-1 text-xs font-semibold shadow-lg">
             {tier.badge}
           </Badge>
