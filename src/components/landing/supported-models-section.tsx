@@ -272,7 +272,7 @@ function UGCAvatarContent() {
 
         <div className="flex items-center justify-between mb-6 px-3 py-2.5 rounded-lg bg-primary-500/5 border border-primary-500/10">
           <span className="text-xs text-gray-400">Pricing</span>
-          <span className="text-sm font-semibold text-primary-300">40 credits / minute</span>
+          <span className="text-sm font-semibold text-primary-300">120 credits / minute</span>
         </div>
 
         <Link href="/studio/ugc-avatar">
