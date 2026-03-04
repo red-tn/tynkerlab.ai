@@ -36,7 +36,7 @@ const CATEGORIES: { value: PromptCategory; label: string }[] = [
 ]
 
 export default function DashboardPage() {
-  const { user, profile } = useAuth()
+  const { user, profile, refreshProfile } = useAuth()
   const { addToast } = useToast()
   const [recentGenerations, setRecentGenerations] = useState<Generation[]>([])
   const [loading, setLoading] = useState(true)
@@ -214,6 +214,7 @@ export default function DashboardPage() {
       } else if (data.credits_granted) {
         setCheckinClaimed(true)
         addToast(`+${data.credits_granted} daily credits claimed!`, 'success')
+        await refreshProfile()
       } else if (data.error) {
         addToast(data.error, 'error')
       }
