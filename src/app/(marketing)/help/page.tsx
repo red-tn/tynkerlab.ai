@@ -26,15 +26,15 @@ const SECTIONS = [
     items: [
       {
         question: 'How do I create an account?',
-        answer: 'Click "Get Started" on the homepage or navigate to /signup. You can sign up with email/password, Google, or GitHub. You\'ll receive 50 free credits upon signup.',
+        answer: 'Click "Get Started" on the homepage or navigate to /signup. You can sign up with email/password, Google, or GitHub. Free accounts earn 3 credits daily via check-in.',
       },
       {
         question: 'What are credits and how do they work?',
-        answer: 'Credits are the currency used to generate content. Each generation costs a certain number of credits depending on the tool and model used. Free accounts get 50 credits, Pro gets 2,000/month, and Enterprise gets 10,000/month.',
+        answer: 'Credits are the currency used to generate content. Each generation costs a certain number of credits depending on the tool and model used. Free accounts earn 3 credits daily via check-in, Creator gets 2,000/month, and Pro Creator gets 15,000/month.',
       },
       {
         question: 'How do I get more credits?',
-        answer: 'You can purchase credit packs from the pricing page ($5, $20, $50, or $125), or upgrade your subscription to Pro or Enterprise for monthly credit allotments.',
+        answer: 'You can purchase credit packs from the pricing page ($5, $20, $60, or $125), or upgrade your subscription to Creator or Pro Creator for monthly credit allotments.',
       },
     ] as FAQItem[],
   },
@@ -95,7 +95,7 @@ const SECTIONS = [
     items: [
       {
         question: 'What plans are available?',
-        answer: 'Free (50 credits, basic features), Pro ($20/month, 2,000 credits, all voices, priority generation), and Enterprise ($99/month, 10,000 credits, all features, professional voice cloning).',
+        answer: 'Free (3 daily credits via check-in, image models only, watermarked outputs), Creator ($20/month, 2,000 credits, all models including video, all voices, no watermark), and Pro Creator ($99/month, 15,000 credits, all features, professional voice cloning, API access).',
       },
       {
         question: 'What happens if I run out of credits?',

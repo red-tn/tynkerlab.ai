@@ -52,7 +52,7 @@ export function UGCSettings({
             >
               {res}
               <span className="block text-[10px] text-gray-500 mt-0.5">
-                {res === '480p' ? '$0.03/s' : '$0.06/s'}
+                {res === '480p' ? '2 cr/s' : '4 cr/s'}
               </span>
             </button>
           ))}

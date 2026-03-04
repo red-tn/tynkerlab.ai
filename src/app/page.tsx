@@ -118,7 +118,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="flex items-center justify-center gap-8 mt-12 text-sm text-gray-500">
-            <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary-400" /> 50 free credits</div>
+            <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary-400" /> Free daily credits</div>
             <div className="flex items-center gap-2"><Shield className="h-4 w-4 text-primary-400" /> No credit card required</div>
           </div>
         </div>
@@ -355,7 +355,7 @@ export default function HomePage() {
       <section className="max-w-4xl mx-auto px-4 py-20 text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Start Creating Today</h2>
         <p className="text-gray-400 mb-8 max-w-xl mx-auto">
-          Get 50 free credits when you sign up. No credit card required.
+          Start creating for free with daily credits. No credit card required.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link href="/signup">

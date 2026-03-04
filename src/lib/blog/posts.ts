@@ -55,9 +55,9 @@ Every detail of Tynkerlab.ai is designed with creators in mind:
 
 ## Getting Started
 
-Sign up for free and get 50 credits — enough to generate dozens of images across our budget-friendly models. No credit card required.
+Sign up for free and earn 3 credits daily via check-in — enough to generate regularly across our budget-friendly models. No credit card required.
 
-When you're ready to scale, our Pro plan ($20/month) gives you 2,000 credits, and Enterprise ($99/month) unlocks 15,000 credits. You can also purchase credit packs that never expire.
+When you're ready to scale, our Creator plan ($20/month) gives you 2,000 credits with access to all video models and premium voices, and Pro Creator ($99/month) unlocks 15,000 credits with all features. Save 25% with annual billing. You can also purchase credit packs that never expire.
 
 Welcome to the future of AI-powered creativity.
 `,
@@ -175,13 +175,13 @@ Key camera terms that work well:
 
 Not all video models are created equal. Here's a decision matrix:
 
-**For cinematic quality:** Google Veo 3.0 (50 credits) or Sora 2 Pro (75 credits) — Best visual fidelity and motion coherence.
+**For cinematic quality:** Google Veo 3.0 (640 credits) or Sora 2 Pro (960 credits) — Best visual fidelity and motion coherence.
 
-**For audio + video:** Veo 3.0 + Audio (90 credits) — Generates synchronized sound effects and ambient audio.
+**For audio + video:** Veo 3.0 + Audio (1,280 credits) — Generates synchronized sound effects and ambient audio.
 
-**For fast iteration:** Seedance 1.0 Lite (6 credits) or Kling 2.1 Standard (8 credits) — Affordable previews.
+**For fast iteration:** Seedance 1.0 Lite (56 credits) or Kling 2.1 Standard (72 credits) — Most affordable previews.
 
-**For image-to-video:** Kling 2.1 Pro (12 credits) or PixVerse V5 (12 credits) — Strong at animating still images.
+**For image-to-video:** Kling 2.1 Pro (128 credits) or PixVerse V5 (120 credits) — Strong at animating still images.
 
 ## Tip 3: Keep Prompts Simple
 
@@ -216,8 +216,8 @@ For longer content, generate multiple clips and edit them together in your video
 
 ## Budget-Smart Video Workflow
 
-1. **Concept test** with Seedance Lite (6 credits) — Verify your prompt works
-2. **Refine** with Kling 2.1 Pro (12 credits) — Better quality at moderate cost
+1. **Concept test** with Seedance Lite (56 credits) — Verify your prompt works
+2. **Refine** with Kling 2.1 Pro (128 credits) — Better quality at moderate cost
 3. **Final render** with Veo 3.0 or Sora 2 Pro — Maximum quality for the keeper
 
 This three-step approach can save you hundreds of credits over time.
@@ -334,21 +334,22 @@ Tynkerlab.ai uses a simple credit system. Every generation costs a set number of
 - **10-15 credits:** FLUX.2 Dev, FLUX Kontext Dev, Seedream 4.0, Imagen 4.0 Preview, FLUX Kontext Pro
 - **20-25 credits:** FLUX.2 Pro, Gemini 3 Pro, Ideogram 3.0, Imagen 4.0 Ultra, FLUX.2 Max
 
-### Video Models
-- **6-12 credits:** Seedance Lite, Kling Standard, MiniMax Director, PixVerse V5, Vidu 2.0/Q1
-- **18-30 credits:** Hailuo 02, Seedance Pro, Kling Pro/Master, Sora 2, Veo 3.0 Fast
-- **50-90 credits:** Veo 3.0, Sora 2 Pro, Veo 2.0, Veo 3.0 + Audio
+### Video Models (paid plans only)
+- **56-88 credits:** Seedance Lite, Kling Standard, Vidu Q1
+- **112-196 credits:** MiniMax Director, PixVerse V5, Vidu 2.0, Kling Pro, Hailuo 02, Seedance Pro, Wan 2.2
+- **264-480 credits:** Sora 2, Veo 3.0 Fast, Kling Master, Wan T2V
+- **640-1,280 credits:** Veo 3.0, Sora 2 Pro, Veo 2.0, Veo 3.0 + Audio
 
 ## Plans
 
-### Free (50 credits/month)
-Perfect for trying out the platform. Generate roughly 15-25 images per month depending on your model choices. Credits reset monthly.
+### Free (3 daily credits via check-in)
+Perfect for trying out the platform. Claim 3 free credits every day and generate images with any model. Free tier outputs include a small watermark. Video, premium TTS, and UGC Avatars require a paid plan.
 
-### Pro — $20/month (2,000 credits)
-Our most popular plan. Enough for hundreds of images and dozens of videos. Annual billing drops to $10/month.
+### Creator — $20/month (2,000 credits)
+Our most popular plan. Unlocks all video models, all TTS voices, UGC Avatars, and watermark-free outputs. Annual billing at $180/year ($15/month — save 25%).
 
-### Enterprise — $99/month (15,000 credits)
-For teams and power users. Massive credit allocation for high-volume production. Annual billing drops to $49/month.
+### Pro Creator — $99/month (15,000 credits)
+For teams and power users. Massive credit allocation for high-volume production. Includes API access, custom voice catalog, and dedicated support. Annual billing at $900/year ($75/month — save 25%).
 
 ## Credit Packs
 
@@ -357,7 +358,7 @@ Need a boost? Purchase credit packs that **never expire**:
 | Pack | Credits | Price | Per Credit |
 |------|---------|-------|-----------|
 | Starter | 100 | $5 | $0.050 |
-| Creator | 500 | $20 | $0.040 |
+| Boost | 500 | $20 | $0.040 |
 | Professional | 2,000 | $60 | $0.030 |
 | Studio | 5,000 | $125 | $0.025 |
 

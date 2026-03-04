@@ -24,10 +24,10 @@ const BENEFITS = [
 ]
 
 const PRODUCTS = [
-  { name: 'Pro Monthly', price: '$20/mo', commission: '$24/yr', note: '$2/mo recurring' },
-  { name: 'Pro Annual', price: '$192/yr', commission: '$19.20/yr', note: 'Paid upfront' },
-  { name: 'Enterprise Monthly', price: '$99/mo', commission: '$118.80/yr', note: '$9.90/mo recurring' },
-  { name: 'Enterprise Annual', price: '$948/yr', commission: '$94.80/yr', note: 'Paid upfront' },
+  { name: 'Creator Monthly', price: '$20/mo', commission: '$24/yr', note: '$2/mo recurring' },
+  { name: 'Creator Annual', price: '$180/yr', commission: '$18/yr', note: 'Paid upfront' },
+  { name: 'Pro Creator Monthly', price: '$99/mo', commission: '$118.80/yr', note: '$9.90/mo recurring' },
+  { name: 'Pro Creator Annual', price: '$900/yr', commission: '$90/yr', note: 'Paid upfront' },
   { name: 'Credit Packs', price: '$5–$125', commission: '$0.50–$12.50 each', note: 'Per purchase' },
 ]
 
@@ -123,17 +123,17 @@ export default function AffiliatesPage() {
         <p className="text-gray-400 text-center mb-12 max-w-xl mx-auto">See how quickly your earnings can grow with just 10 referrals</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-nyx-surface border border-nyx-border rounded-xl p-6 text-center">
-            <p className="text-sm text-gray-400 mb-2">10 Pro Monthly Referrals</p>
+            <p className="text-sm text-gray-400 mb-2">10 Creator Monthly Referrals</p>
             <p className="text-3xl font-bold gradient-text mb-1">$240/yr</p>
             <p className="text-xs text-gray-500">$20/mo recurring from each referral</p>
           </div>
           <div className="bg-nyx-surface border border-primary-500/30 rounded-xl p-6 text-center">
-            <p className="text-sm text-gray-400 mb-2">10 Enterprise Monthly Referrals</p>
+            <p className="text-sm text-gray-400 mb-2">10 Pro Creator Monthly Referrals</p>
             <p className="text-3xl font-bold gradient-text mb-1">$1,188/yr</p>
             <p className="text-xs text-gray-500">$99/mo recurring from each referral</p>
           </div>
           <div className="bg-nyx-surface border border-nyx-border rounded-xl p-6 text-center">
-            <p className="text-sm text-gray-400 mb-2">Mix: 5 Pro + 5 Enterprise</p>
+            <p className="text-sm text-gray-400 mb-2">Mix: 5 Creator + 5 Pro Creator</p>
             <p className="text-3xl font-bold gradient-text mb-1">$714/yr</p>
             <p className="text-xs text-gray-500">Blended recurring income</p>
           </div>

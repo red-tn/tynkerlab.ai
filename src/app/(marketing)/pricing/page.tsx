@@ -192,6 +192,10 @@ const FAQ_ITEMS = [
     a: 'Credits are the currency used to generate images and videos. Different AI models cost different amounts of credits depending on their quality and compute requirements.',
   },
   {
+    q: 'What can free users access?',
+    a: 'Free users can generate images with all 32 image models and use Kokoro TTS. Outputs include a small watermark. Video generation, premium TTS voices, and UGC Avatars require a Creator or Pro Creator plan. Free users earn 3 credits daily via check-in.',
+  },
+  {
     q: 'Do unused credits roll over?',
     a: 'Monthly subscription credits reset each billing cycle. Credit pack purchases never expire and remain in your account until used.',
   },
