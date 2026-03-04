@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
+// Whitelist of keys that can be read without authentication
+const PUBLIC_KEYS = ['homepage_tools', 'active_icon_set', 'voice_config']
+
 // Public read-only endpoint for site settings (no auth required).
 // Used by the homepage and other public pages to load settings like homepage_tools.
 export async function GET(request: Request) {
@@ -10,6 +13,10 @@ export async function GET(request: Request) {
 
     if (!key) {
       return NextResponse.json({ error: 'key parameter is required' }, { status: 400 })
+    }
+
+    if (!PUBLIC_KEYS.includes(key)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const supabase = createAdminClient()
@@ -27,6 +34,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ key, value: null })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,19 +1,32 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getTogetherClient } from '@/lib/together/client'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const contentType = request.headers.get('content-type') || ''
 
     // Handle file upload (multipart form data)
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData()
       const file = formData.get('file') as File | null
-      const userId = formData.get('userId') as string | null
 
-      if (!file || !userId) {
-        return NextResponse.json({ error: 'file and userId are required' }, { status: 400 })
+      if (!file) {
+        return NextResponse.json({ error: 'file is required' }, { status: 400 })
+      }
+
+      // Validate file size (5MB max)
+      const MAX_AVATAR_SIZE = 5 * 1024 * 1024
+      if (file.size > MAX_AVATAR_SIZE) {
+        return NextResponse.json({ error: 'File size must be under 5MB' }, { status: 400 })
+      }
+
+      // Validate file type
+      const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        return NextResponse.json({ error: 'Only PNG, JPEG, GIF, and WebP images are allowed' }, { status: 400 })
       }
 
       const supabase = createAdminClient()
@@ -26,7 +39,7 @@ export async function POST(request: Request) {
         .upload(filePath, buffer, { contentType: file.type, upsert: true })
 
       if (uploadError) {
-        return NextResponse.json({ error: uploadError.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
       }
 
       const { data: { publicUrl: avatarUrl } } = supabase.storage
@@ -42,7 +55,7 @@ export async function POST(request: Request) {
     }
 
     // Handle AI avatar generation (JSON body)
-    const { prompt, userId } = await request.json()
+    const { prompt } = await request.json()
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
     }
@@ -74,7 +87,7 @@ export async function POST(request: Request) {
       .upload(filePath, Buffer.from(imageBuffer), { contentType: 'image/png', upsert: true })
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     const { data: { publicUrl: avatarUrl } } = supabase.storage
@@ -82,19 +95,19 @@ export async function POST(request: Request) {
       .getPublicUrl(filePath)
 
     // Update profile with new avatar
-    if (userId) {
-      await supabase
-        .from('profiles')
-        .update({
-          avatar_url: avatarUrl,
-          avatar_prompt: prompt,
-        })
-        .eq('user_id', userId)
-    }
+    await supabase
+      .from('profiles')
+      .update({
+        avatar_url: avatarUrl,
+        avatar_prompt: prompt,
+      })
+      .eq('user_id', userId)
 
     return NextResponse.json({ avatarUrl })
   } catch (error: any) {
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
     console.error('Avatar generation error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

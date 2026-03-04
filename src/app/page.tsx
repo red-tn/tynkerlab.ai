@@ -30,7 +30,7 @@ interface ToolImageData {
 }
 
 const STEPS = [
-  { num: '01', title: 'Choose Your Tool', desc: 'Select from text-to-image, image-to-image, text-to-video, or image-to-video.' },
+  { num: '01', title: 'Choose Your Tool', desc: 'Select from seven AI tools including image, video, speech, UGC avatars, and prompt maker.' },
   { num: '02', title: 'Describe Your Vision', desc: 'Enter a prompt and let AI Enhance polish it for optimal results. Pick a model and settings.' },
   { num: '03', title: 'Generate & Download', desc: 'Hit generate and watch your creation come to life. Download in full resolution.' },
 ]
@@ -94,7 +94,7 @@ export default function HomePage() {
         <div className="relative max-w-6xl mx-auto px-4 py-24 md:py-36 text-center">
           <Badge variant="default" className="mb-6 gradient-primary text-white px-4 py-1.5">
             <Sparkles className="h-3 w-3 mr-1.5" />
-            56+ AI Models Available
+            54+ AI Models Available
           </Badge>
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
             Create Anything with

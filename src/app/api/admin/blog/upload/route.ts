@@ -14,6 +14,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File and slug are required' }, { status: 400 })
     }
 
+    // Validate file size (10MB max for blog images)
+    const MAX_BLOG_IMAGE_SIZE = 10 * 1024 * 1024
+    if (file.size > MAX_BLOG_IMAGE_SIZE) {
+      return NextResponse.json({ error: 'File size must be under 10MB' }, { status: 400 })
+    }
+
+    // Validate file type (only images allowed)
+    const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return NextResponse.json({ error: 'Only image files (PNG, JPEG, GIF, WebP, SVG) are allowed' }, { status: 400 })
+    }
+
     const ext = file.name.split('.').pop() || 'jpg'
     const path = `blog/${slug}-${Date.now()}.${ext}`
 

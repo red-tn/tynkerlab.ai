@@ -7,10 +7,8 @@ export const metadata = {
 }
 
 const COOKIE_TABLE = [
-  { name: 'session', purpose: 'Maintains your login session and authentication state.', type: 'Essential', duration: '30 days' },
-  { name: 'theme', purpose: 'Stores your preferred color theme (dark/light).', type: 'Functional', duration: '1 year' },
-  { name: 'locale', purpose: 'Remembers your preferred language setting.', type: 'Functional', duration: '1 year' },
-  { name: 'csrf_token', purpose: 'Prevents cross-site request forgery attacks.', type: 'Essential', duration: 'Session' },
+  { name: 'session', purpose: 'Supabase session token for cookie-based authentication.', type: 'Essential', duration: '30 days' },
+  { name: 'sb-*-auth-token', purpose: 'Stores Supabase authentication session tokens.', type: 'Essential', duration: 'Session / 1 hour' },
   { name: 'analytics_session', purpose: 'Anonymous session identifier for usage analytics.', type: 'Analytics', duration: '24 hours' },
 ]
 
@@ -34,7 +32,6 @@ export default function CookiePolicyPage() {
             We use cookies for three purposes:
             <div className="mt-3 space-y-3">
               <CookieCategory title="Essential Cookies" desc="Required for the platform to function. These handle authentication, security, and session management. They cannot be disabled." />
-              <CookieCategory title="Functional Cookies" desc="Remember your preferences like theme and language settings. Disabling these means you'd need to set preferences each visit." />
               <CookieCategory title="Analytics Cookies" desc="Help us understand how people use Tynkerlab.ai so we can improve. These are anonymous and never linked to your identity." />
             </div>
           </Section>

@@ -9,12 +9,20 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '0')
     const limit = parseInt(searchParams.get('limit') || '20')
 
+    const submissionStatus = searchParams.get('submission_status')
+
     const supabase = createAdminClient()
-    const { data, count, error } = await supabase
+    let query = supabase
       .from('prompts')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(page * limit, page * limit + limit - 1)
+
+    if (submissionStatus) {
+      query = query.eq('submission_status', submissionStatus)
+    }
+
+    const { data, count, error } = await query
 
     if (error) throw error
 

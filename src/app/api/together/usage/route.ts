@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/admin-auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    await requireAdmin(request)
+
     // Proxy to Together.ai usage API
     const res = await fetch('https://api.together.ai/v1/dashboard/usage', {
       headers: {
@@ -16,6 +19,9 @@ export async function GET() {
     const data = await res.json()
     return NextResponse.json(data)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error?.status === 401 || error?.status === 403) {
+      return NextResponse.json({ error: error.message || 'Unauthorized' }, { status: error.status })
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

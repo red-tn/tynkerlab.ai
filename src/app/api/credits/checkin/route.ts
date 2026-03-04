@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { addCredits } from '@/lib/credits'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 const DAILY_CREDITS = 3
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
-    }
+    const { userId } = await requireUser(request)
 
     const supabase = createAdminClient()
     const { data: profile } = await supabase
@@ -24,16 +21,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ claimed })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await request.json()
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
-    }
+    const { userId } = await requireUser(request)
 
     const supabase = createAdminClient()
 
@@ -69,6 +65,8 @@ export async function POST(request: Request) {
       new_balance: newBalance,
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

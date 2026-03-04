@@ -10,7 +10,8 @@ function CallbackHandler() {
   const [status, setStatus] = useState('Signing you in...')
 
   useEffect(() => {
-    const redirect = searchParams.get('redirect') || '/dashboard'
+    const rawRedirect = searchParams.get('redirect') || '/dashboard'
+    const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/dashboard'
 
     const handleCallback = async () => {
       try {

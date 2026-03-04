@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin-fetch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Toggle } from '@/components/ui/toggle'
@@ -9,18 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Settings, Shield, Zap, AlertTriangle } from 'lucide-react'
 
 interface SiteSettings {
-  maintenanceMode: boolean
-  registrationEnabled: boolean
-  freeCredits: number
-  maxGenerationsPerMinute: number
+  maintenance_mode: boolean
+  registration_enabled: boolean
+  free_credits: number
+  max_generations_per_minute: number
 }
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({
-    maintenanceMode: false,
-    registrationEnabled: true,
-    freeCredits: 50,
-    maxGenerationsPerMinute: 10,
+    maintenance_mode: false,
+    registration_enabled: true,
+    free_credits: 50,
+    max_generations_per_minute: 10,
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -28,21 +28,19 @@ export default function AdminSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data, error } = await supabase
-          .from('site_settings')
-          .select('*')
-          .limit(10)
-        if (error) throw error
+        const res = await adminFetch('/api/admin/settings')
+        if (!res.ok) throw new Error('Failed to fetch settings')
+        const data = await res.json()
         const mapped: Record<string, any> = {}
-        for (const doc of data || []) {
+        for (const doc of data.settings || []) {
           // value is jsonb so no JSON.parse needed
           mapped[doc.key] = doc.value
         }
         setSettings({
-          maintenanceMode: mapped.maintenanceMode === true,
-          registrationEnabled: mapped.registrationEnabled !== false,
-          freeCredits: typeof mapped.freeCredits === 'number' ? mapped.freeCredits : 50,
-          maxGenerationsPerMinute: typeof mapped.maxGenerationsPerMinute === 'number' ? mapped.maxGenerationsPerMinute : 10,
+          maintenance_mode: mapped.maintenance_mode === true,
+          registration_enabled: mapped.registration_enabled !== false,
+          free_credits: typeof mapped.free_credits === 'number' ? mapped.free_credits : 50,
+          max_generations_per_minute: typeof mapped.max_generations_per_minute === 'number' ? mapped.max_generations_per_minute : 10,
         })
       } catch (err) {
         console.error('Failed to fetch settings:', err)
@@ -55,21 +53,19 @@ export default function AdminSettingsPage() {
     setSaving(true)
     try {
       const entries = [
-        { key: 'maintenanceMode', value: settings.maintenanceMode },
-        { key: 'registrationEnabled', value: settings.registrationEnabled },
-        { key: 'freeCredits', value: settings.freeCredits },
-        { key: 'maxGenerationsPerMinute', value: settings.maxGenerationsPerMinute },
+        { key: 'maintenance_mode', value: settings.maintenance_mode },
+        { key: 'registration_enabled', value: settings.registration_enabled },
+        { key: 'free_credits', value: settings.free_credits },
+        { key: 'max_generations_per_minute', value: settings.max_generations_per_minute },
       ]
 
       for (const entry of entries) {
-        // Upsert: update existing row by key, or insert if not found
-        const { error } = await supabase
-          .from('site_settings')
-          .upsert(
-            { key: entry.key, value: entry.value },
-            { onConflict: 'key' }
-          )
-        if (error) throw error
+        const res = await adminFetch('/api/admin/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key: entry.key, value: entry.value }),
+        })
+        if (!res.ok) throw new Error(`Failed to save ${entry.key}`)
       }
 
       setSaved(true)
@@ -102,8 +98,8 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-gray-500">Disable the platform for all non-admin users</p>
             </div>
             <Toggle
-              checked={settings.maintenanceMode}
-              onChange={(checked) => setSettings({ ...settings, maintenanceMode: checked })}
+              checked={settings.maintenance_mode}
+              onChange={(checked) => setSettings({ ...settings, maintenance_mode: checked })}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -112,8 +108,8 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-gray-500">Allow new user signups</p>
             </div>
             <Toggle
-              checked={settings.registrationEnabled}
-              onChange={(checked) => setSettings({ ...settings, registrationEnabled: checked })}
+              checked={settings.registration_enabled}
+              onChange={(checked) => setSettings({ ...settings, registration_enabled: checked })}
             />
           </div>
         </CardContent>
@@ -130,21 +126,21 @@ export default function AdminSettingsPage() {
           <Input
             label="Free Credits on Signup"
             type="number"
-            value={settings.freeCredits.toString()}
-            onChange={(e) => setSettings({ ...settings, freeCredits: parseInt(e.target.value) || 0 })}
+            value={settings.free_credits.toString()}
+            onChange={(e) => setSettings({ ...settings, free_credits: parseInt(e.target.value) || 0 })}
             helperText="Number of credits given to new users"
           />
           <Input
             label="Max Generations per Minute"
             type="number"
-            value={settings.maxGenerationsPerMinute.toString()}
-            onChange={(e) => setSettings({ ...settings, maxGenerationsPerMinute: parseInt(e.target.value) || 1 })}
+            value={settings.max_generations_per_minute.toString()}
+            onChange={(e) => setSettings({ ...settings, max_generations_per_minute: parseInt(e.target.value) || 1 })}
             helperText="Rate limit per user per minute"
           />
         </CardContent>
       </Card>
 
-      {settings.maintenanceMode && (
+      {settings.maintenance_mode && (
         <div className="flex items-center gap-3 p-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
           <AlertTriangle className="h-5 w-5 text-yellow-400 shrink-0" />
           <p className="text-sm text-yellow-200">

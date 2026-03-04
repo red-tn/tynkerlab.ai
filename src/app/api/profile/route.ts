@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    if (!userId) {
-      return NextResponse.json({ error: 'userId required' }, { status: 400 })
-    }
+    const { userId } = await requireUser(request)
 
     const supabase = createAdminClient()
     const { data: profile, error } = await supabase
@@ -35,17 +32,22 @@ export async function GET(request: Request) {
         .single()
 
       if (updateError) {
-        return NextResponse.json({ error: updateError.message }, { status: 500 })
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
       }
       return NextResponse.json(updated)
     }
 
     return NextResponse.json(profile)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
+// POST: Used for initial profile creation during signup.
+// userId comes from the request body because the session may not be ready yet
+// at the moment of profile creation (e.g., during OAuth callback or email confirmation).
 export async function POST(request: Request) {
   try {
     const { userId, name, email } = await request.json()
@@ -75,17 +77,18 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     return NextResponse.json(profile)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function PATCH(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const updates = await request.json()
     const supabase = createAdminClient()
 
@@ -93,29 +96,57 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Profile ID required' }, { status: 400 })
     }
 
+    // Verify the profile belongs to the authenticated user
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('id', updates.profileId)
+      .single()
+
+    if (!existingProfile || existingProfile.user_id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Whitelist allowed fields
+    const allowedFields = ['full_name', 'bio', 'location', 'website', 'avatar_url', 'avatar_prompt']
+    const safeData: Record<string, any> = {}
+    if (updates.data && typeof updates.data === 'object') {
+      for (const key of allowedFields) {
+        if (key in updates.data) {
+          safeData[key] = updates.data[key]
+        }
+      }
+    }
+
+    if (Object.keys(safeData).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
+    }
+
     const { data: profile, error } = await supabase
       .from('profiles')
-      .update(updates.data)
+      .update(safeData)
       .eq('id', updates.profileId)
       .select()
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     return NextResponse.json(profile)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const supabase = createAdminClient()
-    const { userId } = await request.json()
 
-    // Delete profile document
+    // Delete profile document — only allow deleting own profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('id')
@@ -131,6 +162,8 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

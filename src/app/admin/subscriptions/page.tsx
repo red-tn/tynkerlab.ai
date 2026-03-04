@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { adminFetch } from '@/lib/admin-fetch'
 import { StatsCard } from '@/components/admin/stats-card'
 import { Badge } from '@/components/ui/badge'
 import { formatDate, formatCurrency } from '@/lib/utils'
@@ -9,18 +9,17 @@ import { CreditCard, DollarSign, TrendingUp, Users } from 'lucide-react'
 
 export default function AdminSubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<any[]>([])
+  const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50)
-        if (error) throw error
-        setSubscriptions(data || [])
+        const res = await adminFetch('/api/admin/subscriptions')
+        if (!res.ok) throw new Error('Failed to fetch subscriptions')
+        const data = await res.json()
+        setSubscriptions(data.subscriptions || [])
+        setStats(data.stats || null)
       } catch (err) {
         console.error(err)
       } finally {
@@ -30,11 +29,11 @@ export default function AdminSubscriptionsPage() {
     fetchData()
   }, [])
 
-  const active = subscriptions.filter(s => s.status === 'active')
-  const canceled = subscriptions.filter(s => s.status === 'canceled')
-  const proCount = active.filter(s => s.tier === 'pro').length
-  const enterpriseCount = active.filter(s => s.tier === 'enterprise').length
-  const mrr = proCount * 20 + enterpriseCount * 99
+  const activeCount = stats?.active ?? 0
+  const mrr = stats?.mrr ?? 0
+  const churn = stats?.churn ?? 0
+  const proCount = stats?.proCount ?? 0
+  const enterpriseCount = stats?.enterpriseCount ?? 0
 
   return (
     <div className="space-y-6">
@@ -44,9 +43,9 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard title="Active Subs" value={active.length} icon={CreditCard} />
+        <StatsCard title="Active Subs" value={activeCount} icon={CreditCard} />
         <StatsCard title="MRR" value={formatCurrency(mrr)} icon={DollarSign} iconColor="text-green-400" />
-        <StatsCard title="Churn Rate" value={`${subscriptions.length > 0 ? (canceled.length / subscriptions.length * 100).toFixed(1) : 0}%`} icon={TrendingUp} iconColor="text-orange-400" />
+        <StatsCard title="Churn Rate" value={`${churn}%`} icon={TrendingUp} iconColor="text-orange-400" />
         <StatsCard title="Creator / Pro Creator" value={`${proCount} / ${enterpriseCount}`} icon={Users} iconColor="text-accent-400" />
       </div>
 
@@ -56,6 +55,7 @@ export default function AdminSubscriptionsPage() {
             <tr className="border-b border-nyx-border bg-nyx-bg/50">
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">User</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Tier</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Period</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Period End</th>
               <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Created</th>
@@ -63,17 +63,23 @@ export default function AdminSubscriptionsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={5} className="text-center py-8 text-gray-500">Loading...</td></tr>
+              <tr><td colSpan={6} className="text-center py-8 text-gray-500">Loading...</td></tr>
             ) : subscriptions.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-8 text-gray-500">No subscriptions yet</td></tr>
+              <tr><td colSpan={6} className="text-center py-8 text-gray-500">No subscriptions yet</td></tr>
             ) : subscriptions.map((sub) => (
               <tr key={sub.id} className="border-b border-nyx-border last:border-0 hover:bg-white/[.02]">
-                <td className="px-4 py-3 text-white">{sub.user_id}</td>
+                <td className="px-4 py-3">
+                  <div>
+                    <p className="text-white text-sm">{sub.user_name || 'Unknown'}</p>
+                    <p className="text-gray-500 text-xs">{sub.user_email || sub.user_id}</p>
+                  </div>
+                </td>
                 <td className="px-4 py-3">
                   <Badge variant={sub.tier === 'pro' ? 'success' : sub.tier === 'enterprise' ? 'info' : 'default'}>
                     {sub.tier === 'enterprise' ? 'Pro Creator' : sub.tier === 'pro' ? 'Creator' : sub.tier}
                   </Badge>
                 </td>
+                <td className="px-4 py-3 text-gray-400 text-xs capitalize">{sub.period || '-'}</td>
                 <td className="px-4 py-3">
                   <Badge variant={sub.status === 'active' ? 'success' : sub.status === 'past_due' ? 'warning' : 'error'}>
                     {sub.status}

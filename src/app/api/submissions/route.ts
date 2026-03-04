@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const body = await request.json()
-    const { title, promptText, category, modelType, modelUsed, previewImageUrl, userId, userName } = body
+    const { title, promptText, category, modelType, modelUsed, previewImageUrl, userName } = body
 
-    if (!title || !promptText || !userId) {
-      return NextResponse.json({ error: 'Title, prompt, and userId are required' }, { status: 400 })
+    if (!title || !promptText) {
+      return NextResponse.json({ error: 'Title and prompt are required' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
@@ -31,11 +33,13 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     return NextResponse.json(doc)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

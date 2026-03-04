@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { checkCredits, deductCredits, addCredits } from '@/lib/credits'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
   conservative: {
@@ -16,14 +17,11 @@ const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
 
 export async function POST(request: Request) {
   try {
-    const { prompt, mode = 'conservative', generationType = 'image', userId } = await request.json()
+    const { userId } = await requireUser(request)
+    const { prompt, mode = 'conservative', generationType = 'image' } = await request.json()
 
     if (!prompt?.trim()) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
-    }
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
     // Check and deduct 2 credits for AI Enhance
@@ -60,8 +58,7 @@ export async function POST(request: Request) {
     if (!response.ok) {
       // Refund credits on API failure
       await addCredits(userId, 2, 'Refund: AI Enhance failed', `enhance-refund-${Date.now()}`, 'refund')
-      const err = await response.text()
-      throw new Error(`LLM call failed: ${err}`)
+      throw new Error('LLM call failed')
     }
 
     const data = await response.json()
@@ -75,6 +72,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ enhanced, original: prompt.trim(), mode })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

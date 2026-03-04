@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe/client'
 import { createAdminClient } from '@/lib/supabase/server'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await request.json()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
-    }
+    const { userId } = await requireUser(request)
 
     const supabase = createAdminClient()
     const { data: sub } = await supabase
@@ -30,6 +27,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: portalSession.url })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

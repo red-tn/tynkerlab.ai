@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { generateSpeech, getTTSFamily, TTS_MODEL_FAMILIES } from '@/lib/together/tts'
 import { checkCredits, deductCredits } from '@/lib/credits'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 const VOICE_CREATION_CREDITS = 2 // Credits to create/preview a custom voice
 
@@ -29,11 +30,7 @@ interface CustomVoice {
 // GET — fetch user's custom voices
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-    if (!userId) {
-      return NextResponse.json({ error: 'userId required' }, { status: 400 })
-    }
+    const { userId } = await requireUser(request)
 
     const supabase = createAdminClient()
     const key = `custom_voices_${userId}`
@@ -52,17 +49,20 @@ export async function GET(request: Request) {
     const voices: CustomVoice[] = data.value || []
     return NextResponse.json({ voices })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // POST — create or preview a custom voice
 export async function POST(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const body = await request.json()
-    const { userId, name, gender, age, accent, tone, preview, previewOnly, customSettings, sampleText } = body
+    const { name, gender, age, accent, tone, preview, previewOnly, customSettings, sampleText } = body
 
-    if (!userId || !gender || !age || !tone) {
+    if (!gender || !age || !tone) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -165,18 +165,21 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ voice: newVoice, previewAudio })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // PATCH — update a custom voice's settings or name
 export async function PATCH(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const body = await request.json()
-    const { userId, voiceId, settings: newSettings, name: newName } = body
+    const { voiceId, settings: newSettings, name: newName } = body
 
-    if (!userId || !voiceId) {
-      return NextResponse.json({ error: 'userId and voiceId required' }, { status: 400 })
+    if (!voiceId) {
+      return NextResponse.json({ error: 'voiceId required' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
@@ -212,19 +215,21 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ voice: voices[idx] })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // DELETE — remove a custom voice
 export async function DELETE(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
     const voiceId = searchParams.get('voiceId')
 
-    if (!userId || !voiceId) {
-      return NextResponse.json({ error: 'userId and voiceId required' }, { status: 400 })
+    if (!voiceId) {
+      return NextResponse.json({ error: 'voiceId required' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
@@ -250,7 +255,9 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 

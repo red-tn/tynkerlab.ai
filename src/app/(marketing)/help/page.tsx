@@ -49,7 +49,7 @@ const SECTIONS = [
       },
       {
         question: 'What AI models can I use?',
-        answer: 'We offer 54+ AI models including Google Imagen 3, FLUX Pro/Schnell, Stable Diffusion XL, Sora, Kling, Minimax, and more. Each model has different strengths — some excel at photorealism, others at artistic styles.',
+        answer: 'We offer 54+ AI models including Google Imagen 4.0, FLUX.2 Pro/Schnell, Stable Diffusion XL, Sora, Kling, Minimax, and more. Each model has different strengths — some excel at photorealism, others at artistic styles.',
       },
       {
         question: 'How does the AI Prompt Enhancement work?',
@@ -68,11 +68,11 @@ const SECTIONS = [
     items: [
       {
         question: 'What TTS engines are available?',
-        answer: 'Three voice engines: Kokoro (fast, 1 credit, 8 voices), Orpheus (mid-tier, 2 credits, 6 voices with emotional markers), and Cartesia Sonic 2 (premium, 5 credits, 6 voices, highest quality).',
+        answer: 'Three voice engines: Kokoro (fast, 1 credit, 8 voices), Orpheus (mid-tier, 2 credits, 8 voices with emotional markers), and Cartesia Sonic 2 (premium, 5 credits, 6 voices, highest quality).',
       },
       {
         question: 'What are the voice modes?',
-        answer: 'Library: Browse 20+ pre-built voices filtered by gender and engine. Voice Design: Describe your ideal voice (gender, age, accent) and we match the best option. Instant Clone: Upload a short audio sample for a quick voice clone. Professional Clone: Upload multiple samples for highest-fidelity voice cloning (Pro/Enterprise only).',
+        answer: 'Library: Browse 20+ pre-built voices filtered by gender and engine. Voice Design: Describe your ideal voice (gender, age, accent) and we match the best option. Instant Clone: Upload a short audio sample for a quick voice clone. Professional Clone: Upload multiple samples for highest-fidelity voice cloning (Creator/Pro Creator only).',
       },
       {
         question: 'What voice settings can I adjust?',
@@ -80,7 +80,7 @@ const SECTIONS = [
       },
       {
         question: 'How many voice clones can I create?',
-        answer: 'Free: 1 instant clone. Pro: 5 instant + 2 professional clones. Enterprise: 20 instant + 10 professional clones.',
+        answer: 'Free: 1 instant clone. Creator: 5 instant + 2 professional clones. Pro Creator: 20 instant + 10 professional clones.',
       },
       {
         question: 'What audio formats are supported?',

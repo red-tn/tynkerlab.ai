@@ -18,9 +18,8 @@ const VALUES = [
 
 const STATS = [
   { value: '54+', label: 'AI Models' },
-  { value: '1M+', label: 'Images Generated' },
-  { value: '50K+', label: 'Creators' },
-  { value: '99.9%', label: 'Uptime' },
+  { value: '7', label: 'Creative Tools' },
+  { value: '24/7', label: 'Availability' },
 ]
 
 export default function AboutPage() {
@@ -58,7 +57,7 @@ export default function AboutPage() {
 
       {/* Stats */}
       <section className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-3 gap-6">
           {STATS.map((stat) => (
             <div key={stat.label} className="text-center p-6 bg-nyx-surface border border-nyx-border rounded-xl">
               <div className="text-3xl font-bold gradient-text mb-1">{stat.value}</div>

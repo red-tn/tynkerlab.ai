@@ -5,6 +5,7 @@ import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getUserTier } from '@/lib/tier-gate'
 import { applyWatermark } from '@/lib/watermark'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 // Allow up to 2 minutes for image generation + storage upload (Vercel)
 export const maxDuration = 120
@@ -13,10 +14,11 @@ export async function POST(request: Request) {
   const startTime = Date.now()
 
   try {
+    const { userId } = await requireUser(request)
     const body = await request.json()
-    const { model, prompt, negativePrompt, width, height, steps, seed, imageUrl, type, userId, aspectRatio } = body
+    const { model, prompt, negativePrompt, width, height, steps, seed, imageUrl, type, aspectRatio } = body
 
-    if (!model || !prompt || !userId) {
+    if (!model || !prompt) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -66,7 +68,7 @@ export async function POST(request: Request) {
       .single()
 
     if (genInsertError || !genDoc) {
-      return NextResponse.json({ error: genInsertError?.message || 'Failed to create generation record' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to create generation record' }, { status: 500 })
     }
 
     const generationId = genDoc.id
@@ -161,6 +163,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMsg }, { status: 500 })
     }
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

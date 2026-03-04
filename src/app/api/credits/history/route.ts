@@ -1,17 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export async function GET(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
     const type = searchParams.get('type')
     const page = parseInt(searchParams.get('page') || '0')
     const limit = parseInt(searchParams.get('limit') || '20')
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId required' }, { status: 400 })
-    }
 
     const supabase = createAdminClient()
     let query = supabase
@@ -41,7 +38,7 @@ export async function GET(request: Request) {
     const { data, count, error } = await query
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
     const total = count || 0
@@ -53,6 +50,8 @@ export async function GET(request: Request) {
       totalPages: Math.ceil(total / limit),
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

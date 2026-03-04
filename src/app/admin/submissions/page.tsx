@@ -22,13 +22,11 @@ export default function AdminSubmissionsPage() {
   const fetchSubmissions = async () => {
     setLoading(true)
     try {
-      const res = await adminFetch(`/api/admin/prompts?page=${page}&limit=20`)
+      const res = await adminFetch(`/api/admin/prompts?page=${page}&limit=20&submission_status=pending`)
       if (res.ok) {
         const data = await res.json()
-        // Filter to show pending submissions
-        const pending = data.prompts.filter((p: Prompt) => p.submission_status === 'pending')
-        setSubmissions(pending)
-        setTotal(pending.length)
+        setSubmissions(data.prompts || [])
+        setTotal(data.total ?? 0)
       }
     } catch (err) {
       console.error(err)

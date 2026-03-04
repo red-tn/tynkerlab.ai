@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { generateSpeech, getTTSFamily } from '@/lib/together/tts'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 import type { TTSVoiceSettings } from '@/types/together'
 
 const PREVIEW_TEXTS: Record<string, string> = {
@@ -32,6 +33,7 @@ const PREVIEW_TEXTS: Record<string, string> = {
 
 export async function POST(request: Request) {
   try {
+    await requireUser(request)
     const { familyId, voice, settings } = await request.json() as {
       familyId: string
       voice: string
@@ -57,7 +59,8 @@ export async function POST(request: Request) {
       mimeType: 'audio/mpeg',
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Preview generation failed'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

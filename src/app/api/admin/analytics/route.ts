@@ -15,16 +15,32 @@ export async function GET(request: Request) {
     // Fetch all data in parallel
     const [
       profilesResult,
+      prevProfilesResult,
       subsResult,
+      prevSubsResult,
+      allActiveSubsResult,
       generationsResult,
       prevGenerationsResult,
       apiUsageResult,
       recentGensResult,
       recentSignupsResult,
     ] = await Promise.all([
+      // Current month users
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      // Previous month users (created before 30d ago)
+      supabase.from('profiles').select('*', { count: 'exact', head: true })
+        .lt('created_at', thirtyDaysAgo.toISOString()),
+      // Current active subscriptions
       supabase.from('subscriptions').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+      // Subscriptions that were active 30 days ago (approximate: created before 30d ago and still active or canceled after)
+      supabase.from('subscriptions').select('*', { count: 'exact', head: true })
+        .eq('status', 'active')
+        .lt('created_at', thirtyDaysAgo.toISOString()),
+      // All active subscriptions with tier and period for revenue calculation
+      supabase.from('subscriptions').select('tier, period').eq('status', 'active'),
+      // Current 30d generations
       supabase.from('generations').select('*').gt('created_at', thirtyDaysAgo.toISOString()).limit(5000),
+      // Previous 30d generations count
       supabase.from('generations').select('*', { count: 'exact', head: true })
         .gt('created_at', sixtyDaysAgo.toISOString())
         .lt('created_at', thirtyDaysAgo.toISOString()),
@@ -37,6 +53,38 @@ export async function GET(request: Request) {
     const generations = generationsResult.data || []
     const generationsCount = generationsResult.count ?? generations.length
     const prevGenerationsCount = prevGenerationsResult.count ?? 0
+
+    // Calculate actual month-over-month changes
+    const totalUsers = profilesResult.count ?? 0
+    const prevUsers = prevProfilesResult.count ?? 0
+    const newUsersThisMonth = totalUsers - prevUsers
+    const usersChange = prevUsers > 0
+      ? Math.round((newUsersThisMonth / prevUsers) * 100)
+      : 0
+
+    const activeSubs = subsResult.count ?? 0
+    const prevActiveSubs = prevSubsResult.count ?? 0
+    const subsChange = prevActiveSubs > 0
+      ? Math.round(((activeSubs - prevActiveSubs) / prevActiveSubs) * 100)
+      : 0
+
+    // Calculate proper revenue from subscription tiers and periods
+    const activeSubsData = allActiveSubsResult.data || []
+    let monthlyRevenue = 0
+    for (const sub of activeSubsData) {
+      if (sub.tier === 'pro') {
+        monthlyRevenue += sub.period === 'annual' ? 15 : 20
+      } else if (sub.tier === 'enterprise') {
+        monthlyRevenue += sub.period === 'annual' ? 75 : 99
+      }
+    }
+
+    // Revenue change: compare current MRR with what we'd estimate from prev subs
+    // Use simplified approach: prevActiveSubs had some revenue, current has monthlyRevenue
+    const estimatedPrevRevenue = prevActiveSubs > 0 ? (prevActiveSubs * (monthlyRevenue / Math.max(activeSubs, 1))) : 0
+    const revenueChange = estimatedPrevRevenue > 0
+      ? Math.round(((monthlyRevenue - estimatedPrevRevenue) / estimatedPrevRevenue) * 100)
+      : 0
 
     // Build activity feed
     const recentActivity = [
@@ -54,7 +102,7 @@ export async function GET(request: Request) {
       })),
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 15)
 
-    // Build chart data (simplified — group generations by day)
+    // Build chart data (simplified -- group generations by day)
     const gensByDay: Record<string, { images: number; videos: number; avatars: number }> = {}
     for (const g of generations) {
       const day = (g as any).created_at?.slice(0, 10)
@@ -73,15 +121,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       stats: {
-        totalUsers: profilesResult.count ?? 0,
-        activeSubscriptions: subsResult.count ?? 0,
-        monthlyRevenue: (subsResult.count ?? 0) * 20, // Simplified estimate
+        totalUsers,
+        activeSubscriptions: activeSubs,
+        monthlyRevenue,
         totalGenerations: generationsCount,
         creditsUsed: totalCreditsUsed,
         apiCalls: apiUsageResult.count ?? 0,
-        usersChange: 12,
-        subsChange: 5,
-        revenueChange: 8,
+        usersChange,
+        subsChange,
+        revenueChange,
         generationsChange: Math.round(((generationsCount - prevGenerationsCount) / Math.max(prevGenerationsCount, 1)) * 100),
       },
       revenueChart: generationsChart.map(d => ({ date: d.date, revenue: (d.images * 2 + d.videos * 10) })),

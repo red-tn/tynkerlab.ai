@@ -2,20 +2,20 @@ import { NextResponse } from 'next/server'
 import { generateSpeech, getTTSFamily } from '@/lib/together/tts'
 import { deductCredits, addCredits, checkCredits } from '@/lib/credits'
 import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 import type { TTSResponseFormat, TTSVoiceSettings } from '@/types/together'
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const body = await request.json()
     const {
-      userId,
       familyId,
       voice,
       input,
       responseFormat = 'mp3',
       settings = {},
     } = body as {
-      userId: string
       familyId: string
       voice: string
       input: string
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       settings?: Partial<TTSVoiceSettings>
     }
 
-    if (!userId || !familyId || !voice || !input) {
+    if (!familyId || !voice || !input) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -60,12 +60,16 @@ export async function POST(request: Request) {
 
     // Deduct credits
     const generationRef = `tts-${Date.now()}`
-    await deductCredits(
+    const deducted = await deductCredits(
       userId,
       family.creditsPerGeneration,
       `TTS generation: ${family.name} - ${voice}`,
       generationRef,
     )
+
+    if (!deducted) {
+      return NextResponse.json({ error: 'Failed to deduct credits' }, { status: 402 })
+    }
 
     try {
       // Generate speech with full voice settings
@@ -104,11 +108,11 @@ export async function POST(request: Request) {
         undefined,
         'refund',
       )
-      const message = genError instanceof Error ? genError.message : 'TTS generation failed'
-      return NextResponse.json({ error: message }, { status: 500 })
+      return NextResponse.json({ error: 'TTS generation failed' }, { status: 500 })
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

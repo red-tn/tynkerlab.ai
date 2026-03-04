@@ -6,14 +6,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, Clock, User } from 'lucide-react'
 import Image from 'next/image'
-import { getPostBySlug, getAllPosts, getPostBySlugFromDb, getAllPostsFromDb } from '@/lib/blog/posts'
+import { getPostBySlugFromDb, getAllPostsFromDb } from '@/lib/blog/posts'
 
 interface Props {
   params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
-  return getAllPosts().map(p => ({ slug: p.slug }))
+  const posts = await getAllPostsFromDb()
+  return posts.map(p => ({ slug: p.slug }))
 }
 
 export async function generateMetadata({ params }: Props) {

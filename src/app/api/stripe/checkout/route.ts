@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe/client'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: Request) {
   try {
+    const { userId, email } = await requireUser(request)
     const body = await request.json()
-    const { priceId, userId, userEmail, mode } = body
+    const { priceId, mode } = body
 
-    if (!priceId || !userId) {
+    if (!priceId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -20,13 +22,15 @@ export async function POST(request: Request) {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?canceled=true`,
-      customer_email: userEmail || undefined,
+      customer_email: email || undefined,
       metadata: { userId },
       allow_promotion_codes: true,
     })
 
     return NextResponse.json({ sessionId: session.id, url: session.url })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

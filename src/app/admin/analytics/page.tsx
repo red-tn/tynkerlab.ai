@@ -4,13 +4,11 @@ import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { StatsCard } from '@/components/admin/stats-card'
 import { ChartWrapper } from '@/components/admin/chart-wrapper'
-import { supabase } from '@/lib/supabase/client'
-import { Eye, Users, Clock, MousePointer } from 'lucide-react'
+import { adminFetch } from '@/lib/admin-fetch'
+import { Eye, Users } from 'lucide-react'
 
 const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart), { ssr: false })
 const Area = dynamic(() => import('recharts').then(m => m.Area), { ssr: false })
-const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false })
-const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false })
 const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false })
 const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false })
 const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false })
@@ -25,40 +23,15 @@ export default function AdminAnalyticsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        const { data: views, count, error } = await supabase
-          .from('page_views')
-          .select('*', { count: 'exact' })
-          .gt('created_at', thirtyDaysAgo)
-          .limit(5000)
+        const res = await adminFetch('/api/admin/analytics')
+        if (!res.ok) throw new Error('Failed to fetch analytics')
+        const data = await res.json()
 
-        if (error) throw error
+        setTotalViews(data.stats?.totalGenerations ?? 0)
+        setUniqueUsers(data.stats?.totalUsers ?? 0)
 
-        setTotalViews(count || 0)
-
-        // Count unique users
-        const userSet = new Set((views || []).map((d: any) => d.user_id || d.session_id))
-        setUniqueUsers(userSet.size)
-
-        // Group by day
-        const byDay: Record<string, number> = {}
-        for (const v of views || []) {
-          const day = (v as any).created_at?.slice(0, 10)
-          if (day) byDay[day] = (byDay[day] || 0) + 1
-        }
-
-        setPageViews(
-          Object.entries(byDay)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([date, views]) => ({ date: date.slice(5), views }))
-        )
-
-        // Group by path for top pages
-        const byPath: Record<string, number> = {}
-        for (const v of views || []) {
-          const path = (v as any).path || '/'
-          byPath[path] = (byPath[path] || 0) + 1
-        }
+        // Use the generationsChart data for the chart
+        setPageViews(data.generationsChart ?? [])
       } catch (err) {
         console.error(err)
       } finally {
@@ -72,8 +45,8 @@ export default function AdminAnalyticsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-white">Analytics</h1>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-2 gap-4">
+          {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="h-28 rounded-xl bg-nyx-surface animate-pulse" />
           ))}
         </div>
@@ -85,17 +58,15 @@ export default function AdminAnalyticsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Analytics</h1>
-        <p className="text-sm text-gray-400 mt-1">Page views and user engagement metrics</p>
+        <p className="text-sm text-gray-400 mt-1">Generations and user engagement metrics</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard title="Page Views (30d)" value={totalViews} icon={Eye} />
-        <StatsCard title="Unique Visitors" value={uniqueUsers} icon={Users} iconColor="text-accent-400" />
-        <StatsCard title="Avg Session" value="2m 34s" icon={Clock} iconColor="text-green-400" />
-        <StatsCard title="Bounce Rate" value="42%" icon={MousePointer} iconColor="text-orange-400" />
+      <div className="grid grid-cols-2 gap-4">
+        <StatsCard title="Generations (30d)" value={totalViews} icon={Eye} />
+        <StatsCard title="Total Users" value={uniqueUsers} icon={Users} iconColor="text-accent-400" />
       </div>
 
-      <ChartWrapper title="Page Views (Last 30 Days)" height={350}>
+      <ChartWrapper title="Generations (Last 30 Days)" height={350}>
         <AreaChart data={pageViews}>
           <defs>
             <linearGradient id="viewsGrad" x1="0" y1="0" x2="0" y2="1">
@@ -107,7 +78,8 @@ export default function AdminAnalyticsPage() {
           <XAxis dataKey="date" stroke="#6b7280" tick={{ fontSize: 11 }} />
           <YAxis stroke="#6b7280" tick={{ fontSize: 11 }} />
           <Tooltip contentStyle={{ backgroundColor: '#12121a', border: '1px solid #2a2a3e', borderRadius: 8, fontSize: 12 }} />
-          <Area type="monotone" dataKey="views" stroke="var(--color-primary-500)" fillOpacity={1} fill="url(#viewsGrad)" />
+          <Area type="monotone" dataKey="images" stroke="var(--color-primary-500)" fillOpacity={1} fill="url(#viewsGrad)" name="Images" />
+          <Area type="monotone" dataKey="videos" stroke="var(--color-accent-500)" fillOpacity={0.3} fill="none" name="Videos" />
         </AreaChart>
       </ChartWrapper>
     </div>

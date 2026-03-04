@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 
@@ -48,7 +49,7 @@ export default function PrivacyPolicyPage() {
             <BulletList items={[
               'Together.ai — to process your generation requests (prompts are sent to their API).',
               'Stripe — to process payments securely.',
-              'Appwrite — our backend infrastructure provider for authentication and storage.',
+              'Supabase — our backend infrastructure provider for authentication and storage.',
               'Law enforcement — only when required by law or to protect our rights.',
             ]} />
           </Section>
@@ -73,7 +74,7 @@ export default function PrivacyPolicyPage() {
 
           <Section title="8. Cookies">
             We use essential cookies for authentication and session management. We do not use
-            third-party advertising cookies. See our Cookie Policy for details.
+            third-party advertising cookies. See our <Link href="/cookies" className="text-primary-400 hover:underline">Cookie Policy</Link> for details.
           </Section>
 
           <Section title="9. Your Rights">

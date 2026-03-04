@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       .range(page * limit, page * limit + limit - 1)
 
     if (search) {
-      query = query.ilike('full_name', `%${search}%`)
+      query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`)
     }
 
     const { data, count, error } = await query

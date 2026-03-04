@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { checkCredits, getBalance } from '@/lib/credits'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: Request) {
   try {
-    const { userId, amount } = await request.json()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
-    }
+    const { userId } = await requireUser(request)
+    const { amount } = await request.json()
 
     const balance = await getBalance(userId)
     const hasEnough = amount ? balance >= amount : true
@@ -19,6 +17,8 @@ export async function POST(request: Request) {
       deficit: amount ? Math.max(0, amount - balance) : 0,
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -30,6 +30,7 @@ export interface Profile extends DbRow {
   total_videos: number
   total_avatars: number
   last_active_at: string | null
+  last_checkin_date: string | null
   bio: string | null
   location: string | null
   website: string | null
@@ -55,6 +56,7 @@ export interface ProfileCreate {
   total_videos?: number
   total_avatars?: number
   last_active_at?: string | null
+  last_checkin_date?: string | null
   bio?: string | null
   location?: string | null
   website?: string | null
@@ -65,7 +67,7 @@ export type ProfileUpdate = Partial<Omit<ProfileCreate, 'user_id'>>
 // ---------------------------------------------------------------------------
 // Generation
 // ---------------------------------------------------------------------------
-export type GenerationType = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video' | 'ugc-avatar'
+export type GenerationType = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video' | 'ugc-avatar' | 'text-to-speech'
 export type GenerationStatus = 'pending' | 'processing' | 'completed' | 'failed'
 
 export interface Generation extends DbRow {
@@ -129,6 +131,9 @@ export type CreditTransactionType =
   | 'generation_debit'
   | 'admin_adjustment'
   | 'refund'
+  | 'daily_checkin'
+  | 'credit_purchase'
+  | 'subscription_credit'
 
 export interface CreditTransaction {
   id: string

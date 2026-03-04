@@ -4,6 +4,7 @@ import { getModelById, getModelResolution, getVideoResolutionForQuality, getVide
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
+import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 
 export const maxDuration = 60
 
@@ -22,13 +23,14 @@ function isContentModerationError(msg: string): boolean {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const body = await request.json()
     const {
-      model, prompt, imageUrl, type, userId, aspectRatio, duration,
+      model, prompt, imageUrl, type, aspectRatio, duration,
       quality, seed, negativePrompt, cameraMotion,
     } = body
 
-    if (!model || !prompt || !userId) {
+    if (!model || !prompt) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
       .single()
 
     if (genInsertError || !genDoc) {
-      return NextResponse.json({ error: genInsertError?.message || 'Failed to create generation record' }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to create generation record' }, { status: 500 })
     }
 
     const generationId = genDoc.id
@@ -133,12 +135,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errorMsg }, { status: 500 })
     }
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function GET(request: Request) {
   try {
+    await requireUser(request)
     const { searchParams } = new URL(request.url)
     const jobId = searchParams.get('jobId')
 
@@ -219,13 +224,16 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ status: status.status })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // PUT — client reports a timeout or cancellation, refund credits
 export async function PUT(request: Request) {
   try {
+    const { userId } = await requireUser(request)
     const { jobId } = await request.json()
     if (!jobId) {
       return NextResponse.json({ error: 'jobId required' }, { status: 400 })
@@ -243,6 +251,11 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Generation not found' }, { status: 404 })
     }
 
+    // Verify the generation belongs to the authenticated user
+    if (gen.user_id !== userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     // Only refund if not already completed or failed
     if (gen.status !== 'completed' && gen.status !== 'failed') {
       await refundCredits(gen.user_id, gen.credits_used, 'Refund: video generation cancelled', gen.id)
@@ -255,6 +268,8 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ refunded: false, reason: `Generation status is ${gen.status}` })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const authErr = authErrorResponse(error)
+    if (authErr) return authErr
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
