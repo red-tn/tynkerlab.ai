@@ -10,6 +10,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    if (!priceId.startsWith('price_')) {
+      return NextResponse.json({ error: 'Invalid price ID. Please check Stripe configuration.' }, { status: 400 })
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: mode === 'subscription' ? 'subscription' : 'payment',
       payment_method_types: ['card'],
