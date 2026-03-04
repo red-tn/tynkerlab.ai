@@ -3,6 +3,7 @@ import { createVideoJob, checkVideoStatus } from '@/lib/together/video'
 import { getModelById, getModelResolution, getVideoResolutionForQuality, getVideoCreditsForQuality } from '@/lib/together/models'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient } from '@/lib/supabase/server'
+import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
 
 export const maxDuration = 60
 
@@ -29,6 +30,17 @@ export async function POST(request: Request) {
 
     if (!model || !prompt || !userId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Tier gate: video generation requires a paid subscription
+    const tier = await getUserTier(userId)
+    try {
+      requirePaidTier(tier, 'Video generation')
+    } catch (e) {
+      if (e instanceof TierGateError) {
+        return NextResponse.json({ error: e.message }, { status: 403 })
+      }
+      throw e
     }
 
     const modelData = getModelById(model)

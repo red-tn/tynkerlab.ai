@@ -30,7 +30,7 @@ export function PricingToggle({ annual, onToggle }: PricingToggleProps) {
       </span>
       {annual && (
         <span className="text-xs font-semibold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">
-          Save 50%
+          Save 25%
         </span>
       )}
     </div>

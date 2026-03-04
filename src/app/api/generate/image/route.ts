@@ -3,6 +3,8 @@ import { generateImage, generateImageFromImage } from '@/lib/together/image'
 import { getModelById, getModelResolution } from '@/lib/together/models'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient } from '@/lib/supabase/server'
+import { getUserTier } from '@/lib/tier-gate'
+import { applyWatermark } from '@/lib/watermark'
 
 // Allow up to 2 minutes for image generation + storage upload (Vercel)
 export const maxDuration = 120
@@ -82,12 +84,17 @@ export async function POST(request: Request) {
 
       // Store in Supabase Storage
       const imageResponse = await fetch(result.url)
-      const imageBuffer = await imageResponse.arrayBuffer()
+      const rawBuffer = Buffer.from(await imageResponse.arrayBuffer())
+
+      // Watermark free tier images
+      const userTier = await getUserTier(userId)
+      const imageBuffer = userTier === 'free' ? await applyWatermark(rawBuffer) : rawBuffer
+
       const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_UPLOADS || 'uploads'
       const filePath = `gen-${generationId}.png`
       await supabase.storage
         .from(bucket)
-        .upload(filePath, Buffer.from(imageBuffer), { contentType: 'image/png' })
+        .upload(filePath, imageBuffer, { contentType: 'image/png' })
 
       const { data: { publicUrl: outputUrl } } = supabase.storage
         .from(bucket)

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { generateSpeech, getTTSFamily } from '@/lib/together/tts'
 import { deductCredits, addCredits, checkCredits } from '@/lib/credits'
+import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
 import type { TTSResponseFormat, TTSVoiceSettings } from '@/types/together'
 
 export async function POST(request: Request) {
@@ -29,6 +30,19 @@ export async function POST(request: Request) {
     const family = getTTSFamily(familyId)
     if (!family) {
       return NextResponse.json({ error: 'Invalid model family' }, { status: 400 })
+    }
+
+    // Tier gate: premium TTS voices (non-Kokoro) require a paid subscription
+    if (familyId !== 'kokoro') {
+      const tier = await getUserTier(userId)
+      try {
+        requirePaidTier(tier, 'Premium TTS voices')
+      } catch (e) {
+        if (e instanceof TierGateError) {
+          return NextResponse.json({ error: e.message }, { status: 403 })
+        }
+        throw e
+      }
     }
 
     if (input.length > family.maxCharacters) {

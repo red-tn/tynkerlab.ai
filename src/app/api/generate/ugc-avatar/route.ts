@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAvatarJob, checkJobStatus } from '@/lib/wavespeed/client'
 import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient } from '@/lib/supabase/server'
+import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
 
 export const maxDuration = 60
 
@@ -14,11 +15,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields (userId, imageUrl, audioUrl)' }, { status: 400 })
     }
 
+    // Tier gate: UGC Avatars require a paid subscription
+    const tier = await getUserTier(userId)
+    try {
+      requirePaidTier(tier, 'UGC Avatars')
+    } catch (e) {
+      if (e instanceof TierGateError) {
+        return NextResponse.json({ error: e.message }, { status: 403 })
+      }
+      throw e
+    }
+
     const res = resolution || '480p'
     const duration = durationSeconds || 60
 
-    // 40 credits per minute, minimum 40
-    const creditsToCharge = Math.max(40, Math.ceil(duration / 60) * 40)
+    // 120 credits per minute, minimum 120
+    const creditsToCharge = Math.max(120, Math.ceil(duration / 60) * 120)
 
     const hasCredits = await checkCredits(userId, creditsToCharge)
     if (!hasCredits) {

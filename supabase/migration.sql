@@ -391,5 +391,10 @@ ALTER TABLE generations ADD COLUMN IF NOT EXISTS input_audio_url text;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS total_avatars int NOT NULL DEFAULT 0;
 
 -- ---------------------------------------------------------------------------
+-- Daily check-in support
+-- ---------------------------------------------------------------------------
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_checkin_date date;
+
+-- ---------------------------------------------------------------------------
 -- Done! Verify with: SELECT tablename FROM pg_tables WHERE schemaname = 'public';
 -- ---------------------------------------------------------------------------

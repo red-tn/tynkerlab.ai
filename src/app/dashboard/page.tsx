@@ -20,7 +20,7 @@ import { adminFetch } from '@/lib/admin-fetch'
 import { formatDate } from '@/lib/utils'
 import {
   Wand2, ImageIcon, Video, Image, Volume2, Coins, TrendingUp,
-  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2, UserCircle, Download, Info, BookOpen, Send
+  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2, UserCircle, Download, Info, BookOpen, Send, Gift
 } from 'lucide-react'
 
 const CATEGORIES: { value: PromptCategory; label: string }[] = [
@@ -53,6 +53,8 @@ export default function DashboardPage() {
   const [publishAs, setPublishAs] = useState<'curated' | 'community'>('curated')
   const [postingInspiration, setPostingInspiration] = useState(false)
   const [submitMode, setSubmitMode] = useState<'admin' | 'user'>('admin')
+  const [checkinClaimed, setCheckinClaimed] = useState(false)
+  const [checkinLoading, setCheckinLoading] = useState(false)
   const isAdmin = profile?.role === 'admin'
 
   const handleDownload = async (gen: Generation) => {
@@ -196,6 +198,32 @@ export default function DashboardPage() {
     }
   }
 
+  const handleCheckin = async () => {
+    if (!user || checkinLoading || checkinClaimed) return
+    setCheckinLoading(true)
+    try {
+      const res = await fetch('/api/credits/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      })
+      const data = await res.json()
+      if (data.already_claimed) {
+        setCheckinClaimed(true)
+        addToast('Already claimed today!', 'info')
+      } else if (data.credits_granted) {
+        setCheckinClaimed(true)
+        addToast(`+${data.credits_granted} daily credits claimed!`, 'success')
+      } else if (data.error) {
+        addToast(data.error, 'error')
+      }
+    } catch {
+      addToast('Failed to claim daily credits', 'error')
+    } finally {
+      setCheckinLoading(false)
+    }
+  }
+
   const quickLinks = [
     { href: '/studio/text-to-image', label: 'Text to Image', desc: 'Generate from text prompts', icon: Wand2, gradient: 'from-primary-500 to-primary-700' },
     { href: '/studio/image-to-image', label: 'Image to Image', desc: 'Transform existing images', icon: ImageIcon, gradient: 'from-accent-500 to-accent-700' },
@@ -244,24 +272,55 @@ export default function DashboardPage() {
             </div>
 
             {/* Credits pill */}
-            <div className="flex items-center gap-4 bg-nyx-bg/60 backdrop-blur-sm border border-nyx-border rounded-xl px-5 py-4 min-w-[200px]">
-              <div className="relative">
-                <svg className="h-14 w-14 -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" className="text-nyx-border" strokeWidth="3" />
-                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="url(#credit-grad)" strokeWidth="3" strokeDasharray={`${creditsPercent} ${100 - creditsPercent}`} strokeLinecap="round" />
-                  <defs>
-                    <linearGradient id="credit-grad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" />
-                      <stop offset="100%" stopColor="#38bdf8" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <Coins className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-5 w-5 text-primary-400" />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-4 bg-nyx-bg/60 backdrop-blur-sm border border-nyx-border rounded-xl px-5 py-4 min-w-[200px]">
+                <div className="relative">
+                  <svg className="h-14 w-14 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" className="text-nyx-border" strokeWidth="3" />
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="url(#credit-grad)" strokeWidth="3" strokeDasharray={`${creditsPercent} ${100 - creditsPercent}`} strokeLinecap="round" />
+                    <defs>
+                      <linearGradient id="credit-grad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" />
+                        <stop offset="100%" stopColor="#38bdf8" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <Coins className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-5 w-5 text-primary-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{profile?.credits_balance?.toLocaleString() ?? 0}</p>
+                  <p className="text-xs text-gray-500">credits remaining</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-white">{profile?.credits_balance?.toLocaleString() ?? 0}</p>
-                <p className="text-xs text-gray-500">credits remaining</p>
-              </div>
+              {profile?.subscription_tier === 'free' && (
+                <button
+                  onClick={handleCheckin}
+                  disabled={checkinClaimed || checkinLoading}
+                  className={cn(
+                    'flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300',
+                    checkinClaimed
+                      ? 'bg-green-500/10 border border-green-500/20 text-green-400 cursor-default'
+                      : 'bg-gradient-to-r from-primary-500/20 to-accent-500/20 border border-primary-500/30 text-primary-300 hover:from-primary-500/30 hover:to-accent-500/30 hover:border-primary-500/50 hover:shadow-lg hover:shadow-primary-500/10'
+                  )}
+                >
+                  {checkinClaimed ? (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Claimed!
+                    </>
+                  ) : checkinLoading ? (
+                    <>
+                      <Sparkles className="h-4 w-4 animate-spin" />
+                      Claiming...
+                    </>
+                  ) : (
+                    <>
+                      <Gift className="h-4 w-4" />
+                      Claim Daily Credits (+3)
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
