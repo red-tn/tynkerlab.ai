@@ -56,8 +56,8 @@ export default function SubscriptionPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl font-bold text-white">{currentTier.name}</span>
-              <Badge variant={profile?.subscription_status === 'active' ? 'success' : 'default'}>
-                {profile?.subscription_status || 'free'}
+              <Badge variant={currentTier.id === 'free' || profile?.subscription_status === 'active' ? 'success' : 'default'}>
+                {currentTier.id === 'free' ? 'active' : (profile?.subscription_status || 'inactive')}
               </Badge>
             </div>
             <p className="text-sm text-gray-400">{currentTier.description}</p>
