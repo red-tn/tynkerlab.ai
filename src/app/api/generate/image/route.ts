@@ -86,9 +86,16 @@ export async function POST(request: Request) {
       const imageResponse = await fetch(result.url)
       const rawBuffer = Buffer.from(await imageResponse.arrayBuffer())
 
-      // Watermark free tier images
+      // Watermark free tier images (graceful fallback — don't fail gen if watermark errors)
       const userTier = await getUserTier(userId)
-      const imageBuffer = userTier === 'free' ? await applyWatermark(rawBuffer) : rawBuffer
+      let imageBuffer: Buffer = rawBuffer
+      if (userTier === 'free') {
+        try {
+          imageBuffer = await applyWatermark(rawBuffer)
+        } catch (wmErr) {
+          console.error('Watermark failed, uploading without:', wmErr)
+        }
+      }
 
       const bucket = process.env.NEXT_PUBLIC_SUPABASE_BUCKET_UPLOADS || 'uploads'
       const filePath = `gen-${generationId}.png`
