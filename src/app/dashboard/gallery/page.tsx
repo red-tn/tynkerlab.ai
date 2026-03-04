@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog } from '@/components/ui/dialog'
+import { Lightbox } from '@/components/ui/lightbox'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
-import { Image as ImageIcon, Video, Download, ChevronLeft, ChevronRight, BookOpen, Send, Trash2 } from 'lucide-react'
+import { Image as ImageIcon, Video, Download, ChevronLeft, ChevronRight, BookOpen, Send, Trash2, Info } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import { adminFetch } from '@/lib/admin-fetch'
 import { getModelById } from '@/lib/together/models'
@@ -45,6 +46,7 @@ export default function GalleryPage() {
 
   // Detail dialog state
   const [detailGen, setDetailGen] = useState<Generation | null>(null)
+  const [lightboxGen, setLightboxGen] = useState<Generation | null>(null)
 
   // Post/Submit to Inspirations state
   const [inspirationGen, setInspirationGen] = useState<Generation | null>(null)
@@ -258,7 +260,7 @@ export default function GalleryPage() {
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {generations.map((gen) => (
-              <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden cursor-pointer" onClick={() => setDetailGen(gen)}>
+              <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden cursor-pointer" onClick={() => setLightboxGen(gen)}>
                 {gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
                   <video src={gen.output_url || ''} className="w-full aspect-square object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => (e.target as HTMLVideoElement).pause()} />
                 ) : (
@@ -277,6 +279,9 @@ export default function GalleryPage() {
                         <span className="text-[10px] text-gray-400">{formatDate(gen.created_at)}</span>
                       </div>
                       <div className="flex items-center gap-1">
+                        <button onClick={(e) => { e.stopPropagation(); setDetailGen(gen) }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="View details">
+                          <Info className="h-3 w-3 text-white" />
+                        </button>
                         {isAdmin && (
                           <button onClick={(e) => { e.stopPropagation(); openInspirationDialog(gen, 'admin') }} className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors" title="Post to Inspirations">
                             <BookOpen className="h-3 w-3 text-primary-400" />
@@ -350,6 +355,21 @@ export default function GalleryPage() {
           )}
         </>
       )}
+
+      {/* Lightbox */}
+      {lightboxGen && lightboxGen.output_url && (() => {
+        const currentIndex = generations.findIndex(g => g.id === lightboxGen.id)
+        return (
+          <Lightbox
+            url={lightboxGen.output_url}
+            type={lightboxGen.type.includes('video') || lightboxGen.type === 'ugc-avatar' ? 'video' : 'image'}
+            alt={lightboxGen.prompt || ''}
+            onClose={() => setLightboxGen(null)}
+            onPrev={currentIndex > 0 ? () => setLightboxGen(generations[currentIndex - 1]) : undefined}
+            onNext={currentIndex < generations.length - 1 ? () => setLightboxGen(generations[currentIndex + 1]) : undefined}
+          />
+        )
+      })()}
 
       {/* Generation Detail Dialog */}
       {detailGen && (() => {

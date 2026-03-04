@@ -12,12 +12,13 @@ import { formatRelativeDate } from '@/lib/utils'
 import type { Generation } from '@/types/database'
 import { useToast } from '@/components/ui/toast'
 import { Dialog } from '@/components/ui/dialog'
+import { Lightbox } from '@/components/ui/lightbox'
 import { getModelById } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import { formatDate } from '@/lib/utils'
 import {
   Wand2, ImageIcon, Video, Image, Volume2, Coins, TrendingUp,
-  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2, UserCircle, Download
+  Zap, ArrowRight, Clock, Sparkles, Crown, CreditCard, Trash2, UserCircle, Download, Info
 } from 'lucide-react'
 
 export default function DashboardPage() {
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [detailGen, setDetailGen] = useState<Generation | null>(null)
+  const [lightboxGen, setLightboxGen] = useState<Generation | null>(null)
 
   const handleDownload = async (gen: Generation) => {
     if (!gen.output_url) return
@@ -275,7 +277,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {recentGenerations.map((gen) => (
-              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer" onClick={() => setDetailGen(gen)}>
+              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer" onClick={() => setLightboxGen(gen)}>
                 <div className="aspect-video bg-nyx-border relative overflow-hidden">
                   {gen.output_url ? (
                     gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
@@ -318,8 +320,15 @@ export default function DashboardPage() {
                       </button>
                     )}
                   </div>
-                  {/* Download button */}
-                  <div className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                  {/* Info + Download buttons */}
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDetailGen(gen) }}
+                      className="p-1.5 rounded-lg bg-black/50 hover:bg-white/20 transition-colors"
+                      title="View details"
+                    >
+                      <Info className="h-3.5 w-3.5 text-white" />
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDownload(gen) }}
                       className="p-1.5 rounded-lg bg-black/50 hover:bg-white/20 transition-colors"
@@ -344,6 +353,16 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Lightbox */}
+      {lightboxGen && lightboxGen.output_url && (
+        <Lightbox
+          url={lightboxGen.output_url}
+          type={lightboxGen.type.includes('video') || lightboxGen.type === 'ugc-avatar' ? 'video' : 'image'}
+          alt={lightboxGen.prompt || ''}
+          onClose={() => setLightboxGen(null)}
+        />
+      )}
 
       {/* Generation Detail Dialog */}
       {detailGen && (() => {
