@@ -21,7 +21,7 @@ export const BLOG_POSTS: BlogPost[] = [
     category: 'Announcement',
     date: '2026-02-26',
     readTime: '4 min read',
-    coverImage: '/blog/introducing-tynkerlab.jpg',
+    coverImage: '/blog/introducing-tynkerlab.svg',
     author: { name: 'Tynkerlab.ai Team', role: 'Engineering' },
     content: `
 ## Why We Built Tynkerlab.ai
@@ -69,7 +69,7 @@ Welcome to the future of AI-powered creativity.
     category: 'Tutorial',
     date: '2026-02-24',
     readTime: '7 min read',
-    coverImage: '/blog/flux-pro-guide.jpg',
+    coverImage: '/blog/flux-pro-guide.svg',
     author: { name: 'Tynkerlab.ai Team', role: 'AI Research' },
     content: `
 ## Understanding the FLUX Family
@@ -150,7 +150,7 @@ Happy generating!
     category: 'Tutorial',
     date: '2026-02-20',
     readTime: '6 min read',
-    coverImage: '/blog/video-generation-tips.jpg',
+    coverImage: '/blog/video-generation-tips.svg',
     author: { name: 'Tynkerlab.ai Team', role: 'Creative' },
     content: `
 ## The State of AI Video
@@ -230,7 +230,7 @@ This three-step approach can save you hundreds of credits over time.
     category: 'Guide',
     date: '2026-02-18',
     readTime: '8 min read',
-    coverImage: '/blog/ai-models-compared.jpg',
+    coverImage: '/blog/ai-models-compared.svg',
     author: { name: 'Tynkerlab.ai Team', role: 'AI Research' },
     content: `
 ## The Paradox of Choice
@@ -319,7 +319,7 @@ This progressive approach maximizes quality while minimizing credit spend.
     category: 'Guide',
     date: '2026-02-15',
     readTime: '3 min read',
-    coverImage: '/blog/credits-explained.jpg',
+    coverImage: '/blog/credits-explained.svg',
     author: { name: 'Tynkerlab.ai Team', role: 'Product' },
     content: `
 ## How Credits Work
@@ -384,7 +384,7 @@ We believe in transparent pricing. The credit cost for every model is displayed 
     category: 'Announcement',
     date: '2026-02-12',
     readTime: '2 min read',
-    coverImage: '/blog/prompt-gallery.jpg',
+    coverImage: '/blog/prompt-gallery.svg',
     author: { name: 'Tynkerlab.ai Team', role: 'Product' },
     content: `
 ## Inspiration on Demand
@@ -431,4 +431,72 @@ export function getPostBySlug(slug: string): BlogPost | undefined {
 
 export function getAllPosts(): BlogPost[] {
   return BLOG_POSTS.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
+
+// ---------------------------------------------------------------------------
+// Database-backed helpers (server-side only)
+// ---------------------------------------------------------------------------
+function dbPostToBlogPost(row: any): BlogPost {
+  return {
+    slug: row.slug,
+    title: row.title,
+    excerpt: row.excerpt,
+    content: row.content,
+    category: row.category,
+    date: row.published_at
+      ? row.published_at.split('T')[0]
+      : row.created_at.split('T')[0],
+    readTime: row.read_time,
+    coverImage: row.cover_image_url || `/blog/${row.slug}.jpg`,
+    author: { name: row.author_name, role: row.author_role },
+  }
+}
+
+/**
+ * Fetch all published blog posts from Supabase.
+ * Falls back to static BLOG_POSTS if the table doesn't exist or the query fails.
+ */
+export async function getAllPostsFromDb(): Promise<BlogPost[]> {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+
+    if (error || !data || data.length === 0) {
+      return getAllPosts()
+    }
+
+    return data.map(dbPostToBlogPost)
+  } catch {
+    return getAllPosts()
+  }
+}
+
+/**
+ * Fetch a single published blog post by slug from Supabase.
+ * Falls back to static BLOG_POSTS if the table doesn't exist or the query fails.
+ */
+export async function getPostBySlugFromDb(slug: string): Promise<BlogPost | undefined> {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const supabase = createAdminClient()
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single()
+
+    if (error || !data) {
+      return getPostBySlug(slug)
+    }
+
+    return dbPostToBlogPost(data)
+  } catch {
+    return getPostBySlug(slug)
+  }
 }

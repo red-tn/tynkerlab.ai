@@ -1,9 +1,10 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, ArrowRight, Clock } from 'lucide-react'
-import { getAllPosts } from '@/lib/blog/posts'
+import { getAllPostsFromDb } from '@/lib/blog/posts'
 
 export const metadata = {
   title: 'Blog | Tynkerlab.ai',
@@ -18,8 +19,8 @@ function formatDate(dateStr: string) {
   })
 }
 
-export default function BlogPage() {
-  const posts = getAllPosts()
+export default async function BlogPage() {
+  const posts = await getAllPostsFromDb()
 
   return (
     <div className="min-h-screen relative z-[1]">
@@ -45,9 +46,18 @@ export default function BlogPage() {
             <Link key={post.slug} href={`/blog/${post.slug}`}>
               <article className="group bg-nyx-surface border border-nyx-border rounded-xl overflow-hidden hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 h-full">
                 <div className="aspect-video bg-nyx-bg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-accent-500/10 flex items-center justify-center">
-                    <span className="text-4xl font-bold gradient-text opacity-30">{post.title.charAt(0)}</span>
-                  </div>
+                  {post.coverImage && !post.coverImage.includes('.jpg') ? (
+                    <Image
+                      src={post.coverImage}
+                      alt={post.title}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-accent-500/10 flex items-center justify-center">
+                      <span className="text-4xl font-bold gradient-text opacity-30">{post.title.charAt(0)}</span>
+                    </div>
+                  )}
                   <div className="absolute top-3 left-3">
                     <Badge variant="default" className="gradient-primary text-white text-[10px]">{post.category}</Badge>
                   </div>

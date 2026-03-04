@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#12121a"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="75%" cy="45%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <!-- Coins motif -->
+  <ellipse cx="1000" cy="280" rx="80" ry="20" stroke="#fbbf24" stroke-width="2" fill="none" opacity="0.15"/>
+  <ellipse cx="1000" cy="260" rx="80" ry="20" stroke="#fbbf24" stroke-width="2" fill="#fbbf24" fill-opacity="0.03" opacity="0.15"/>
+  <ellipse cx="1000" cy="240" rx="80" ry="20" stroke="#fbbf24" stroke-width="2" fill="#fbbf24" fill-opacity="0.03" opacity="0.15"/>
+  <ellipse cx="1000" cy="220" rx="80" ry="20" stroke="#fbbf24" stroke-width="2" fill="#fbbf24" fill-opacity="0.05" opacity="0.2"/>
+  <!-- Credit symbol on top coin -->
+  <text x="1000" y="226" font-family="Inter, system-ui, sans-serif" font-size="16" font-weight="700" fill="#fbbf24" text-anchor="middle" opacity="0.2">C</text>
+  <!-- Decorative lines -->
+  <line x1="900" y1="320" x2="1100" y2="320" stroke="#2a2a3e" stroke-width="1"/>
+  <!-- Price tags -->
+  <rect x="910" y="340" width="60" height="24" rx="12" fill="#f59e0b" opacity="0.1"/>
+  <text x="940" y="357" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#fbbf24" text-anchor="middle">$5</text>
+  <rect x="980" y="340" width="60" height="24" rx="12" fill="#06b6d4" opacity="0.1"/>
+  <text x="1010" y="357" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#22d3ee" text-anchor="middle">$20</text>
+  <rect x="1050" y="340" width="60" height="24" rx="12" fill="#8b5cf6" opacity="0.1"/>
+  <text x="1080" y="357" font-family="Inter, system-ui, sans-serif" font-size="11" fill="#a78bfa" text-anchor="middle">$125</text>
+  <!-- Sparkles -->
+  <circle cx="150" cy="130" r="3" fill="#fbbf24" opacity="0.3"/>
+  <circle cx="350" cy="100" r="2" fill="#06b6d4" opacity="0.2"/>
+  <circle cx="550" cy="170" r="2" fill="#ec4899" opacity="0.15"/>
+  <!-- Badge -->
+  <rect x="80" y="180" width="90" height="32" rx="16" fill="#8b5cf6" opacity="0.15"/>
+  <text x="125" y="201" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#a78bfa" text-anchor="middle">GUIDE</text>
+  <!-- Title -->
+  <text x="80" y="268" font-family="Inter, system-ui, sans-serif" font-size="40" font-weight="800" fill="white">Understanding Credits:</text>
+  <text x="80" y="320" font-family="Inter, system-ui, sans-serif" font-size="40" font-weight="800" fill="url(#amber)">How Pricing Works</text>
+  <!-- Subtitle -->
+  <text x="80" y="375" font-family="Inter, system-ui, sans-serif" font-size="18" fill="#9ca3af">Transparent pricing, credit packs, and tips to maximize value.</text>
+  <!-- Bottom bar -->
+  <rect x="0" y="590" width="1200" height="40" fill="#f59e0b" opacity="0.08"/>
+  <text x="80" y="616" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#d97706">tynkerlab.ai</text>
+  <text x="1120" y="616" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#6b7280" text-anchor="end">Feb 15, 2026</text>
+</svg>

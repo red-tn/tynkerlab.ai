@@ -5,7 +5,8 @@ import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Calendar, Clock, User } from 'lucide-react'
-import { getPostBySlug, getAllPosts } from '@/lib/blog/posts'
+import Image from 'next/image'
+import { getPostBySlug, getAllPosts, getPostBySlugFromDb, getAllPostsFromDb } from '@/lib/blog/posts'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -17,7 +18,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params
-  const post = getPostBySlug(slug)
+  const post = await getPostBySlugFromDb(slug)
   if (!post) return { title: 'Not Found' }
   return {
     title: `${post.title} | Tynkerlab.ai Blog`,
@@ -167,11 +168,11 @@ function renderMarkdown(content: string) {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params
-  const post = getPostBySlug(slug)
+  const post = await getPostBySlugFromDb(slug)
 
   if (!post) notFound()
 
-  const allPosts = getAllPosts()
+  const allPosts = await getAllPostsFromDb()
   const currentIdx = allPosts.findIndex(p => p.slug === slug)
   const relatedPosts = allPosts.filter((_, i) => i !== currentIdx).slice(0, 2)
 
@@ -180,9 +181,15 @@ export default async function BlogPostPage({ params }: Props) {
       <Navbar />
 
       {/* Cover */}
-      <div className="relative h-48 md:h-64 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-900/60 via-nyx-bg to-accent-900/30" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary-500/15 via-transparent to-transparent" />
+      <div className="relative h-48 md:h-72 overflow-hidden">
+        {post.coverImage && !post.coverImage.includes('.jpg') ? (
+          <Image src={post.coverImage} alt={post.title} fill className="object-cover" />
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-900/60 via-nyx-bg to-accent-900/30" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary-500/15 via-transparent to-transparent" />
+          </>
+        )}
       </div>
 
       {/* Content */}

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#12121a"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="30%" cy="70%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="70%" cy="30%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+  <!-- Decorative gear -->
+  <circle cx="950" cy="320" r="120" stroke="#d97706" stroke-width="2" fill="none" opacity="0.15"/>
+  <circle cx="950" cy="320" r="80" stroke="#d97706" stroke-width="1.5" fill="none" opacity="0.1"/>
+  <circle cx="950" cy="320" r="20" fill="#d97706" opacity="0.1"/>
+  <!-- Gear teeth -->
+  <line x1="950" y1="190" x2="950" y2="210" stroke="#d97706" stroke-width="3" opacity="0.12"/>
+  <line x1="950" y1="430" x2="950" y2="450" stroke="#d97706" stroke-width="3" opacity="0.12"/>
+  <line x1="820" y1="320" x2="840" y2="320" stroke="#d97706" stroke-width="3" opacity="0.12"/>
+  <line x1="1060" y1="320" x2="1080" y2="320" stroke="#d97706" stroke-width="3" opacity="0.12"/>
+  <!-- Circuit lines -->
+  <path d="M0 500 H200 L250 450 H400" stroke="#06b6d4" stroke-width="1" fill="none" opacity="0.08"/>
+  <path d="M0 520 H150 L180 490 H350 L380 520 H500" stroke="#8b5cf6" stroke-width="1" fill="none" opacity="0.06"/>
+  <!-- Decorative nodes -->
+  <circle cx="200" cy="180" r="4" fill="#f59e0b" opacity="0.3"/>
+  <circle cx="350" cy="140" r="3" fill="#06b6d4" opacity="0.25"/>
+  <circle cx="180" cy="250" r="2.5" fill="#8b5cf6" opacity="0.2"/>
+  <circle cx="1100" cy="150" r="3" fill="#f59e0b" opacity="0.2"/>
+  <circle cx="1050" cy="500" r="2" fill="#06b6d4" opacity="0.15"/>
+  <!-- Badge -->
+  <rect x="80" y="180" width="160" height="32" rx="16" fill="#f59e0b" opacity="0.15"/>
+  <text x="160" y="201" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#fbbf24" text-anchor="middle">ANNOUNCEMENT</text>
+  <!-- Title -->
+  <text x="80" y="270" font-family="Inter, system-ui, sans-serif" font-size="42" font-weight="800" fill="white">Introducing Tynkerlab.ai</text>
+  <text x="80" y="325" font-family="Inter, system-ui, sans-serif" font-size="42" font-weight="800" fill="url(#amber)">AI Creative Tools for Everyone</text>
+  <!-- Subtitle -->
+  <text x="80" y="380" font-family="Inter, system-ui, sans-serif" font-size="18" fill="#9ca3af">54 AI models. One unified platform. Infinite creativity.</text>
+  <!-- Bottom bar -->
+  <rect x="0" y="590" width="1200" height="40" fill="#f59e0b" opacity="0.08"/>
+  <text x="80" y="616" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#d97706">tynkerlab.ai</text>
+  <text x="1120" y="616" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#6b7280" text-anchor="end">Feb 26, 2026</text>
+</svg>

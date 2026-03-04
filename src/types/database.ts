@@ -380,6 +380,45 @@ export interface AffiliateEvent {
 }
 
 // ---------------------------------------------------------------------------
+// Blog Post
+// ---------------------------------------------------------------------------
+export type BlogPostStatus = 'draft' | 'published'
+
+export interface BlogPost extends DbRow {
+  slug: string
+  title: string
+  excerpt: string
+  content: string
+  category: string
+  cover_image_url: string | null
+  author_name: string
+  author_role: string
+  status: BlogPostStatus
+  published_at: string | null
+  read_time: string
+  meta_title: string | null
+  meta_description: string | null
+}
+
+export interface BlogPostCreate {
+  slug: string
+  title: string
+  excerpt?: string
+  content?: string
+  category?: string
+  cover_image_url?: string | null
+  author_name?: string
+  author_role?: string
+  status?: BlogPostStatus
+  published_at?: string | null
+  read_time?: string
+  meta_title?: string | null
+  meta_description?: string | null
+}
+
+export type BlogPostUpdate = Partial<BlogPostCreate>
+
+// ---------------------------------------------------------------------------
 // User Role type
 // ---------------------------------------------------------------------------
 export type UserRole = 'user' | 'admin'

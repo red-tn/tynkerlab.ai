@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0f"/>
+      <stop offset="100%" stop-color="#12121a"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="60%" cy="50%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <!-- Comparison chart motif -->
+  <!-- Bar chart -->
+  <rect x="850" y="350" width="40" height="120" rx="4" fill="#f59e0b" opacity="0.12"/>
+  <rect x="910" y="300" width="40" height="170" rx="4" fill="#06b6d4" opacity="0.12"/>
+  <rect x="970" y="250" width="40" height="220" rx="4" fill="#8b5cf6" opacity="0.12"/>
+  <rect x="1030" y="200" width="40" height="270" rx="4" fill="#f59e0b" opacity="0.15"/>
+  <rect x="1090" y="280" width="40" height="190" rx="4" fill="#ec4899" opacity="0.1"/>
+  <!-- Chart base line -->
+  <line x1="830" y1="470" x2="1150" y2="470" stroke="#2a2a3e" stroke-width="1"/>
+  <!-- Connection lines between bars -->
+  <path d="M870 350 L930 300 L990 250 L1050 200 L1110 280" stroke="#d97706" stroke-width="1.5" fill="none" opacity="0.15" stroke-dasharray="4 4"/>
+  <!-- Tier labels -->
+  <text x="870" y="500" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">T3</text>
+  <text x="930" y="500" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">T2</text>
+  <text x="990" y="500" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">T1</text>
+  <text x="1050" y="500" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">Max</text>
+  <text x="1110" y="500" font-family="Inter, system-ui, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">Edit</text>
+  <!-- Sparkles -->
+  <circle cx="180" cy="140" r="3" fill="#f59e0b" opacity="0.3"/>
+  <circle cx="400" cy="100" r="2" fill="#06b6d4" opacity="0.2"/>
+  <circle cx="600" cy="150" r="2.5" fill="#8b5cf6" opacity="0.2"/>
+  <!-- Badge -->
+  <rect x="80" y="180" width="90" height="32" rx="16" fill="#8b5cf6" opacity="0.15"/>
+  <text x="125" y="201" font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="600" fill="#a78bfa" text-anchor="middle">GUIDE</text>
+  <!-- Title -->
+  <text x="80" y="268" font-family="Inter, system-ui, sans-serif" font-size="40" font-weight="800" fill="white">AI Image Models Compared:</text>
+  <text x="80" y="320" font-family="Inter, system-ui, sans-serif" font-size="40" font-weight="800" fill="url(#amber)">Which One Should You Use?</text>
+  <!-- Subtitle -->
+  <text x="80" y="375" font-family="Inter, system-ui, sans-serif" font-size="18" fill="#9ca3af">32 models ranked by quality, speed, and cost.</text>
+  <!-- Bottom bar -->
+  <rect x="0" y="590" width="1200" height="40" fill="#f59e0b" opacity="0.08"/>
+  <text x="80" y="616" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#d97706">tynkerlab.ai</text>
+  <text x="1120" y="616" font-family="Inter, system-ui, sans-serif" font-size="14" fill="#6b7280" text-anchor="end">Feb 18, 2026</text>
+</svg>
