@@ -74,7 +74,7 @@ export default function ImageToVideoPage() {
   const qualityOptions = model ? getVideoQualityOptions(model) : ['720p' as VideoQuality]
   const durationOptions = model ? getVideoDurationOptions(model) : []
   const cameraOptions = model ? getVideoCameraMotionOptions(model) : null
-  const cost = model ? getVideoCreditsForQuality(model, quality) : 0
+  const cost = model ? getVideoCreditsForQuality(model, quality, parseInt(duration)) : 0
   const resolution = model ? getVideoResolutionForQuality(model, quality, aspectRatio) : { w: 1280, h: 720 }
 
   const handleGenerate = () => {
@@ -144,6 +144,7 @@ export default function ImageToVideoPage() {
             options={qualityOptions}
             modelId={model}
             disabled={isGenerating}
+            duration={parseInt(duration)}
           />
 
           <DurationPicker

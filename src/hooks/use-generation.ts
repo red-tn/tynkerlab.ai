@@ -116,7 +116,18 @@ export function useGeneration(options?: UseGenerationOptions) {
         throw new Error(data.error || 'Failed to submit video job')
       }
 
-      const { jobId: vid } = await submitRes.json()
+      const submitData = await submitRes.json()
+
+      // LTX models complete synchronously — no polling needed
+      if (submitData.status === 'completed' && submitData.url) {
+        const genResult: GenerationResult = { url: submitData.url, type: 'video' }
+        setResult(genResult)
+        setState('completed')
+        options?.onComplete?.(genResult)
+        return
+      }
+
+      const vid = submitData.jobId
       setJobId(vid)
 
       useGenerationStore.getState().addGeneration({

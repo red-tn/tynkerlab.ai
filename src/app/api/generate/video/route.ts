@@ -6,8 +6,9 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
 import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
 import { uploadFromUrl } from '@/lib/storage'
+import { generateAndUploadLtxVideo } from '@/lib/ltx/client'
 
-export const maxDuration = 60
+export const maxDuration = 300
 
 /** Detect content moderation / safety filter errors from Google Veo, OpenAI Sora, etc. */
 function isContentModerationError(msg: string): boolean {
@@ -64,8 +65,9 @@ export async function POST(request: Request) {
       ? getVideoResolutionForQuality(model, selectedQuality, ar)
       : getModelResolution(model, ar)
 
+    const parsedDuration = duration ? parseInt(duration) : undefined
     const creditsToCharge = quality
-      ? getVideoCreditsForQuality(model, selectedQuality)
+      ? getVideoCreditsForQuality(model, selectedQuality, parsedDuration)
       : modelData.credits
 
     const hasCredits = await checkCredits(userId, creditsToCharge)
@@ -106,15 +108,50 @@ export async function POST(request: Request) {
     }
 
     try {
+      // Branch by provider
+      if (modelData.provider === 'ltx') {
+        // LTX — synchronous: generate + upload in one go
+        const storagePath = `${userId}/${generationId}.mp4`
+        const videoUrl = await generateAndUploadLtxVideo({
+          prompt,
+          model: model as 'ltx-2-fast' | 'ltx-2-pro',
+          duration: parsedDuration || 6,
+          width: validRes.w,
+          height: validRes.h,
+          generateAudio: modelData.supportsAudio,
+          imageUrl: imageUrl || undefined,
+        }, 'generations', storagePath)
+
+        await supabase.from('generations').update({
+          status: 'completed', output_url: videoUrl, completed_at: new Date().toISOString(),
+        }).eq('id', generationId)
+
+        // Increment user stats
+        const { data: profile } = await supabase.from('profiles')
+          .select('id, total_generations, total_videos, last_active_at')
+          .eq('user_id', userId)
+          .limit(1)
+          .maybeSingle()
+
+        if (profile) {
+          await supabase.from('profiles').update({
+            total_generations: (profile.total_generations || 0) + 1,
+            total_videos: (profile.total_videos || 0) + 1,
+            last_active_at: new Date().toISOString(),
+          }).eq('id', profile.id)
+        }
+
+        return NextResponse.json({ generationId, status: 'completed', url: videoUrl })
+      }
+
+      // Together.ai — async: submit job and return jobId for polling
       const frameImages = imageUrl ? [imageUrl] : undefined
-      // Only send params the Together.ai video API actually supports
-      // (no aspect_ratio — use width/height instead)
       const job = await createVideoJob({
         model, prompt,
         width: validRes.w, height: validRes.h,
         frameImages,
         seed: seed || undefined,
-        seconds: duration ? parseInt(duration) : undefined,
+        seconds: parsedDuration || undefined,
         negativePrompt: negativePrompt || undefined,
         cameraMotion: cameraMotion || undefined,
       })

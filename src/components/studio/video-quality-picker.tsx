@@ -9,6 +9,8 @@ const QUALITY_META: Record<VideoQuality, { label: string; desc: string }> = {
   '480p': { label: '480p', desc: 'SD' },
   '720p': { label: '720p', desc: 'HD' },
   '1080p': { label: '1080p', desc: 'Full HD' },
+  '1440p': { label: '1440p', desc: 'QHD' },
+  '4k': { label: '4K', desc: 'Ultra HD' },
 }
 
 interface VideoQualityPickerProps {
@@ -17,9 +19,10 @@ interface VideoQualityPickerProps {
   options: VideoQuality[]
   modelId: string | null
   disabled?: boolean
+  duration?: number
 }
 
-export function VideoQualityPicker({ value, onChange, options, modelId, disabled }: VideoQualityPickerProps) {
+export function VideoQualityPicker({ value, onChange, options, modelId, disabled, duration }: VideoQualityPickerProps) {
   if (options.length <= 1) return null
 
   return (
@@ -31,7 +34,7 @@ export function VideoQualityPicker({ value, onChange, options, modelId, disabled
       <div className="flex gap-2">
         {options.map((q) => {
           const meta = QUALITY_META[q]
-          const credits = modelId ? getVideoCreditsForQuality(modelId, q) : 0
+          const credits = modelId ? getVideoCreditsForQuality(modelId, q, duration) : 0
           return (
             <button
               key={q}

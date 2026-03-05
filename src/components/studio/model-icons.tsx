@@ -148,6 +148,15 @@ function ViduIcon({ className = 'h-4 w-4' }: ModelIconProps) {
   )
 }
 
+function LtxIcon({ className = 'h-4 w-4' }: ModelIconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <rect x="2" y="2" width="20" height="20" rx="4" fill="#06b6d4"/>
+      <path d="M7 7h3v7h4v3H7V7z" fill="#fff"/>
+    </svg>
+  )
+}
+
 const CATEGORY_ICON_MAP: Record<ModelCategory, React.FC<ModelIconProps>> = {
   google: GoogleIcon,
   flux: FluxIcon,
@@ -164,6 +173,7 @@ const CATEGORY_ICON_MAP: Record<ModelCategory, React.FC<ModelIconProps>> = {
   kling: KlingIcon,
   pixverse: PixVerseIcon,
   vidu: ViduIcon,
+  ltx: LtxIcon,
 }
 
 export function ModelCategoryIcon({ category, className = 'h-4 w-4' }: { category: ModelCategory; className?: string }) {

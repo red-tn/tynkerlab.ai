@@ -1,6 +1,6 @@
 export type ModelCapability = 'text-to-image' | 'image-to-image' | 'text-to-video' | 'image-to-video'
-export type ModelCategory = 'google' | 'flux' | 'bytedance' | 'qwen' | 'wan' | 'ideogram' | 'hidream' | 'rundiffusion' | 'stability' | 'lykon' | 'openai' | 'minimax' | 'kling' | 'pixverse' | 'vidu'
-export type VideoQuality = '480p' | '720p' | '1080p'
+export type ModelCategory = 'google' | 'flux' | 'bytedance' | 'qwen' | 'wan' | 'ideogram' | 'hidream' | 'rundiffusion' | 'stability' | 'lykon' | 'openai' | 'minimax' | 'kling' | 'pixverse' | 'vidu' | 'ltx'
+export type VideoQuality = '480p' | '720p' | '1080p' | '1440p' | '4k'
 
 export interface AIModel {
   id: string
@@ -32,6 +32,12 @@ export interface AIModel {
   cameraMotionOptions?: string[]
   /** Exact supported duration values in seconds (overrides maxSeconds-based derivation) */
   durationOptions?: number[]
+  /** Credits per second for duration-based pricing (e.g. LTX models) */
+  creditsPerSecond?: number
+  /** Whether the model generates synchronized audio */
+  supportsAudio?: boolean
+  /** API provider — defaults to 'together' when absent */
+  provider?: 'together' | 'ltx'
 }
 
 const CATEGORY_LABELS: Record<ModelCategory, string> = {
@@ -50,6 +56,7 @@ const CATEGORY_LABELS: Record<ModelCategory, string> = {
   kling: 'Kuaishou / Kling',
   pixverse: 'PixVerse',
   vidu: 'Vidu',
+  ltx: 'LTX',
 }
 
 const DEFAULT_IMAGE_ASPECT_RATIOS = ['1:1', '3:2', '2:3', '4:3', '3:4', '16:9', '9:16', '4:5', '5:4', '21:9']
@@ -1021,6 +1028,57 @@ const VIDEO_MODELS: AIModel[] = [
     durationOptions: [4, 5],
     supportsNegativePrompt: true,
   },
+  // LTX-2 family — synchronous API, audio+video, up to 4K, 20s clips
+  {
+    id: 'ltx-2-fast',
+    displayName: 'LTX-2 Fast',
+    category: 'ltx',
+    categoryLabel: CATEGORY_LABELS.ltx,
+    type: 'video',
+    capabilities: ['text-to-video', 'image-to-video'],
+    credits: 96,
+    togetherPrice: '$0.04/s',
+    resolution: '1080p',
+    duration: '6–20s',
+    supportsFrameImages: true,
+    supportsAudio: true,
+    hasAudio: true,
+    provider: 'ltx',
+    creditsPerSecond: 16,
+    description: 'LTX-2 Fast — affordable audio+video generation up to 4K and 20 seconds.',
+    badge: 'Audio+Video',
+    enabled: true,
+    aspectRatios: ['16:9'],
+    videoQualities: ['1080p', '1440p', '4k'],
+    defaultQuality: '1080p',
+    maxSeconds: 20,
+    durationOptions: [6, 8, 10, 12, 14, 16, 18, 20],
+  },
+  {
+    id: 'ltx-2-pro',
+    displayName: 'LTX-2 Pro',
+    category: 'ltx',
+    categoryLabel: CATEGORY_LABELS.ltx,
+    type: 'video',
+    capabilities: ['text-to-video', 'image-to-video'],
+    credits: 144,
+    togetherPrice: '$0.06/s',
+    resolution: '1080p',
+    duration: '6–20s',
+    supportsFrameImages: true,
+    supportsAudio: true,
+    hasAudio: true,
+    provider: 'ltx',
+    creditsPerSecond: 24,
+    description: 'LTX-2 Pro — premium audio+video with higher fidelity, up to 4K and 20 seconds.',
+    badge: 'Audio+Video',
+    enabled: true,
+    aspectRatios: ['16:9'],
+    videoQualities: ['1080p', '1440p', '4k'],
+    defaultQuality: '1080p',
+    maxSeconds: 20,
+    durationOptions: [6, 8, 10, 12, 14, 16, 18, 20],
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -1110,6 +1168,18 @@ const VIDEO_1080P: ResolutionMap = {
   '1:1':  { w: 1080, h: 1080 },
 }
 
+const VIDEO_1440P: ResolutionMap = {
+  '16:9': { w: 2560, h: 1440 },
+  '9:16': { w: 1440, h: 2560 },
+  '1:1':  { w: 1440, h: 1440 },
+}
+
+const VIDEO_4K: ResolutionMap = {
+  '16:9': { w: 3840, h: 2160 },
+  '9:16': { w: 2160, h: 3840 },
+  '1:1':  { w: 2160, h: 2160 },
+}
+
 const VIDEO_768P: ResolutionMap = {
   '16:9': { w: 1360, h: 768 },
   '9:16': { w: 768, h: 1360 },
@@ -1187,6 +1257,9 @@ const QUALITY_RESOLUTION_MAP: Record<string, Partial<Record<VideoQuality, Resolu
   // Vidu
   'vidu/vidu-2.0':              { '480p': VIDU_480P, '720p': VIDEO_720P, '1080p': VIDEO_1080P },
   'vidu/vidu-q1':               { '1080p': VIDEO_1080P },
+  // LTX
+  'ltx-2-fast':                  { '1080p': VIDEO_1080P, '1440p': VIDEO_1440P, '4k': VIDEO_4K },
+  'ltx-2-pro':                   { '1080p': VIDEO_1080P, '1440p': VIDEO_1440P, '4k': VIDEO_4K },
 }
 
 function getImageResolutionProfile(modelId: string): ResolutionMap {
@@ -1261,6 +1334,8 @@ const QUALITY_CREDIT_MULTIPLIER: Record<VideoQuality, number> = {
   '480p': 0.7,
   '720p': 1.0,
   '1080p': 1.5,
+  '1440p': 2.0,
+  '4k': 4.0,
 }
 
 /**
@@ -1281,12 +1356,16 @@ export function getVideoDefaultQuality(modelId: string): VideoQuality {
 
 /**
  * Compute final credit cost for a video model at a given quality.
- * Base credits × quality multiplier, rounded up.
+ * For duration-based models (creditsPerSecond): creditsPerSecond × qualityMultiplier × duration.
+ * For flat-rate models: base credits × qualityMultiplier.
  */
-export function getVideoCreditsForQuality(modelId: string, quality: VideoQuality): number {
+export function getVideoCreditsForQuality(modelId: string, quality: VideoQuality, duration?: number): number {
   const model = ALL_MODELS.find(m => m.id === modelId)
   if (!model) return 0
   const multiplier = QUALITY_CREDIT_MULTIPLIER[quality] || 1.0
+  if (model.creditsPerSecond && duration) {
+    return Math.ceil(model.creditsPerSecond * multiplier * duration)
+  }
   return Math.ceil(model.credits * multiplier)
 }
 
@@ -1304,6 +1383,8 @@ export function getVideoResolutionForQuality(
     return qualityMap[quality]![ar] || qualityMap[quality]!['16:9'] || { w: 1280, h: 720 }
   }
   // Fallback to generic quality maps
+  if (quality === '4k') return VIDEO_4K[ar] || { w: 3840, h: 2160 }
+  if (quality === '1440p') return VIDEO_1440P[ar] || { w: 2560, h: 1440 }
   if (quality === '1080p') return VIDEO_1080P[ar] || { w: 1920, h: 1080 }
   if (quality === '480p') return VIDEO_480P[ar] || { w: 864, h: 480 }
   return VIDEO_720P[ar] || { w: 1280, h: 720 }
