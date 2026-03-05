@@ -11,11 +11,11 @@ export async function GET(request: Request) {
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-    // Fetch completed generations from last 30 days
+    // Fetch generations from last 30 days that consumed credits
     const { data: generations } = await supabase
       .from('generations')
       .select('model, width, height, duration, credits_used, created_at, type')
-      .eq('status', 'completed')
+      .gt('credits_used', 0)
       .gt('created_at', thirtyDaysAgo.toISOString())
       .limit(10000)
 
