@@ -2,33 +2,41 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
-async function fetchTogetherBalance(): Promise<{ balance: number | null; error?: string }> {
+type ProviderHealth = { healthy: boolean; error?: string }
+
+async function fetchTogetherHealth(): Promise<ProviderHealth> {
   try {
-    // Together.ai doesn't expose a public billing API — use the usage endpoint as a proxy
     const res = await fetch('https://api.together.xyz/v1/models', {
       headers: { Authorization: `Bearer ${process.env.TOGETHER_API_KEY}` },
       signal: AbortSignal.timeout(5000),
     })
-    if (res.ok) {
-      // API key is valid but no balance endpoint available
-      return { balance: null, error: 'No billing API — check together.ai dashboard' }
-    }
-    return { balance: null, error: `API key issue (${res.status})` }
+    if (res.ok) return { healthy: true }
+    return { healthy: false, error: `API returned ${res.status}` }
   } catch {
-    return { balance: null, error: 'Timeout or network error' }
+    return { healthy: false, error: 'Timeout or network error' }
   }
 }
 
-async function fetchLtxHealth(): Promise<{ healthy: boolean; error?: string }> {
+async function fetchLtxHealth(): Promise<ProviderHealth> {
   try {
     const res = await fetch('https://api.ltx.video/v1', {
       headers: { Authorization: `Bearer ${process.env.LTX_API_KEY}` },
       signal: AbortSignal.timeout(5000),
     })
-    if (res.ok || res.status === 404) {
-      // Any non-error response means the API key and endpoint are reachable
-      return { healthy: true }
-    }
+    if (res.ok || res.status === 404) return { healthy: true }
+    return { healthy: false, error: `API returned ${res.status}` }
+  } catch {
+    return { healthy: false, error: 'Timeout or network error' }
+  }
+}
+
+async function fetchWaveSpeedHealth(): Promise<ProviderHealth> {
+  try {
+    const res = await fetch('https://api.wavespeed.ai/api/v3', {
+      headers: { Authorization: `Bearer ${process.env.WAVESPEED_API_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (res.ok || res.status === 404) return { healthy: true }
     return { healthy: false, error: `API returned ${res.status}` }
   } catch {
     return { healthy: false, error: 'Timeout or network error' }
@@ -59,7 +67,7 @@ export async function GET(request: Request) {
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
 
-    const [usage24hResult, usageHourResult, recentErrorsResult, togetherBalance, stripeBalance, ltxHealth] = await Promise.all([
+    const [usage24hResult, usageHourResult, recentErrorsResult, togetherHealth, stripeBalance, ltxHealth, wavespeedHealth] = await Promise.all([
       supabase.from('api_usage_log').select('*')
         .gt('created_at', twentyFourHoursAgo.toISOString())
         .limit(5000),
@@ -69,9 +77,10 @@ export async function GET(request: Request) {
         .gt('status_code', 399)
         .order('created_at', { ascending: false })
         .limit(100),
-      fetchTogetherBalance(),
+      fetchTogetherHealth(),
       fetchStripeBalance(),
       fetchLtxHealth(),
+      fetchWaveSpeedHealth(),
     ])
 
     const usage24hDocs = usage24hResult.data || []
@@ -111,9 +120,10 @@ export async function GET(request: Request) {
       p95Latency,
       modelStats,
       balances: {
-        together: togetherBalance,
+        together: togetherHealth,
         stripe: stripeBalance,
         ltx: ltxHealth,
+        wavespeed: wavespeedHealth,
       },
       recentErrors: errorDocs.map((d: any) => ({
         id: d.id,

@@ -18,9 +18,10 @@ const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid
 const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false })
 
 interface Balances {
-  together: { balance: number | null; error?: string }
+  together: { healthy: boolean; error?: string }
   stripe: { available: number; pending: number } | null
   ltx: { healthy: boolean; error?: string }
+  wavespeed: { healthy: boolean; error?: string }
 }
 
 interface DashboardData {
@@ -100,41 +101,52 @@ export default function AdminDashboard() {
         <StatsCard title="API Calls (24h)" value={stats.apiCalls} icon={Activity} iconColor="text-orange-400" />
       </div>
 
-      {/* Stripe Balance & LTX Status */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {balances?.stripe && (
-          <>
-            <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Wallet className="h-4 w-4 text-green-400" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
-              </div>
-              <p className="text-2xl font-bold text-white">${balances.stripe.available.toFixed(2)}</p>
-            </div>
-            <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Wallet className="h-4 w-4 text-yellow-400" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
-              </div>
-              <p className="text-2xl font-bold text-white">${balances.stripe.pending.toFixed(2)}</p>
-            </div>
-          </>
-        )}
-        {balances?.ltx && (
+      {/* Stripe Balance */}
+      {balances?.stripe && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
             <div className="flex items-center gap-2 mb-2">
-              <div className={`h-2.5 w-2.5 rounded-full ${balances.ltx.healthy ? 'bg-green-400' : 'bg-red-400'}`} />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">LTX Video API</span>
+              <Wallet className="h-4 w-4 text-green-400" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
             </div>
-            <p className={`text-lg font-bold ${balances.ltx.healthy ? 'text-green-400' : 'text-red-400'}`}>
-              {balances.ltx.healthy ? 'Connected' : 'Error'}
-            </p>
-            {balances.ltx.error && (
-              <p className="text-xs text-gray-500 mt-1">{balances.ltx.error}</p>
-            )}
+            <p className="text-2xl font-bold text-white">${balances.stripe.available.toFixed(2)}</p>
           </div>
-        )}
-      </div>
+          <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Wallet className="h-4 w-4 text-yellow-400" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
+            </div>
+            <p className="text-2xl font-bold text-white">${balances.stripe.pending.toFixed(2)}</p>
+          </div>
+        </div>
+      )}
+
+      {/* AI Provider Health */}
+      {balances && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {([
+            { key: 'together' as const, label: 'Together.ai' },
+            { key: 'ltx' as const, label: 'LTX Video' },
+            { key: 'wavespeed' as const, label: 'WaveSpeed' },
+          ]).map(({ key, label }) => {
+            const provider = balances[key]
+            return (
+              <div key={key} className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`h-2.5 w-2.5 rounded-full ${provider.healthy ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+                </div>
+                <p className={`text-lg font-bold ${provider.healthy ? 'text-green-400' : 'text-red-400'}`}>
+                  {provider.healthy ? 'Connected' : 'Error'}
+                </p>
+                {provider.error && (
+                  <p className="text-xs text-gray-500 mt-1">{provider.error}</p>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
