@@ -8,7 +8,7 @@ import { Logo } from '@/components/brand/dynamic-icons'
 import {
   LayoutDashboard, Users, CreditCard, MessageSquare,
   Activity, BarChart3, Settings, ArrowLeft, Home, FileText, Volume2, Handshake, Inbox, Share2, Palette,
-  Menu, X, Cpu,
+  Menu, X, Cpu, DollarSign,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { href: '/admin/models', label: 'Models', icon: Cpu },
   { href: '/admin/monitoring', label: 'Monitoring', icon: Activity },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/admin/costs', label: 'Cost Analysis', icon: DollarSign },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

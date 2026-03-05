@@ -1429,6 +1429,48 @@ export function getVideoCameraMotionOptions(modelId: string): string[] | null {
 }
 
 // ---------------------------------------------------------------------------
+// Cost estimation
+// ---------------------------------------------------------------------------
+
+/** Blended average price per credit across all credit packs */
+export const AVG_CREDIT_PRICE_USD = 0.035
+
+/**
+ * Estimate the API cost in USD for a single generation.
+ * Parses the model's `togetherPrice` string to compute cost.
+ */
+export function estimateApiCostUsd(
+  modelId: string,
+  width?: number | null,
+  height?: number | null,
+  durationSeconds?: number | null
+): number {
+  const model = ALL_MODELS.find(m => m.id === modelId)
+  if (!model) return 0
+
+  const price = model.togetherPrice
+  const rateMatch = price.match(/^\$([0-9.]+)\//)
+  if (!rateMatch) return 0 // "Per-job pricing" or unknown
+
+  const rate = parseFloat(rateMatch[1])
+
+  if (price.endsWith('/MP')) {
+    const w = width || 1024
+    const h = height || 1024
+    const megapixels = (w * h) / 1_000_000
+    return rate * megapixels
+  }
+
+  if (price.endsWith('/s')) {
+    const dur = durationSeconds || 6
+    return rate * dur
+  }
+
+  // /video or /image — flat rate
+  return rate
+}
+
+// ---------------------------------------------------------------------------
 // Helper functions
 // ---------------------------------------------------------------------------
 
