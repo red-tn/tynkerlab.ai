@@ -159,7 +159,7 @@ export async function GET(request: Request) {
       .select('*')
       .eq('together_job_id', jobId)
       .limit(1)
-      .single()
+      .maybeSingle()
 
     if (gen) {
       if (gen.status === 'completed' && gen.output_url) {
@@ -178,31 +178,25 @@ export async function GET(request: Request) {
       // This is fast and reliable. Together hosts the video for us.
       const videoUrl = status.videoUrl
 
-      // Update generation record + user stats (non-blocking, don't wait)
+      // Update generation record + user stats — must await before response
       if (gen) {
-        Promise.resolve(
-          supabase.from('generations').update({
-            status: 'completed', output_url: videoUrl, completed_at: new Date().toISOString(),
-          }).eq('id', gen.id)
-        ).catch(() => {})
+        await supabase.from('generations').update({
+          status: 'completed', output_url: videoUrl, completed_at: new Date().toISOString(),
+        }).eq('id', gen.id)
 
-        Promise.resolve(
-          supabase.from('profiles')
-            .select('id, total_generations, total_videos, last_active_at')
-            .eq('user_id', gen.user_id)
-            .limit(1)
-            .single()
-        ).then(({ data: profile }) => {
-          if (profile) {
-            Promise.resolve(
-              supabase.from('profiles').update({
-                total_generations: (profile.total_generations || 0) + 1,
-                total_videos: (profile.total_videos || 0) + 1,
-                last_active_at: new Date().toISOString(),
-              }).eq('id', profile.id)
-            ).catch(() => {})
-          }
-        }).catch(() => {})
+        const { data: profile } = await supabase.from('profiles')
+          .select('id, total_generations, total_videos, last_active_at')
+          .eq('user_id', gen.user_id)
+          .limit(1)
+          .maybeSingle()
+
+        if (profile) {
+          await supabase.from('profiles').update({
+            total_generations: (profile.total_generations || 0) + 1,
+            total_videos: (profile.total_videos || 0) + 1,
+            last_active_at: new Date().toISOString(),
+          }).eq('id', profile.id)
+        }
       }
 
       return NextResponse.json({ status: 'completed', url: videoUrl })

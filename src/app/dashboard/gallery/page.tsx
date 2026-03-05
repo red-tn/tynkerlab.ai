@@ -262,7 +262,7 @@ export default function GalleryPage() {
             {generations.map((gen) => (
               <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden cursor-pointer" onClick={() => setLightboxGen(gen)}>
                 {gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
-                  <video src={gen.output_url || ''} className="w-full aspect-square object-cover" muted loop onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => (e.target as HTMLVideoElement).pause()} />
+                  <video src={gen.output_url || ''} className="w-full aspect-square object-cover" muted loop playsInline autoPlay onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => { if (window.innerWidth >= 768) (e.target as HTMLVideoElement).pause() }} />
                 ) : (
                   <img src={gen.output_url || ''} alt={gen.prompt} className="w-full aspect-square object-cover" />
                 )}

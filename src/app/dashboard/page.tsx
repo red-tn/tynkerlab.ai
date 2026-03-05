@@ -457,7 +457,7 @@ export default function DashboardPage() {
                 <div className="aspect-video bg-nyx-border relative overflow-hidden">
                   {gen.output_url ? (
                     gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
-                      <video src={gen.output_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted />
+                      <video src={gen.output_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted playsInline autoPlay loop />
                     ) : (
                       <img src={gen.output_url} alt={gen.prompt || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     )

@@ -1,9 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import { ChevronDown, ChevronUp, Sparkles, Check, X, Loader2, Coins } from 'lucide-react'
+import { ChevronDown, ChevronUp, Sparkles, Check, X, Loader2, Coins, BookOpen } from 'lucide-react'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
+
+interface InspirationPrompt {
+  id: string
+  title: string
+  prompt_text: string
+  category: string
+  model_type: 'image' | 'video'
+}
 
 interface PromptInputProps {
   prompt: string
@@ -27,6 +35,37 @@ export function PromptInput({
   const [enhancing, setEnhancing] = useState(false)
   const [enhancedPrompt, setEnhancedPrompt] = useState<string | null>(null)
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
+  const [inspirations, setInspirations] = useState<InspirationPrompt[]>([])
+  const [showInspirations, setShowInspirations] = useState(false)
+  const [inspirationsLoaded, setInspirationsLoaded] = useState(false)
+  const inspirationRef = useRef<HTMLDivElement>(null)
+
+  // Fetch inspirations on first open
+  useEffect(() => {
+    if (!showInspirations || inspirationsLoaded) return
+    const modelType = generationType === 'video' ? 'video' : 'image'
+    fetch(`/api/prompts/featured?type=${modelType}`)
+      .then(r => r.ok ? r.json() : { prompts: [] })
+      .then(data => {
+        setInspirations(
+          (data.prompts || []).filter((p: any) => p.model_type === modelType || !p.model_type)
+        )
+        setInspirationsLoaded(true)
+      })
+      .catch(() => setInspirationsLoaded(true))
+  }, [showInspirations, inspirationsLoaded, generationType])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!showInspirations) return
+    const handler = (e: MouseEvent) => {
+      if (inspirationRef.current && !inspirationRef.current.contains(e.target as Node)) {
+        setShowInspirations(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showInspirations])
 
   const canEnhance = prompt.trim().length > 0 && !disabled && !enhancing
 
@@ -72,7 +111,48 @@ export function PromptInput({
     <div className="space-y-3">
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-gray-300">Prompt</label>
+          <div className="flex items-center gap-2">
+            <label className="block text-sm font-medium text-gray-300">Prompt</label>
+            {generationType !== 'tts' && (
+              <div className="relative" ref={inspirationRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowInspirations(!showInspirations)}
+                  className={cn(
+                    'flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors',
+                    showInspirations
+                      ? 'bg-accent-500/20 text-accent-300 border border-accent-500/30'
+                      : 'text-gray-500 hover:text-gray-300 border border-transparent hover:border-nyx-border'
+                  )}
+                >
+                  <BookOpen className="h-3 w-3" />
+                  Inspirations
+                  <ChevronDown className={cn('h-3 w-3 transition-transform', showInspirations && 'rotate-180')} />
+                </button>
+                {showInspirations && (
+                  <div className="absolute left-0 top-full mt-1 z-50 w-80 max-h-64 overflow-y-auto rounded-lg border border-nyx-border bg-nyx-surface/95 backdrop-blur-xl shadow-2xl shadow-black/40">
+                    {inspirations.length === 0 && inspirationsLoaded ? (
+                      <p className="px-3 py-4 text-xs text-gray-500 text-center">No inspiration prompts available yet.</p>
+                    ) : inspirations.length === 0 ? (
+                      <p className="px-3 py-4 text-xs text-gray-500 text-center">Loading...</p>
+                    ) : (
+                      inspirations.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => { onPromptChange(p.prompt_text); setShowInspirations(false) }}
+                          className="w-full text-left px-3 py-2.5 hover:bg-white/5 transition-colors border-b border-nyx-border/50 last:border-0"
+                        >
+                          <p className="text-xs font-medium text-white truncate">{p.title}</p>
+                          <p className="text-[11px] text-gray-500 line-clamp-2 mt-0.5">{p.prompt_text}</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* AI Enhance controls */}
           <div className="flex items-center gap-2">
