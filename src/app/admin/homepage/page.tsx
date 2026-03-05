@@ -1,46 +1,21 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { adminFetch } from '@/lib/admin-fetch'
 import type { Prompt } from '@/types/database'
 import { ALL_MODELS } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ImageDropZone } from '@/components/ui/image-drop-zone'
 import {
-  ImageIcon, Video, Star, StarOff, Trash2, X,
-  ExternalLink, Settings2, Sparkles, ArrowUp, ArrowDown, Check, Loader2
+  ImageIcon, Video, Star, StarOff, Trash2,
+  ExternalLink, Sparkles, ArrowUp, ArrowDown, Loader2
 } from 'lucide-react'
 
-interface ToolCardConfig {
-  key: string
-  title: string
-  imageUrl: string
-  imageUrlAfter?: string
-  prompt: string
-}
-
-const DEFAULT_TOOLS: ToolCardConfig[] = [
-  { key: 'text-to-image', title: 'Text to Image', imageUrl: '', prompt: '' },
-  { key: 'image-to-image', title: 'Image to Image', imageUrl: '', prompt: '' },
-  { key: 'text-to-video', title: 'Text to Video', imageUrl: '', prompt: '' },
-  { key: 'image-to-video', title: 'Image to Video', imageUrl: '', prompt: '' },
-  { key: 'ugc-avatar', title: 'UGC Avatar', imageUrl: '', prompt: '' },
-]
-
 export default function AdminHomepagePage() {
-  const [tools, setTools] = useState<ToolCardConfig[]>(DEFAULT_TOOLS)
   const [featuredPrompts, setFeaturedPrompts] = useState<Prompt[]>([])
   const [allPrompts, setAllPrompts] = useState<Prompt[]>([])
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<'tools' | 'gallery'>('gallery')
-
-  // Auto-save state for tools
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const initialLoad = useRef(true)
-  const dataLoaded = useRef(false)
 
   // Toggling / deleting state
   const [togglingId, setTogglingId] = useState<string | null>(null)
@@ -65,67 +40,14 @@ export default function AdminHomepagePage() {
       setLoading(true)
       try {
         await fetchPrompts()
-
-        const settingsRes = await adminFetch('/api/admin/settings?key=homepage_tools')
-        if (settingsRes.ok) {
-          const data = await settingsRes.json()
-          if (data.value) {
-            try {
-              const saved = JSON.parse(data.value)
-              setTools(prev => prev.map(t => {
-                const s = saved.find((s: ToolCardConfig) => s.key === t.key)
-                return s ? { ...t, imageUrl: s.imageUrl, imageUrlAfter: s.imageUrlAfter || '', prompt: s.prompt || '' } : t
-              }))
-            } catch {}
-          }
-        }
       } catch (err) {
         console.error(err)
       } finally {
         setLoading(false)
-        // Mark data as loaded, then allow auto-save after a tick
-        dataLoaded.current = true
-        setTimeout(() => { initialLoad.current = false }, 500)
       }
     }
     fetchData()
   }, [fetchPrompts])
-
-  // Auto-save tools on change (debounced 800ms)
-  useEffect(() => {
-    if (initialLoad.current || !dataLoaded.current) return
-
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    setAutoSaveStatus('saving')
-
-    saveTimer.current = setTimeout(async () => {
-      try {
-        const res = await adminFetch('/api/admin/settings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            key: 'homepage_tools',
-            value: JSON.stringify(tools),
-          }),
-        })
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: 'Unknown error' }))
-          console.error('Auto-save failed:', err)
-          setAutoSaveStatus('error')
-          setTimeout(() => setAutoSaveStatus('idle'), 3000)
-          return
-        }
-        setAutoSaveStatus('saved')
-        setTimeout(() => setAutoSaveStatus('idle'), 1500)
-      } catch (err) {
-        console.error('Auto-save error:', err)
-        setAutoSaveStatus('error')
-        setTimeout(() => setAutoSaveStatus('idle'), 3000)
-      }
-    }, 800)
-
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
-  }, [tools])
 
   const toggleFeatured = async (prompt: Prompt) => {
     setTogglingId(prompt.id)
@@ -201,31 +123,8 @@ export default function AdminHomepagePage() {
         </a>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 bg-nyx-bg rounded-lg p-1 w-fit">
-        <button
-          onClick={() => setTab('gallery')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === 'gallery' ? 'bg-nyx-surface text-white shadow-sm' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          <Sparkles className="h-4 w-4 inline mr-1.5" />
-          Featured Gallery ({featuredPrompts.length})
-        </button>
-        <button
-          onClick={() => setTab('tools')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === 'tools' ? 'bg-nyx-surface text-white shadow-sm' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          <Settings2 className="h-4 w-4 inline mr-1.5" />
-          Tool Showcase Images
-        </button>
-      </div>
-
       {/* Featured Gallery Manager */}
-      {tab === 'gallery' && (
-        <div className="space-y-6">
+      <div className="space-y-6">
           {/* Currently featured */}
           <div>
             <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
@@ -412,109 +311,7 @@ export default function AdminHomepagePage() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Tool Showcase Images */}
-      {tab === 'tools' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-400">
-              Set custom images for the &ldquo;Five Powerful Tools&rdquo; section on the homepage. Leave blank to use the default icon-only cards.
-            </p>
-            {/* Auto-save indicator */}
-            <div className="flex items-center gap-1.5 text-xs shrink-0 ml-4">
-              {autoSaveStatus === 'saving' && (
-                <><Loader2 className="h-3 w-3 animate-spin text-gray-500" /><span className="text-gray-500">Saving...</span></>
-              )}
-              {autoSaveStatus === 'saved' && (
-                <><Check className="h-3 w-3 text-green-400" /><span className="text-green-400">Saved</span></>
-              )}
-              {autoSaveStatus === 'error' && (
-                <><X className="h-3 w-3 text-red-400" /><span className="text-red-400">Save failed</span></>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {tools.map((tool, idx) => (
-              <div key={tool.key} className="rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
-                <div className="p-4 space-y-3">
-                  <h3 className="text-sm font-semibold text-white">{tool.title}</h3>
-                  {tool.key === 'image-to-image' ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <ImageDropZone
-                        label="Before"
-                        value={tool.imageUrl}
-                        onChange={(url) => {
-                          const updated = [...tools]
-                          updated[idx] = { ...tool, imageUrl: url }
-                          setTools(updated)
-                        }}
-                      />
-                      <ImageDropZone
-                        label="After"
-                        value={tool.imageUrlAfter || ''}
-                        onChange={(url) => {
-                          const updated = [...tools]
-                          updated[idx] = { ...tool, imageUrlAfter: url }
-                          setTools(updated)
-                        }}
-                      />
-                    </div>
-                  ) : tool.key === 'image-to-video' ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      <ImageDropZone
-                        label="Source Image"
-                        value={tool.imageUrl}
-                        onChange={(url) => {
-                          const updated = [...tools]
-                          updated[idx] = { ...tool, imageUrl: url }
-                          setTools(updated)
-                        }}
-                      />
-                      <ImageDropZone
-                        label="Result Video"
-                        value={tool.imageUrlAfter || ''}
-                        onChange={(url) => {
-                          const updated = [...tools]
-                          updated[idx] = { ...tool, imageUrlAfter: url }
-                          setTools(updated)
-                        }}
-                        isVideo
-                      />
-                    </div>
-                  ) : (
-                    <ImageDropZone
-                      label={tool.key === 'text-to-video' ? 'Showcase Video/Image' : 'Showcase Image'}
-                      value={tool.imageUrl}
-                      onChange={(url) => {
-                        const updated = [...tools]
-                        updated[idx] = { ...tool, imageUrl: url }
-                        setTools(updated)
-                      }}
-                      isVideo={tool.key === 'text-to-video'}
-                    />
-                  )}
-                  <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-gray-300">Prompt</label>
-                    <textarea
-                      value={tool.prompt}
-                      onChange={(e) => {
-                        const updated = [...tools]
-                        updated[idx] = { ...tool, prompt: e.target.value }
-                        setTools(updated)
-                      }}
-                      placeholder="Prompt used to generate this image..."
-                      rows={2}
-                      className="w-full rounded-lg bg-nyx-bg border border-nyx-border px-3 py-2 text-sm text-white placeholder:text-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }

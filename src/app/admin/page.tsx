@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 import { StatsCard } from '@/components/admin/stats-card'
 import { ActivityFeed, type ActivityItem } from '@/components/admin/activity-feed'
 import { ChartWrapper } from '@/components/admin/chart-wrapper'
-import { Users, CreditCard, DollarSign, Image, Coins, Activity } from 'lucide-react'
+import { Users, CreditCard, DollarSign, Image, Coins, Activity, Wallet } from 'lucide-react'
 
 const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false })
 const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false })
@@ -16,6 +16,11 @@ const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false 
 const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false })
 const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false })
 const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false })
+
+interface Balances {
+  together: { balance: number | null; error?: string }
+  stripe: { available: number; pending: number } | null
+}
 
 interface DashboardData {
   stats: {
@@ -37,14 +42,20 @@ interface DashboardData {
 
 export default function AdminDashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
+  const [balances, setBalances] = useState<Balances | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await adminFetch('/api/admin/analytics')
-        if (res.ok) {
-          setData(await res.json())
+        const [analyticsRes, monitoringRes] = await Promise.all([
+          adminFetch('/api/admin/analytics'),
+          adminFetch('/api/admin/monitoring'),
+        ])
+        if (analyticsRes.ok) setData(await analyticsRes.json())
+        if (monitoringRes.ok) {
+          const m = await monitoringRes.json()
+          setBalances(m.balances || null)
         }
       } catch (err) {
         console.error('Failed to fetch admin data:', err)
@@ -86,6 +97,43 @@ export default function AdminDashboard() {
         <StatsCard title="Total Generations" value={stats.totalGenerations} change={stats.generationsChange} changeLabel="vs last month" icon={Image} />
         <StatsCard title="Credits Used" value={stats.creditsUsed} icon={Coins} iconColor="text-yellow-400" />
         <StatsCard title="API Calls (24h)" value={stats.apiCalls} icon={Activity} iconColor="text-orange-400" />
+      </div>
+
+      {/* API Balances */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Wallet className="h-4 w-4 text-primary-400" />
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Together.ai Balance</span>
+          </div>
+          {balances?.together.balance !== null && balances?.together.balance !== undefined ? (
+            <p className="text-2xl font-bold text-white">${balances.together.balance.toFixed(2)}</p>
+          ) : (
+            <p className="text-sm text-gray-500">{balances?.together.error || 'Unavailable'}</p>
+          )}
+        </div>
+        <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Wallet className="h-4 w-4 text-green-400" />
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
+          </div>
+          {balances?.stripe ? (
+            <p className="text-2xl font-bold text-white">${balances.stripe.available.toFixed(2)}</p>
+          ) : (
+            <p className="text-sm text-gray-500">Unavailable</p>
+          )}
+        </div>
+        <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Wallet className="h-4 w-4 text-yellow-400" />
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
+          </div>
+          {balances?.stripe ? (
+            <p className="text-2xl font-bold text-white">${balances.stripe.pending.toFixed(2)}</p>
+          ) : (
+            <p className="text-sm text-gray-500">Unavailable</p>
+          )}
+        </div>
       </div>
 
       {/* Charts */}

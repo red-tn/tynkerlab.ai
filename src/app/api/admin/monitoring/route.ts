@@ -2,6 +2,47 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
+async function fetchTogetherBalance(): Promise<{ balance: number | null; error?: string }> {
+  try {
+    const res = await fetch('https://api.together.xyz/v1/dashboard/billing/credits', {
+      headers: { Authorization: `Bearer ${process.env.TOGETHER_API_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return { balance: data.total_balance ?? data.balance ?? null }
+    }
+    // Fallback endpoint
+    const res2 = await fetch('https://api.together.xyz/v1/dashboard/billing', {
+      headers: { Authorization: `Bearer ${process.env.TOGETHER_API_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (res2.ok) {
+      const data = await res2.json()
+      return { balance: data.balance ?? data.credits ?? null }
+    }
+    return { balance: null, error: `Status ${res.status}` }
+  } catch {
+    return { balance: null, error: 'Timeout or network error' }
+  }
+}
+
+async function fetchStripeBalance(): Promise<{ available: number; pending: number } | null> {
+  try {
+    const { getServerStripe } = await import('@/lib/stripe/client')
+    const stripe = getServerStripe()
+    const balance = await stripe.balance.retrieve()
+    const usdAvailable = balance.available.find((b: any) => b.currency === 'usd')
+    const usdPending = balance.pending.find((b: any) => b.currency === 'usd')
+    return {
+      available: (usdAvailable?.amount || 0) / 100,
+      pending: (usdPending?.amount || 0) / 100,
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function GET(request: Request) {
   try {
     await requireAdmin(request)
@@ -10,7 +51,7 @@ export async function GET(request: Request) {
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
 
-    const [usage24hResult, usageHourResult, recentErrorsResult] = await Promise.all([
+    const [usage24hResult, usageHourResult, recentErrorsResult, togetherBalance, stripeBalance] = await Promise.all([
       supabase.from('api_usage_log').select('*')
         .gt('created_at', twentyFourHoursAgo.toISOString())
         .limit(5000),
@@ -19,7 +60,9 @@ export async function GET(request: Request) {
       supabase.from('api_usage_log').select('*')
         .gt('status_code', 399)
         .order('created_at', { ascending: false })
-        .limit(20),
+        .limit(100),
+      fetchTogetherBalance(),
+      fetchStripeBalance(),
     ])
 
     const usage24hDocs = usage24hResult.data || []
@@ -45,6 +88,11 @@ export async function GET(request: Request) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
 
+    // Collect unique models and endpoints for filter options
+    const errorDocs = recentErrorsResult.data || []
+    const uniqueModels = [...new Set(errorDocs.map((d: any) => d.model).filter(Boolean))]
+    const uniqueEndpoints = [...new Set(errorDocs.map((d: any) => d.endpoint).filter(Boolean))]
+
     return NextResponse.json({
       totalRequests,
       requestsPerHour: usageHourResult.count ?? 0,
@@ -53,14 +101,23 @@ export async function GET(request: Request) {
       avgLatency,
       p95Latency,
       modelStats,
-      recentErrors: (recentErrorsResult.data || []).map((d: any) => ({
+      balances: {
+        together: togetherBalance,
+        stripe: stripeBalance,
+      },
+      recentErrors: errorDocs.map((d: any) => ({
         id: d.id,
         endpoint: d.endpoint,
         model: d.model,
         error: d.error,
         statusCode: d.status_code,
+        userId: d.user_id,
         timestamp: d.created_at,
       })),
+      filterOptions: {
+        models: uniqueModels,
+        endpoints: uniqueEndpoints,
+      },
     })
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
