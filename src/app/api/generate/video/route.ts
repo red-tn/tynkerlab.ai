@@ -5,6 +5,7 @@ import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
 import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
+import { uploadFromUrl } from '@/lib/storage'
 
 export const maxDuration = 60
 
@@ -174,9 +175,16 @@ export async function GET(request: Request) {
     const status = await checkVideoStatus(jobId)
 
     if (status.status === 'completed' && status.videoUrl) {
-      // Return the Together.ai CDN URL directly — no download/re-upload.
-      // This is fast and reliable. Together hosts the video for us.
-      const videoUrl = status.videoUrl
+      // Download from Together.ai and upload to Supabase storage (temp URLs expire)
+      let videoUrl = status.videoUrl
+      if (gen) {
+        try {
+          const storagePath = `${gen.user_id}/${gen.id}.mp4`
+          videoUrl = await uploadFromUrl(status.videoUrl, 'generations', storagePath, 'video/mp4')
+        } catch (uploadErr) {
+          console.error('Failed to upload video to storage, using direct URL:', uploadErr)
+        }
+      }
 
       // Update generation record + user stats — must await before response
       if (gen) {

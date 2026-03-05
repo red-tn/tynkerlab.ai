@@ -4,6 +4,7 @@ import { checkCredits, deductCredits, refundCredits } from '@/lib/credits'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
 import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
+import { uploadFromUrl } from '@/lib/storage'
 
 export const maxDuration = 60
 
@@ -131,7 +132,15 @@ export async function GET(request: Request) {
     const status = await checkJobStatus(jobId)
 
     if (status.status === 'completed' && status.videoUrl) {
-      const videoUrl = status.videoUrl
+      let videoUrl = status.videoUrl
+      if (gen) {
+        try {
+          const storagePath = `${gen.user_id}/${gen.id}.mp4`
+          videoUrl = await uploadFromUrl(status.videoUrl, 'generations', storagePath, 'video/mp4')
+        } catch (uploadErr) {
+          console.error('Failed to upload avatar to storage, using direct URL:', uploadErr)
+        }
+      }
 
       if (gen) {
         await supabase.from('generations').update({
