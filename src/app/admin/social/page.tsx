@@ -9,6 +9,7 @@ import {
   Share2, Loader2, Check, Copy, X, Grid3X3, Smartphone, Monitor
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
+import { downloadFile } from '@/lib/download'
 
 interface MediaItem {
   id: string
@@ -109,23 +110,8 @@ export default function AdminSocialPage() {
     if (!imageUrl) return
 
     if (itemIsVideo(selected) || platform.id === 'original') {
-      setDownloading(true)
-      try {
-        const response = await fetch(imageUrl)
-        const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `tynkerlab-${platform.id}-${Date.now()}.${itemIsVideo(selected) ? 'mp4' : 'png'}`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      } catch {
-        window.open(imageUrl, '_blank')
-      } finally {
-        setDownloading(false)
-      }
+      const ext = itemIsVideo(selected) ? 'mp4' : 'png'
+      downloadFile(imageUrl, `tynkerlab-${platform.id}-${Date.now()}.${ext}`)
       return
     }
 
@@ -271,9 +257,11 @@ export default function AdminSocialPage() {
                         src={url}
                         className="w-full h-full object-cover"
                         muted
+                        autoPlay
+                        loop
                         playsInline
                         onMouseEnter={e => (e.target as HTMLVideoElement).play()}
-                        onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 }}
+                        onMouseLeave={e => { if (window.innerWidth >= 768) { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0 } }}
                       />
                     ) : (
                       <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

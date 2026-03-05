@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Download, RefreshCw, Sparkles, AlertCircle, Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { downloadFile } from '@/lib/download'
 
 interface GenerationResultProps {
   state: 'idle' | 'generating' | 'polling' | 'completed' | 'failed'
@@ -16,22 +17,10 @@ interface GenerationResultProps {
 }
 
 export function GenerationResult({ state, result, error, progress, progressPercent = 0, progressNote, onRetry, onCancel }: GenerationResultProps) {
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!result?.url) return
-    try {
-      const response = await fetch(result.url)
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `tynkerlab-${Date.now()}.${result.type === 'video' ? 'mp4' : 'png'}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch {
-      window.open(result.url, '_blank')
-    }
+    const ext = result.type === 'video' ? 'mp4' : 'png'
+    downloadFile(result.url, `tynkerlab-${Date.now()}.${ext}`)
   }
 
   if (state === 'idle') {

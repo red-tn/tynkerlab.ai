@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Play, Pause, Download, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { downloadFile } from '@/lib/download'
 
 interface AudioPlayerProps {
   src: string | null
@@ -123,10 +124,7 @@ export function AudioPlayer({ src, mimeType = 'audio/mpeg', format = 'mp3', onDo
       return
     }
     if (!src) return
-    const a = document.createElement('a')
-    a.href = src
-    a.download = `tynkerlab-tts.${format}`
-    a.click()
+    downloadFile(src, `tynkerlab-tts.${format}`)
   }
 
   if (!src) {

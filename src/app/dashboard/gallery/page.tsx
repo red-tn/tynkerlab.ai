@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 import { Image as ImageIcon, Video, Download, ChevronLeft, ChevronRight, BookOpen, Send, Trash2, Info } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
+import { downloadFile } from '@/lib/download'
 import { adminFetch } from '@/lib/admin-fetch'
 import { getModelById } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
@@ -97,22 +98,10 @@ export default function GalleryPage() {
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
-  const handleDownload = async (gen: Generation) => {
+  const handleDownload = (gen: Generation) => {
     if (!gen.output_url) return
-    try {
-      const response = await fetch(gen.output_url)
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `tynkerlab-${gen.id}.${gen.type.includes('video') || gen.type === 'ugc-avatar' ? 'mp4' : 'png'}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch {
-      window.open(gen.output_url, '_blank')
-    }
+    const ext = gen.type.includes('video') || gen.type === 'ugc-avatar' ? 'mp4' : 'png'
+    downloadFile(gen.output_url, `tynkerlab-${gen.id}.${ext}`)
   }
 
   const handleDelete = async (gen: Generation) => {

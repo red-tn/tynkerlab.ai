@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface LightboxProps {
@@ -13,6 +13,9 @@ interface LightboxProps {
 }
 
 export function Lightbox({ url, type, alt, onClose, onPrev, onNext }: LightboxProps) {
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose()
     if (e.key === 'ArrowLeft' && onPrev) onPrev()
@@ -20,16 +23,35 @@ export function Lightbox({ url, type, alt, onClose, onPrev, onNext }: LightboxPr
   }, [onClose, onPrev, onNext])
 
   useEffect(() => {
+    const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = prev
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [handleKeyDown])
 
+  // Swipe support for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return
+    if (dx > 0 && onPrev) onPrev()
+    if (dx < 0 && onNext) onNext()
+  }
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/90" onClick={onClose} />
 
