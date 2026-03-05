@@ -19,7 +19,7 @@ interface ModelSelectorProps {
 const categoryOrder: ModelCategory[] = [
   'google', 'flux', 'bytedance', 'qwen', 'wan', 'ideogram',
   'hidream', 'rundiffusion', 'stability', 'lykon',
-  'openai', 'minimax', 'kling', 'pixverse', 'vidu',
+  'openai', 'minimax', 'kling', 'pixverse', 'vidu', 'ltx',
 ]
 
 export function ModelSelector({ capability, selectedModel, onModelSelect, disabled }: ModelSelectorProps) {
