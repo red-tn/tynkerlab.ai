@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { checkCredits, deductCredits, addCredits } from '@/lib/credits'
 import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
+import { createAdminClient } from '@/lib/supabase/server'
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   image:
@@ -24,6 +25,7 @@ function assembleUserMessage(type: string, fields: Record<string, any>): string 
 
 export async function POST(request: Request) {
   try {
+    const startTime = Date.now()
     const { userId } = await requireUser(request)
     const { type, fields } = await request.json()
 
@@ -77,6 +79,22 @@ export async function POST(request: Request) {
       await addCredits(userId, 2, 'Refund: Prompt Maker no result', `prompt-maker-refund-${Date.now()}`, 'refund')
       throw new Error('No prompt returned')
     }
+
+    // Fire-and-forget: log API usage for cost tracking
+    const totalTokens = data.usage?.total_tokens || 0
+    const costEstimate = (totalTokens / 1_000_000) * 0.88
+    const supabase = createAdminClient()
+    supabase.from('api_usage_log').insert({
+      user_id: userId,
+      endpoint: 'chat/completions',
+      model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+      request_type: 'prompt-maker',
+      tokens_used: totalTokens,
+      cost_estimate: costEstimate,
+      latency_ms: Date.now() - startTime,
+      status_code: 200,
+      request_metadata: { type, creditsUsed: 2 },
+    }).then(() => {}, () => {})
 
     return NextResponse.json({ prompt, type })
   } catch (error: any) {

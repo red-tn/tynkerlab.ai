@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { checkCredits, deductCredits, addCredits } from '@/lib/credits'
 import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
+import { createAdminClient } from '@/lib/supabase/server'
 
 const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
   conservative: {
@@ -17,6 +18,7 @@ const SYSTEM_PROMPTS: Record<string, Record<string, string>> = {
 
 export async function POST(request: Request) {
   try {
+    const startTime = Date.now()
     const { userId } = await requireUser(request)
     const { prompt, mode = 'conservative', generationType = 'image' } = await request.json()
 
@@ -69,6 +71,22 @@ export async function POST(request: Request) {
       await addCredits(userId, 2, 'Refund: AI Enhance no result', `enhance-refund-${Date.now()}`, 'refund')
       throw new Error('No enhanced prompt returned')
     }
+
+    // Fire-and-forget: log API usage for cost tracking
+    const totalTokens = data.usage?.total_tokens || 0
+    const costEstimate = (totalTokens / 1_000_000) * 0.88
+    const supabase = createAdminClient()
+    supabase.from('api_usage_log').insert({
+      user_id: userId,
+      endpoint: 'chat/completions',
+      model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+      request_type: 'enhance-prompt',
+      tokens_used: totalTokens,
+      cost_estimate: costEstimate,
+      latency_ms: Date.now() - startTime,
+      status_code: 200,
+      request_metadata: { mode, generationType, creditsUsed: 2 },
+    }).then(() => {}, () => {})
 
     return NextResponse.json({ enhanced, original: prompt.trim(), mode })
   } catch (error: any) {

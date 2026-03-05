@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { adminFetch } from '@/lib/admin-fetch'
 import dynamic from 'next/dynamic'
 import { ChartWrapper } from '@/components/admin/chart-wrapper'
-import { DollarSign, TrendingUp, Coins, BarChart3, ChevronUp, ChevronDown } from 'lucide-react'
+import { DollarSign, TrendingUp, Coins, BarChart3, ChevronUp, ChevronDown, Image, Film, Mic, Brain } from 'lucide-react'
 
 const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart), { ssr: false })
 const Area = dynamic(() => import('recharts').then(m => m.Area), { ssr: false })
@@ -24,6 +24,7 @@ interface CostData {
   }
   byProvider: { provider: string; count: number; cost: number; credits: number }[]
   byModel: { model: string; displayName: string; provider: string; count: number; cost: number; credits: number; costPerGen: number }[]
+  byService: { service: string; count: number; cost: number; credits: number }[]
   dailyCosts: { date: string; cost: number; credits: number; generations: number }[]
 }
 
@@ -32,6 +33,20 @@ type SortField = 'displayName' | 'provider' | 'count' | 'cost' | 'credits' | 'co
 const PROVIDER_LABELS: Record<string, string> = {
   together: 'Together.ai',
   ltx: 'LTX',
+}
+
+const SERVICE_ICONS: Record<string, React.ElementType> = {
+  'Image Gen': Image,
+  'Video Gen': Film,
+  'TTS': Mic,
+  'LLM': Brain,
+}
+
+const SERVICE_COLORS: Record<string, string> = {
+  'Image Gen': 'text-violet-400',
+  'Video Gen': 'text-cyan-400',
+  'TTS': 'text-amber-400',
+  'LLM': 'text-emerald-400',
 }
 
 export default function CostAnalysisPage() {
@@ -159,6 +174,38 @@ export default function CostAnalysisPage() {
           iconColor={summary.margin >= 50 ? 'text-green-400' : summary.margin >= 20 ? 'text-yellow-400' : 'text-red-400'}
         />
       </div>
+
+      {/* Service Breakdown */}
+      {data.byService && data.byService.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {data.byService.map(s => {
+            const icon = SERVICE_ICONS[s.service] || Image
+            const color = SERVICE_COLORS[s.service] || 'text-gray-400'
+            return (
+              <div key={s.service} className="rounded-xl border border-nyx-border bg-nyx-surface p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  {(() => { const Icon = icon; return <Icon className={`h-4 w-4 ${color}`} /> })()}
+                  <h3 className="text-sm font-semibold text-white">{s.service}</h3>
+                </div>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Calls</span>
+                    <span className="text-white">{s.count.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">API Cost</span>
+                    <span className="text-white">${s.cost.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Credits</span>
+                    <span className="text-white">{s.credits.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Provider Breakdown */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -3,10 +3,12 @@ import { generateSpeech, getTTSFamily } from '@/lib/together/tts'
 import { deductCredits, addCredits, checkCredits } from '@/lib/credits'
 import { getUserTier, requirePaidTier, TierGateError } from '@/lib/tier-gate'
 import { requireUser, AuthError, authErrorResponse } from '@/lib/auth-guard'
+import { createAdminClient } from '@/lib/supabase/server'
 import type { TTSResponseFormat, TTSVoiceSettings } from '@/types/together'
 
 export async function POST(request: Request) {
   try {
+    const startTime = Date.now()
     const { userId } = await requireUser(request)
     const body = await request.json()
     const {
@@ -89,6 +91,21 @@ export async function POST(request: Request) {
         wav: 'audio/wav',
         opus: 'audio/opus',
       }
+
+      // Fire-and-forget: log API usage for cost tracking
+      const rate = parseFloat(family.pricePerMillion.replace(/[^0-9.]/g, '')) || 0
+      const costEstimate = (input.length / 1_000_000) * rate
+      const supabase = createAdminClient()
+      supabase.from('api_usage_log').insert({
+        user_id: userId,
+        endpoint: 'audio/speech',
+        model: family.modelId,
+        request_type: 'text-to-speech',
+        cost_estimate: costEstimate,
+        latency_ms: Date.now() - startTime,
+        status_code: 200,
+        request_metadata: { voice, familyId, characterCount: input.length, creditsUsed: family.creditsPerGeneration },
+      }).then(() => {}, () => {})
 
       return NextResponse.json({
         audio: base64,
