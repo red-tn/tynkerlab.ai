@@ -4,7 +4,9 @@ import { useCallback, useState, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase/client'
-import { Upload, X, Loader2 } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth'
+import { Upload, X, Loader2, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react'
+import type { Generation } from '@/types/database'
 
 interface ImageUploadProps {
   onUpload: (url: string) => void
@@ -42,14 +44,54 @@ function detectAspectRatio(width: number, height: number): string {
 }
 
 export function ImageUpload({ onUpload, currentImage, onClear, disabled, onAspectRatioDetected }: ImageUploadProps) {
+  const { user } = useAuth()
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(currentImage || null)
   const [imgAspect, setImgAspect] = useState<number | null>(null)
+  const [libraryOpen, setLibraryOpen] = useState(false)
+  const [libraryImages, setLibraryImages] = useState<Generation[]>([])
+  const [libraryLoading, setLibraryLoading] = useState(false)
+  const [libraryLoaded, setLibraryLoaded] = useState(false)
 
   // Sync preview when currentImage prop changes externally
   useEffect(() => {
     if (currentImage) setPreview(currentImage)
   }, [currentImage])
+
+  // Fetch library images when expanded
+  const loadLibrary = useCallback(async () => {
+    if (!user || libraryLoaded) return
+    setLibraryLoading(true)
+    try {
+      const { data } = await supabase
+        .from('generations')
+        .select('id, output_url, prompt, created_at, type, width, height')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .ilike('type', '%image%')
+        .not('output_url', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      setLibraryImages((data || []) as Generation[])
+      setLibraryLoaded(true)
+    } catch (err) {
+      console.error('Failed to load library:', err)
+    } finally {
+      setLibraryLoading(false)
+    }
+  }, [user, libraryLoaded])
+
+  const handleLibrarySelect = (gen: Generation) => {
+    if (!gen.output_url) return
+    setPreview(gen.output_url)
+    onUpload(gen.output_url)
+    setLibraryOpen(false)
+    // Detect aspect ratio from stored dimensions
+    if (gen.width && gen.height && onAspectRatioDetected) {
+      onAspectRatioDetected(detectAspectRatio(gen.width, gen.height))
+      setImgAspect(gen.width / gen.height)
+    }
+  }
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -153,6 +195,55 @@ export function ImageUpload({ onUpload, currentImage, onClear, disabled, onAspec
           </div>
         </div>
       </div>
+      {/* My Library expandable section */}
+      {user && (
+        <div className="border border-nyx-border rounded-lg overflow-hidden">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !libraryOpen
+              setLibraryOpen(next)
+              if (next) loadLibrary()
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-primary-400" />
+              My Library
+            </span>
+            {libraryOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+          {libraryOpen && (
+            <div className="border-t border-nyx-border px-3 py-3">
+              {libraryLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 text-primary-400 animate-spin" />
+                </div>
+              ) : libraryImages.length === 0 ? (
+                <p className="text-xs text-gray-500 text-center py-4">No generated images yet</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                  {libraryImages.map((gen) => (
+                    <button
+                      key={gen.id}
+                      type="button"
+                      onClick={() => handleLibrarySelect(gen)}
+                      className="relative aspect-square rounded-md overflow-hidden border border-nyx-border hover:border-primary-500 transition-colors group"
+                    >
+                      <img
+                        src={gen.output_url || ''}
+                        alt={gen.prompt || ''}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

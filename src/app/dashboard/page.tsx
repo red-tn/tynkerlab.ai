@@ -12,7 +12,6 @@ import { cn, formatRelativeDate } from '@/lib/utils'
 import type { Generation, PromptCategory } from '@/types/database'
 import { useToast } from '@/components/ui/toast'
 import { Dialog } from '@/components/ui/dialog'
-import { Lightbox } from '@/components/ui/lightbox'
 import { Input } from '@/components/ui/input'
 import { getModelById } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
@@ -44,7 +43,6 @@ export default function DashboardPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [detailGen, setDetailGen] = useState<Generation | null>(null)
-  const [lightboxGen, setLightboxGen] = useState<Generation | null>(null)
 
   // Post/Submit to Inspirations state
   const [inspirationGen, setInspirationGen] = useState<Generation | null>(null)
@@ -442,7 +440,7 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {recentGenerations.map((gen) => (
-              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer" onClick={() => setLightboxGen(gen)}>
+              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer" onClick={() => setDetailGen(gen)}>
                 <div className="aspect-video bg-nyx-border relative overflow-hidden">
                   {gen.output_url ? (
                     gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
@@ -534,16 +532,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-
-      {/* Lightbox */}
-      {lightboxGen && lightboxGen.output_url && (
-        <Lightbox
-          url={lightboxGen.output_url}
-          type={lightboxGen.type.includes('video') || lightboxGen.type === 'ugc-avatar' ? 'video' : 'image'}
-          alt={lightboxGen.prompt || ''}
-          onClose={() => setLightboxGen(null)}
-        />
-      )}
 
       {/* Generation Detail Dialog */}
       {detailGen && (() => {
