@@ -67,6 +67,10 @@ export default function ImageToVideoPage() {
     if (!durationOpts.find(d => d.value === duration)) {
       setDuration(durationOpts[0]?.value || '5')
     }
+    const md = getModelById(model)
+    if (md?.aspectRatios && !md.aspectRatios.includes(aspectRatio)) {
+      setAspectRatio(md.aspectRatios[0] || '16:9')
+    }
     setCameraMotion('')
   }, [model])
 
@@ -136,6 +140,7 @@ export default function ImageToVideoPage() {
             value={aspectRatio}
             onChange={setAspectRatio}
             disabled={isGenerating}
+            allowedRatios={modelData?.aspectRatios}
           />
 
           <VideoQualityPicker

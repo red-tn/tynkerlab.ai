@@ -21,9 +21,14 @@ interface AspectRatioPickerProps {
   value: string
   onChange: (value: string) => void
   disabled?: boolean
+  allowedRatios?: string[]
 }
 
-export function AspectRatioPicker({ value, onChange, disabled }: AspectRatioPickerProps) {
+export function AspectRatioPicker({ value, onChange, disabled, allowedRatios }: AspectRatioPickerProps) {
+  const ratios = allowedRatios
+    ? ASPECT_RATIOS.filter(r => allowedRatios.includes(r.value))
+    : ASPECT_RATIOS
+
   return (
     <div className="space-y-1.5">
       <label className="flex items-center gap-1.5 text-sm font-medium text-gray-300">
@@ -31,7 +36,7 @@ export function AspectRatioPicker({ value, onChange, disabled }: AspectRatioPick
         <InfoTooltip text="The shape of your output. 1:1 for social posts, 16:9 for widescreen, 9:16 for mobile/stories." />
       </label>
       <div className="grid grid-cols-4 gap-2">
-        {ASPECT_RATIOS.map((ratio) => {
+        {ratios.map((ratio) => {
           const maxDim = 24
           const scale = maxDim / Math.max(ratio.width, ratio.height)
           const w = Math.round(ratio.width * scale)
