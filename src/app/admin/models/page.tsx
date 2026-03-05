@@ -16,6 +16,7 @@ interface ModelEntry {
   enabled: boolean
   defaultEnabled: boolean
   registered: boolean
+  provider?: string
 }
 
 interface ModelsData {
@@ -33,11 +34,12 @@ export default function AdminModelsPage() {
   const [typeFilter, setTypeFilter] = useState<'' | 'image' | 'video'>('')
   const [statusFilter, setStatusFilter] = useState<'' | 'enabled' | 'disabled'>('')
 
-  const fetchData = async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true)
+  const fetchData = async (fetchApi = false) => {
+    if (fetchApi) setRefreshing(true)
     else setLoading(true)
     try {
-      const res = await adminFetch('/api/admin/models')
+      const url = fetchApi ? '/api/admin/models?fetch_api=true' : '/api/admin/models'
+      const res = await adminFetch(url)
       if (res.ok) setData(await res.json())
     } catch (err) {
       console.error(err)
@@ -47,7 +49,7 @@ export default function AdminModelsPage() {
     }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { fetchData(false) }, [])
 
   const toggleModel = async (modelId: string, enabled: boolean) => {
     setTogglingId(modelId)
@@ -57,7 +59,7 @@ export default function AdminModelsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ modelId, enabled }),
       })
-      if (res.ok) await fetchData(true)
+      if (res.ok) await fetchData(false)
     } catch (err) {
       console.error(err)
     } finally {
@@ -121,7 +123,7 @@ export default function AdminModelsPage() {
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white bg-nyx-surface border border-nyx-border hover:border-nyx-borderBright transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh from API
+          {refreshing ? 'Scanning API...' : 'Scan Together.ai for New Models'}
         </button>
       </div>
 

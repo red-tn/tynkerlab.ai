@@ -266,7 +266,7 @@ export default function AdminHomepagePage() {
                         <p className="text-xs font-medium text-white truncate">{prompt.title}</p>
                         <div className="flex items-center justify-between mt-1">
                           <Badge variant="outline" className="text-[9px]">{prompt.category}</Badge>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             {isConfirmingDelete ? (
                               <div className="flex items-center gap-1">
                                 <button
@@ -287,18 +287,19 @@ export default function AdminHomepagePage() {
                               <>
                                 <button
                                   onClick={() => setConfirmDeleteId(prompt.id)}
-                                  className="text-gray-600 hover:text-red-400 transition-colors"
+                                  className="p-1 rounded text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                   title="Delete prompt"
                                 >
-                                  <Trash2 className="h-3 w-3" />
+                                  <Trash2 className="h-3.5 w-3.5" />
                                 </button>
                                 <button
                                   onClick={() => toggleFeatured(prompt)}
                                   disabled={isToggling}
-                                  className="text-gray-500 hover:text-yellow-400 transition-colors disabled:opacity-50"
+                                  className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 transition-colors disabled:opacity-50"
                                   title="Add to featured"
                                 >
-                                  {isToggling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Star className="h-3.5 w-3.5" />}
+                                  {isToggling ? <Loader2 className="h-3 w-3 animate-spin" /> : <Star className="h-3 w-3" />}
+                                  Feature
                                 </button>
                               </>
                             )}

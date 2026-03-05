@@ -4,24 +4,16 @@ import { requireAdmin, AdminAuthError } from '@/lib/admin-auth'
 
 async function fetchTogetherBalance(): Promise<{ balance: number | null; error?: string }> {
   try {
-    const res = await fetch('https://api.together.xyz/v1/dashboard/billing/credits', {
+    // Together.ai doesn't expose a public billing API — use the usage endpoint as a proxy
+    const res = await fetch('https://api.together.xyz/v1/models', {
       headers: { Authorization: `Bearer ${process.env.TOGETHER_API_KEY}` },
       signal: AbortSignal.timeout(5000),
     })
     if (res.ok) {
-      const data = await res.json()
-      return { balance: data.total_balance ?? data.balance ?? null }
+      // API key is valid but no balance endpoint available
+      return { balance: null, error: 'No billing API — check together.ai dashboard' }
     }
-    // Fallback endpoint
-    const res2 = await fetch('https://api.together.xyz/v1/dashboard/billing', {
-      headers: { Authorization: `Bearer ${process.env.TOGETHER_API_KEY}` },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (res2.ok) {
-      const data = await res2.json()
-      return { balance: data.balance ?? data.credits ?? null }
-    }
-    return { balance: null, error: `Status ${res.status}` }
+    return { balance: null, error: `API key issue (${res.status})` }
   } catch {
     return { balance: null, error: 'Timeout or network error' }
   }

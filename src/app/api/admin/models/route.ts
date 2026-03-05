@@ -44,59 +44,86 @@ async function getModelOverrides(supabase: any): Promise<Record<string, boolean>
   return data?.value || {}
 }
 
+// WaveSpeed model (avatar generation, separate provider)
+const WAVESPEED_MODELS = [
+  {
+    id: 'wavespeed/infinitetalk',
+    displayName: 'InfiniteTalk (UGC Avatar)',
+    type: 'video' as const,
+    category: 'wavespeed',
+    categoryLabel: 'WaveSpeed AI',
+    credits: 50,
+    togetherPrice: 'Per-job pricing',
+    provider: 'wavespeed',
+  },
+]
+
 export async function GET(request: Request) {
   try {
     await requireAdmin(request)
     const supabase = createAdminClient()
+    const { searchParams } = new URL(request.url)
+    const fetchApi = searchParams.get('fetch_api') === 'true'
 
-    const [togetherModels, overrides] = await Promise.all([
-      fetchTogetherModels(),
-      getModelOverrides(supabase),
-    ])
+    const overrides = await getModelOverrides(supabase)
 
-    // Filter to image/video types from Together API
-    const imageVideoModels = togetherModels.filter(
-      m => m.type === 'image' || m.type === 'video'
-    )
-
-    // Build a set of registered model IDs
-    const registeredIds = new Set(ALL_MODELS.map(m => m.id))
-
-    // Registered models with override status
-    const registered = ALL_MODELS.map(m => ({
-      id: m.id,
-      displayName: m.displayName,
-      type: m.type,
-      category: m.category,
-      categoryLabel: m.categoryLabel,
-      credits: m.credits,
-      togetherPrice: m.togetherPrice,
-      enabled: overrides[m.id] !== undefined ? overrides[m.id] : m.enabled,
-      defaultEnabled: m.enabled,
-      registered: true,
-    }))
-
-    // Unregistered models from Together API (new models we could add)
-    const unregistered = imageVideoModels
-      .filter(m => !registeredIds.has(m.id))
-      .map(m => ({
+    // Registered models (Together.ai + WaveSpeed) with override status
+    const registered = [
+      ...ALL_MODELS.map(m => ({
         id: m.id,
-        displayName: m.display_name || m.id.split('/').pop() || m.id,
-        type: m.type as 'image' | 'video',
-        category: m.organization?.toLowerCase() || 'unknown',
-        categoryLabel: m.organization || 'Unknown',
-        credits: 0,
-        togetherPrice: m.pricing?.input ? `$${m.pricing.input}/MP` : 'Unknown',
-        enabled: false,
-        defaultEnabled: false,
-        registered: false,
-      }))
+        displayName: m.displayName,
+        type: m.type,
+        category: m.category,
+        categoryLabel: m.categoryLabel,
+        credits: m.credits,
+        togetherPrice: m.togetherPrice,
+        enabled: overrides[m.id] !== undefined ? overrides[m.id] : m.enabled,
+        defaultEnabled: m.enabled,
+        registered: true,
+        provider: 'together' as const,
+      })),
+      ...WAVESPEED_MODELS.map(m => ({
+        ...m,
+        enabled: overrides[m.id] !== undefined ? overrides[m.id] : true,
+        defaultEnabled: true,
+        registered: true,
+      })),
+    ]
+
+    // Only fetch from Together API when explicitly requested
+    let unregistered: any[] = []
+    let togetherModelCount = 0
+
+    if (fetchApi) {
+      const togetherModels = await fetchTogetherModels()
+      const imageVideoModels = togetherModels.filter(
+        m => m.type === 'image' || m.type === 'video'
+      )
+      togetherModelCount = imageVideoModels.length
+
+      const registeredIds = new Set(ALL_MODELS.map(m => m.id))
+      unregistered = imageVideoModels
+        .filter(m => !registeredIds.has(m.id))
+        .map(m => ({
+          id: m.id,
+          displayName: m.display_name || m.id.split('/').pop() || m.id,
+          type: m.type as 'image' | 'video',
+          category: m.organization?.toLowerCase() || 'unknown',
+          categoryLabel: m.organization || 'Unknown',
+          credits: 0,
+          togetherPrice: m.pricing?.input ? `$${m.pricing.input}/MP` : 'Unknown',
+          enabled: false,
+          defaultEnabled: false,
+          registered: false,
+          provider: 'together' as const,
+        }))
+    }
 
     return NextResponse.json({
       registered,
       unregistered,
       overrides,
-      togetherModelCount: imageVideoModels.length,
+      togetherModelCount,
     })
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })

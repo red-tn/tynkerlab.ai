@@ -147,42 +147,25 @@ export default function AdminMonitoringPage() {
         </button>
       </div>
 
-      {/* API Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="h-4 w-4 text-primary-400" />
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Together.ai Balance</span>
-          </div>
-          {d.balances.together.balance !== null ? (
-            <p className="text-2xl font-bold text-white">${d.balances.together.balance.toFixed(2)}</p>
-          ) : (
-            <p className="text-sm text-gray-500">{d.balances.together.error || 'Unavailable'}</p>
-          )}
-        </div>
-        <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="h-4 w-4 text-green-400" />
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
-          </div>
-          {d.balances.stripe ? (
+      {/* Stripe Balance Cards */}
+      {d.balances.stripe && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Wallet className="h-4 w-4 text-green-400" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
+            </div>
             <p className="text-2xl font-bold text-white">${d.balances.stripe.available.toFixed(2)}</p>
-          ) : (
-            <p className="text-sm text-gray-500">Unavailable</p>
-          )}
-        </div>
-        <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Wallet className="h-4 w-4 text-yellow-400" />
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
           </div>
-          {d.balances.stripe ? (
+          <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Wallet className="h-4 w-4 text-yellow-400" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
+            </div>
             <p className="text-2xl font-bold text-white">${d.balances.stripe.pending.toFixed(2)}</p>
-          ) : (
-            <p className="text-sm text-gray-500">Unavailable</p>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Status Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
