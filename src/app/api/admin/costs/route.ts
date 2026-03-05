@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     // Fetch generations from last 30 days that consumed credits
     const { data: generations } = await supabase
       .from('generations')
-      .select('model, width, height, duration, credits_used, created_at, type')
+      .select('model, width, height, duration_seconds, credits_used, created_at, type')
       .gt('credits_used', 0)
       .gt('created_at', thirtyDaysAgo.toISOString())
       .limit(10000)
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       const modelId = (g as any).model || ''
       const width = (g as any).width || null
       const height = (g as any).height || null
-      const duration = (g as any).duration || null
+      const duration = (g as any).duration_seconds || null
       const creditsUsed = (g as any).credits_used || 0
       const createdAt = (g as any).created_at || ''
 
