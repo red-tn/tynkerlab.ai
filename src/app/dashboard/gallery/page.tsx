@@ -229,9 +229,9 @@ export default function GalleryPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" className="aspect-square rounded-xl" />
+            <Skeleton key={i} variant="rectangular" className={cn('rounded-xl break-inside-avoid mb-4', i % 3 === 0 ? 'aspect-[3/4]' : i % 3 === 1 ? 'aspect-square' : 'aspect-[4/3]')} />
           ))}
         </div>
       ) : generations.length === 0 ? (
@@ -245,13 +245,13 @@ export default function GalleryPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">
             {generations.map((gen) => (
-              <div key={gen.id} className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden cursor-pointer" onClick={() => setDetailGen(gen)}>
+              <div key={gen.id} className="break-inside-avoid mb-4 group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden cursor-pointer" onClick={() => setDetailGen(gen)}>
                 {gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
-                  <video src={gen.output_url || ''} className="w-full aspect-square object-cover" muted loop playsInline autoPlay onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => { if (window.innerWidth >= 768) (e.target as HTMLVideoElement).pause() }} />
+                  <video src={gen.output_url || ''} className="w-full h-auto block" muted loop playsInline autoPlay onMouseEnter={e => (e.target as HTMLVideoElement).play()} onMouseLeave={e => { if (window.innerWidth >= 768) (e.target as HTMLVideoElement).pause() }} />
                 ) : (
-                  <img src={gen.output_url || ''} alt={gen.prompt} className="w-full aspect-square object-cover" />
+                  <img src={gen.output_url || ''} alt={gen.prompt} className="w-full h-auto block" />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-0 left-0 right-0 p-3">

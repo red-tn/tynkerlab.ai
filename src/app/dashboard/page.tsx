@@ -416,9 +416,9 @@ export default function DashboardPage() {
           </Link>
         </div>
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="columns-2 lg:columns-3 gap-4 [column-fill:_balance]">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-48" variant="rectangular" />
+              <Skeleton key={i} className={cn('break-inside-avoid mb-4 rounded-xl', i % 3 === 0 ? 'aspect-[3/4]' : i % 3 === 1 ? 'aspect-square' : 'aspect-[4/3]')} variant="rectangular" />
             ))}
           </div>
         ) : recentGenerations.length === 0 ? (
@@ -438,18 +438,18 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="columns-2 lg:columns-3 gap-4 [column-fill:_balance]">
             {recentGenerations.map((gen) => (
-              <div key={gen.id} className="group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer" onClick={() => setDetailGen(gen)}>
-                <div className="aspect-video bg-nyx-border relative overflow-hidden">
+              <div key={gen.id} className="break-inside-avoid mb-4 group relative overflow-hidden rounded-xl border border-nyx-border bg-nyx-surface/80 backdrop-blur-sm hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 cursor-pointer" onClick={() => setDetailGen(gen)}>
+                <div className="bg-nyx-border relative overflow-hidden">
                   {gen.output_url ? (
                     gen.type.includes('video') || gen.type === 'ugc-avatar' ? (
-                      <video src={gen.output_url} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" muted playsInline autoPlay loop />
+                      <video src={gen.output_url} className="w-full h-auto block group-hover:scale-105 transition-transform duration-500" muted playsInline autoPlay loop />
                     ) : (
-                      <img src={gen.output_url} alt={gen.prompt || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <img src={gen.output_url} alt={gen.prompt || ''} className="w-full h-auto block group-hover:scale-105 transition-transform duration-500" />
                     )
                   ) : (
-                    <div className="flex items-center justify-center h-full">
+                    <div className="aspect-video flex items-center justify-center">
                       <Badge variant={gen.status === 'failed' ? 'error' : 'default'}>{gen.status}</Badge>
                     </div>
                   )}
