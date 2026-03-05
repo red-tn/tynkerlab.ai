@@ -29,6 +29,7 @@ interface MonitoringData {
   balances: {
     together: { balance: number | null; error?: string }
     stripe: { available: number; pending: number } | null
+    ltx: { healthy: boolean; error?: string }
   }
   filterOptions: {
     models: string[]
@@ -128,7 +129,7 @@ export default function AdminMonitoringPage() {
     )
   }
 
-  const d = data || { totalRequests: 0, requestsPerHour: 0, errorCount: 0, errorRate: 0, avgLatency: 0, p95Latency: 0, modelStats: [], recentErrors: [], balances: { together: { balance: null }, stripe: null }, filterOptions: { models: [], endpoints: [] } }
+  const d = data || { totalRequests: 0, requestsPerHour: 0, errorCount: 0, errorRate: 0, avgLatency: 0, p95Latency: 0, modelStats: [], recentErrors: [], balances: { together: { balance: null }, stripe: null, ltx: { healthy: false } }, filterOptions: { models: [], endpoints: [] } }
 
   return (
     <div className="space-y-6">
@@ -147,25 +148,39 @@ export default function AdminMonitoringPage() {
         </button>
       </div>
 
-      {/* Stripe Balance Cards */}
-      {d.balances.stripe && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wallet className="h-4 w-4 text-green-400" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
+      {/* Stripe Balance & LTX Status Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {d.balances.stripe && (
+          <>
+            <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="h-4 w-4 text-green-400" />
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
+              </div>
+              <p className="text-2xl font-bold text-white">${d.balances.stripe.available.toFixed(2)}</p>
             </div>
-            <p className="text-2xl font-bold text-white">${d.balances.stripe.available.toFixed(2)}</p>
-          </div>
-          <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wallet className="h-4 w-4 text-yellow-400" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
+            <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="h-4 w-4 text-yellow-400" />
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
+              </div>
+              <p className="text-2xl font-bold text-white">${d.balances.stripe.pending.toFixed(2)}</p>
             </div>
-            <p className="text-2xl font-bold text-white">${d.balances.stripe.pending.toFixed(2)}</p>
+          </>
+        )}
+        <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`h-2.5 w-2.5 rounded-full ${d.balances.ltx.healthy ? 'bg-green-400' : 'bg-red-400'}`} />
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">LTX Video API</span>
           </div>
+          <p className={`text-lg font-bold ${d.balances.ltx.healthy ? 'text-green-400' : 'text-red-400'}`}>
+            {d.balances.ltx.healthy ? 'Connected' : 'Error'}
+          </p>
+          {d.balances.ltx.error && (
+            <p className="text-xs text-gray-500 mt-1">{d.balances.ltx.error}</p>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Status Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

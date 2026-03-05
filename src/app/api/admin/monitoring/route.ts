@@ -19,6 +19,22 @@ async function fetchTogetherBalance(): Promise<{ balance: number | null; error?:
   }
 }
 
+async function fetchLtxHealth(): Promise<{ healthy: boolean; error?: string }> {
+  try {
+    const res = await fetch('https://api.ltx.video/v1', {
+      headers: { Authorization: `Bearer ${process.env.LTX_API_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (res.ok || res.status === 404) {
+      // Any non-error response means the API key and endpoint are reachable
+      return { healthy: true }
+    }
+    return { healthy: false, error: `API returned ${res.status}` }
+  } catch {
+    return { healthy: false, error: 'Timeout or network error' }
+  }
+}
+
 async function fetchStripeBalance(): Promise<{ available: number; pending: number } | null> {
   try {
     const { getServerStripe } = await import('@/lib/stripe/client')
@@ -43,7 +59,7 @@ export async function GET(request: Request) {
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
 
-    const [usage24hResult, usageHourResult, recentErrorsResult, togetherBalance, stripeBalance] = await Promise.all([
+    const [usage24hResult, usageHourResult, recentErrorsResult, togetherBalance, stripeBalance, ltxHealth] = await Promise.all([
       supabase.from('api_usage_log').select('*')
         .gt('created_at', twentyFourHoursAgo.toISOString())
         .limit(5000),
@@ -55,6 +71,7 @@ export async function GET(request: Request) {
         .limit(100),
       fetchTogetherBalance(),
       fetchStripeBalance(),
+      fetchLtxHealth(),
     ])
 
     const usage24hDocs = usage24hResult.data || []
@@ -96,6 +113,7 @@ export async function GET(request: Request) {
       balances: {
         together: togetherBalance,
         stripe: stripeBalance,
+        ltx: ltxHealth,
       },
       recentErrors: errorDocs.map((d: any) => ({
         id: d.id,

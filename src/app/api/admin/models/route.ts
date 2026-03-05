@@ -80,7 +80,7 @@ export async function GET(request: Request) {
         enabled: overrides[m.id] !== undefined ? overrides[m.id] : m.enabled,
         defaultEnabled: m.enabled,
         registered: true,
-        provider: 'together' as const,
+        provider: (m.provider || 'together') as 'together' | 'ltx',
       })),
       ...WAVESPEED_MODELS.map(m => ({
         ...m,

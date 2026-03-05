@@ -20,6 +20,7 @@ const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: fa
 interface Balances {
   together: { balance: number | null; error?: string }
   stripe: { available: number; pending: number } | null
+  ltx: { healthy: boolean; error?: string }
 }
 
 interface DashboardData {
@@ -99,25 +100,41 @@ export default function AdminDashboard() {
         <StatsCard title="API Calls (24h)" value={stats.apiCalls} icon={Activity} iconColor="text-orange-400" />
       </div>
 
-      {/* Stripe Balance */}
-      {balances?.stripe && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Stripe Balance & LTX Status */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {balances?.stripe && (
+          <>
+            <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="h-4 w-4 text-green-400" />
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
+              </div>
+              <p className="text-2xl font-bold text-white">${balances.stripe.available.toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="h-4 w-4 text-yellow-400" />
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
+              </div>
+              <p className="text-2xl font-bold text-white">${balances.stripe.pending.toFixed(2)}</p>
+            </div>
+          </>
+        )}
+        {balances?.ltx && (
           <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Wallet className="h-4 w-4 text-green-400" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Available</span>
+              <div className={`h-2.5 w-2.5 rounded-full ${balances.ltx.healthy ? 'bg-green-400' : 'bg-red-400'}`} />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">LTX Video API</span>
             </div>
-            <p className="text-2xl font-bold text-white">${balances.stripe.available.toFixed(2)}</p>
+            <p className={`text-lg font-bold ${balances.ltx.healthy ? 'text-green-400' : 'text-red-400'}`}>
+              {balances.ltx.healthy ? 'Connected' : 'Error'}
+            </p>
+            {balances.ltx.error && (
+              <p className="text-xs text-gray-500 mt-1">{balances.ltx.error}</p>
+            )}
           </div>
-          <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wallet className="h-4 w-4 text-yellow-400" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stripe Pending</span>
-            </div>
-            <p className="text-2xl font-bold text-white">${balances.stripe.pending.toFixed(2)}</p>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
