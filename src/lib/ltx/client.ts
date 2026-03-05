@@ -34,7 +34,7 @@ export async function generateLtxVideo(params: LtxVideoParams): Promise<Buffer> 
     model: params.model,
     duration: params.duration,
     resolution: `${params.width}x${params.height}`,
-    fps: params.fps || 24,
+    fps: params.fps || 25,
     generate_audio: params.generateAudio ?? true,
   }
 
