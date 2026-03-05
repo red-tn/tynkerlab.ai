@@ -145,10 +145,13 @@ export default function PromptsPage() {
         {/* Grid */}
         {loading ? (
           /* Skeleton loading — grid of square shimmer cards */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-xl bg-nyx-surface overflow-hidden">
-                <div className="aspect-square bg-nyx-bg relative overflow-hidden">
+              <div key={i} className="break-inside-avoid mb-4 rounded-xl bg-nyx-surface overflow-hidden">
+                <div className={cn(
+                  'bg-nyx-bg relative overflow-hidden',
+                  i % 3 === 0 ? 'aspect-[3/4]' : i % 3 === 1 ? 'aspect-square' : 'aspect-[4/3]'
+                )}>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-[shimmer_1.5s_infinite]" />
                 </div>
                 <div className="p-3 space-y-2">
@@ -169,32 +172,32 @@ export default function PromptsPage() {
           </div>
         ) : (
           /* Image-first gallery grid */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">
             {prompts.map((prompt) => {
               const model = getModelInfo(prompt.model_used)
               return (
                 <div
                   key={prompt.id}
-                  className="group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 hover:-translate-y-0.5"
+                  className="break-inside-avoid mb-4 group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden hover:border-primary-500/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5 hover:-translate-y-0.5"
                 >
                   {/* Image area */}
-                  <div className="aspect-square bg-nyx-bg relative overflow-hidden">
+                  <div className="bg-nyx-bg relative overflow-hidden">
                     {prompt.preview_image_url ? (
                       prompt.model_type === 'video' ? (
                         <video
                           src={prompt.preview_image_url}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-auto block group-hover:scale-105 transition-transform duration-500"
                           muted autoPlay loop playsInline
                         />
                       ) : (
                         <img
                           src={prompt.preview_image_url}
                           alt={prompt.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-auto block group-hover:scale-105 transition-transform duration-500"
                         />
                       )
                     ) : (
-                      <div className="flex items-center justify-center h-full">
+                      <div className="aspect-square flex items-center justify-center">
                         {prompt.model_type === 'video'
                           ? <Video className="h-10 w-10 text-gray-700" />
                           : <ImageIcon className="h-10 w-10 text-gray-700" />
