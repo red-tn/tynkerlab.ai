@@ -88,6 +88,7 @@ export const SEED_TEMPLATES: TemplateCreate[] = [
     default_platform: 'instagram_feed',
     tags: ['instagram', 'flat-lay', 'lifestyle', 'aesthetic'],
     is_published: true,
+    is_featured: false,
     sort_order: 3,
   },
 
@@ -146,6 +147,7 @@ export const SEED_TEMPLATES: TemplateCreate[] = [
     default_platform: 'instagram_feed',
     tags: ['before-after', 'transformation', 'comparison'],
     is_published: true,
+    is_featured: false,
     sort_order: 5,
   },
 
@@ -175,6 +177,7 @@ export const SEED_TEMPLATES: TemplateCreate[] = [
     default_platform: 'instagram_story',
     tags: ['social', 'story', 'ad', 'marketing', 'vertical'],
     is_published: true,
+    is_featured: false,
     sort_order: 6,
   },
 
@@ -205,6 +208,7 @@ export const SEED_TEMPLATES: TemplateCreate[] = [
     default_platform: 'instagram_feed',
     tags: ['lifestyle', 'product', 'aspirational', 'scene'],
     is_published: true,
+    is_featured: false,
     sort_order: 7,
   },
 
