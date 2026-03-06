@@ -19,7 +19,7 @@ import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import type { ModelCategory } from '@/lib/together/models'
 import {
   Menu, X, ChevronDown, Wand2, ImageIcon, Video, Coins, Crown,
-  LayoutDashboard, User, CreditCard, LogOut, Shield, Image, Volume2, PenTool, UserCircle, DollarSign
+  LayoutDashboard, User, CreditCard, LogOut, Shield, Image, Volume2, PenTool, UserCircle, DollarSign, LayoutTemplate
 } from 'lucide-react'
 
 const studioLinks = [
@@ -28,6 +28,7 @@ const studioLinks = [
   { href: '/studio/text-to-video', label: 'Text to Video', icon: Video },
   { href: '/studio/image-to-video', label: 'Image to Video', icon: Image },
   { href: '/studio/ugc-avatar', label: 'UGC Avatar', icon: UserCircle },
+  { href: '/studio/templates', label: 'Templates', icon: LayoutTemplate },
   { href: '/studio/prompt-maker', label: 'Prompt Maker', icon: PenTool },
   { href: '/studio/text-to-speech', label: 'Text to Speech', icon: Volume2 },
 ]
@@ -39,6 +40,7 @@ const megaFeatures = [
   { Icon: TextToVideoIcon, label: 'Text to Video', desc: 'Create videos from descriptions', href: '/studio/text-to-video' },
   { Icon: ImageToVideoIcon, label: 'Image to Video', desc: 'Animate still images', href: '/studio/image-to-video' },
   { Icon: UGCAvatarIcon, label: 'UGC Avatar', desc: 'Create talking avatar videos', href: '/studio/ugc-avatar' },
+  { Icon: LayoutTemplate as any, label: 'Templates', desc: 'Pre-built workflows for social media', href: '/studio/templates' },
   { Icon: PromptMakerIcon, label: 'Prompt Maker', desc: 'Build perfect prompts with AI', href: '/studio/prompt-maker' },
   { Icon: TextToSpeechIcon, label: 'Text to Speech', desc: 'Natural AI voice generation', href: '/studio/text-to-speech' },
 ]

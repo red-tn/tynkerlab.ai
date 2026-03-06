@@ -10,6 +10,7 @@ const footerLinks = {
     { href: '/studio/text-to-video', label: 'Text to Video' },
     { href: '/studio/image-to-video', label: 'Image to Video' },
     { href: '/studio/ugc-avatar', label: 'UGC Avatar' },
+    { href: '/studio/templates', label: 'Templates' },
   ],
   resources: [
     { href: '/pricing', label: 'Pricing' },
