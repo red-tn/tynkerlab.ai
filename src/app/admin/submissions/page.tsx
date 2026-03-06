@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
-import { Check, X, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, X, Eye, ChevronLeft, ChevronRight, ImageIcon, Video } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export default function AdminSubmissionsPage() {
   const { addToast } = useToast()
@@ -74,9 +75,9 @@ export default function AdminSubmissionsPage() {
       </div>
 
       {loading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-lg bg-nyx-surface animate-pulse" />
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className={cn('break-inside-avoid mb-4 rounded-xl bg-nyx-surface animate-pulse', i % 3 === 0 ? 'aspect-[3/4]' : i % 3 === 1 ? 'aspect-square' : 'aspect-[4/3]')} />
           ))}
         </div>
       ) : submissions.length === 0 ? (
@@ -84,51 +85,58 @@ export default function AdminSubmissionsPage() {
           <p className="text-gray-500">No pending submissions</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">
           {submissions.map(sub => (
-            <div key={sub.id} className="bg-nyx-surface border border-nyx-border rounded-xl p-4 flex items-start gap-4">
-              {sub.preview_image_url && (
-                sub.model_type === 'video' ? (
-                  <video src={sub.preview_image_url} className="w-16 h-16 rounded-lg object-cover shrink-0" muted />
+            <div key={sub.id} className="break-inside-avoid mb-4 group relative rounded-xl border border-nyx-border bg-nyx-surface overflow-hidden">
+              {/* Image/video area */}
+              <div className="bg-nyx-bg relative overflow-hidden">
+                {sub.preview_image_url ? (
+                  sub.model_type === 'video' ? (
+                    <video src={sub.preview_image_url} className="w-full h-auto block" muted loop playsInline autoPlay />
+                  ) : (
+                    <img src={sub.preview_image_url} alt={sub.title} className="w-full h-auto block" />
+                  )
                 ) : (
-                  <img src={sub.preview_image_url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
-                )
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">{sub.title}</p>
-                <p className="text-xs text-gray-400 line-clamp-2 mt-1">{sub.prompt_text}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="default" className="text-[10px]">{sub.category}</Badge>
-                  <span className="text-[10px] text-gray-500">by {sub.submitter_name || 'Unknown'}</span>
-                  <span className="text-[10px] text-gray-600">
-                    {new Date(sub.created_at).toLocaleDateString()}
-                  </span>
+                  <div className="aspect-square flex items-center justify-center">
+                    {sub.model_type === 'video'
+                      ? <Video className="h-10 w-10 text-gray-700" />
+                      : <ImageIcon className="h-10 w-10 text-gray-700" />
+                    }
+                  </div>
+                )}
+
+                {/* Type badge */}
+                <Badge variant={sub.model_type === 'video' ? 'info' : 'default'} className="absolute top-2 right-2 text-[9px] backdrop-blur-sm">
+                  {sub.model_type}
+                </Badge>
+
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                  <p className="text-xs text-gray-200 line-clamp-4 mb-3 leading-relaxed">{sub.prompt_text}</p>
+                  <div className="flex items-center gap-1.5">
+                    <Button variant="ghost" size="sm" onClick={() => setPreview(sub)} className="!p-1.5 !bg-white/10 hover:!bg-white/20">
+                      <Eye className="h-3.5 w-3.5 text-white" />
+                    </Button>
+                    <Button variant="primary" size="sm" loading={actionLoading === sub.id} onClick={() => handleAction(sub.id, 'approve')} className="!p-1.5">
+                      <Check className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="danger" size="sm" loading={actionLoading === sub.id} onClick={() => handleAction(sub.id, 'reject')} className="!p-1.5">
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPreview(sub)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  loading={actionLoading === sub.id}
-                  onClick={() => handleAction(sub.id, 'approve')}
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  loading={actionLoading === sub.id}
-                  onClick={() => handleAction(sub.id, 'reject')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+
+              {/* Card info */}
+              <div className="p-3">
+                <p className="text-sm font-semibold text-white truncate">{sub.title}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <Badge variant="default" className="text-[9px]">{sub.category}</Badge>
+                  <span className="text-[10px] text-gray-500">by {sub.submitter_name || 'Unknown'}</span>
+                </div>
+                <span className="text-[10px] text-gray-600 mt-1 block">
+                  {new Date(sub.created_at).toLocaleDateString()}
+                </span>
               </div>
             </div>
           ))}
