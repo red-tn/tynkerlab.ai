@@ -193,7 +193,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What can free users access?',
-    a: 'Free users can generate images with all 32 image models and use Kokoro TTS. Outputs include a small watermark. Video generation, premium TTS voices, and UGC Avatars require a Creator or Pro Creator plan. Free users earn 3 credits daily via check-in.',
+    a: 'Free users can generate images with all 32 image models, use Templates, and use Kokoro TTS. Outputs include a small watermark. Video generation, premium TTS voices, and UGC Avatars require a Creator or Pro Creator plan. Free users earn 3 credits daily via check-in.',
   },
   {
     q: 'Do unused credits roll over?',

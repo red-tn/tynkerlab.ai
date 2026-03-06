@@ -430,6 +430,80 @@ export interface BlogPostCreate {
 export type BlogPostUpdate = Partial<BlogPostCreate>
 
 // ---------------------------------------------------------------------------
+// Template
+// ---------------------------------------------------------------------------
+export type TemplateCategory = 'product' | 'beauty' | 'lifestyle' | 'social' | 'ugc'
+
+export interface TemplatePromptVariable {
+  key: string
+  label: string
+  type: 'text' | 'select'
+  placeholder?: string
+  options?: string[]
+  required: boolean
+}
+
+export interface TemplatePhotoSlot {
+  key: string
+  label: string
+  description: string
+  required: boolean
+}
+
+export interface TemplatePlatformPreset {
+  platform: string
+  aspect_ratio: string
+  label: string
+}
+
+export interface Template extends DbRow {
+  name: string
+  slug: string
+  description: string
+  category: TemplateCategory
+  preview_image_url: string | null
+  generation_type: 'image' | 'video'
+  recommended_model: string
+  base_prompt: string
+  prompt_variables: TemplatePromptVariable[]
+  photo_slots: TemplatePhotoSlot[]
+  platform_presets: TemplatePlatformPreset[]
+  default_aspect_ratio: string
+  default_platform: string
+  credits_override: number | null
+  tags: string[]
+  is_published: boolean
+  is_featured: boolean
+  sort_order: number
+  usage_count: number
+  created_by: string | null
+}
+
+export interface TemplateCreate {
+  name: string
+  slug: string
+  description?: string
+  category?: TemplateCategory
+  preview_image_url?: string | null
+  generation_type?: 'image' | 'video'
+  recommended_model: string
+  base_prompt: string
+  prompt_variables?: TemplatePromptVariable[]
+  photo_slots?: TemplatePhotoSlot[]
+  platform_presets?: TemplatePlatformPreset[]
+  default_aspect_ratio?: string
+  default_platform?: string
+  credits_override?: number | null
+  tags?: string[]
+  is_published?: boolean
+  is_featured?: boolean
+  sort_order?: number
+  created_by?: string | null
+}
+
+export type TemplateUpdate = Partial<TemplateCreate>
+
+// ---------------------------------------------------------------------------
 // User Role type
 // ---------------------------------------------------------------------------
 export type UserRole = 'user' | 'admin'

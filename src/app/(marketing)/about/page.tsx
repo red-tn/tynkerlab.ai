@@ -18,7 +18,7 @@ const VALUES = [
 
 const STATS = [
   { value: '54+', label: 'AI Models' },
-  { value: '7', label: 'Creative Tools' },
+  { value: '8', label: 'Creative Tools' },
   { value: '24/7', label: 'Availability' },
 ]
 

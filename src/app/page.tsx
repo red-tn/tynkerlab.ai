@@ -9,7 +9,7 @@ import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, U
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { SupportedModelsSection } from '@/components/landing/supported-models-section'
-import { Sparkles, Zap, Shield, ArrowRight, Star, Palette, Film, Wand2, Layers, Globe, Heart, Code, ImageIcon, Video, Copy, Volume2 } from 'lucide-react'
+import { Sparkles, Zap, Shield, ArrowRight, Star, Palette, Film, Wand2, Layers, Globe, Heart, Code, ImageIcon, Video, Copy, Volume2, LayoutTemplate } from 'lucide-react'
 import type { Prompt } from '@/types/database'
 
 const TOOLS = [
@@ -20,6 +20,7 @@ const TOOLS = [
   { key: 'ugc-avatar', Icon: UGCAvatarIcon, title: 'UGC Avatar', desc: 'Create talking avatar videos from a photo', href: '/studio/ugc-avatar' },
   { key: 'prompt-maker', Icon: PromptMakerIcon, title: 'Prompt Maker', desc: 'Build perfect AI prompts with structured guidance', href: '/studio/prompt-maker' },
   { key: 'text-to-speech', Icon: TextToSpeechIcon, title: 'Text to Speech', desc: 'Convert text to natural-sounding AI voices', href: '/studio/text-to-speech' },
+  { key: 'templates', Icon: LayoutTemplate as any, title: 'Templates', desc: 'Pre-built AI workflows for instant social media content', href: '/studio/templates' },
 ]
 
 interface ToolImageData {
@@ -30,7 +31,7 @@ interface ToolImageData {
 }
 
 const STEPS = [
-  { num: '01', title: 'Choose Your Tool', desc: 'Select from seven AI tools including image, video, speech, UGC avatars, and prompt maker.' },
+  { num: '01', title: 'Choose Your Tool', desc: 'Select from eight AI tools including image, video, speech, templates, UGC avatars, and prompt maker.' },
   { num: '02', title: 'Describe Your Vision', desc: 'Enter a prompt and let AI Enhance polish it for optimal results. Pick a model and settings.' },
   { num: '03', title: 'Generate & Download', desc: 'Hit generate and watch your creation come to life. Download in full resolution.' },
 ]
@@ -193,10 +194,10 @@ export default function HomePage() {
       {/* Feature Tools */}
       <section className="max-w-6xl mx-auto px-4 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Seven Powerful Tools</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Eight Powerful Tools</h2>
           <p className="text-gray-400 max-w-xl mx-auto">Everything you need to bring your creative vision to life</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-5">
           {TOOLS.map(({ key, Icon, title, desc, href }) => {
             const toolData = toolImages[key]
             const hasImage = !!toolData?.imageUrl

@@ -396,5 +396,50 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS total_avatars int NOT NULL DEFAULT
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_checkin_date date;
 
 -- ---------------------------------------------------------------------------
+-- Templates table
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS templates (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name                text NOT NULL,
+  slug                text UNIQUE NOT NULL,
+  description         text NOT NULL DEFAULT '',
+  category            text NOT NULL DEFAULT 'product',
+  preview_image_url   text,
+  generation_type     text NOT NULL DEFAULT 'image',
+  recommended_model   text NOT NULL,
+  base_prompt         text NOT NULL,
+  prompt_variables    jsonb NOT NULL DEFAULT '[]',
+  photo_slots         jsonb NOT NULL DEFAULT '[]',
+  platform_presets    jsonb NOT NULL DEFAULT '[]',
+  default_aspect_ratio text NOT NULL DEFAULT '1:1',
+  default_platform    text NOT NULL DEFAULT 'instagram_feed',
+  credits_override    int,
+  tags                text[] DEFAULT '{}',
+  is_published        boolean NOT NULL DEFAULT false,
+  is_featured         boolean NOT NULL DEFAULT false,
+  sort_order          int NOT NULL DEFAULT 0,
+  usage_count         int NOT NULL DEFAULT 0,
+  created_by          text,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  updated_at          timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TRIGGER templates_updated_at
+  BEFORE UPDATE ON templates
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_templates_slug ON templates (slug);
+CREATE INDEX IF NOT EXISTS idx_templates_category ON templates (category);
+CREATE INDEX IF NOT EXISTS idx_templates_published ON templates (is_published);
+
+ALTER TABLE templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY templates_public_read ON templates FOR SELECT TO anon, authenticated
+  USING (is_published = true);
+
+CREATE POLICY templates_admin_all ON templates FOR ALL TO service_role
+  USING (true) WITH CHECK (true);
+
+-- ---------------------------------------------------------------------------
 -- Done! Verify with: SELECT tablename FROM pg_tables WHERE schemaname = 'public';
 -- ---------------------------------------------------------------------------
