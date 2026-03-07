@@ -123,8 +123,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@tynkerlab",
-    creator: "@tynkerlab",
+    site: "@edwarzio",
+    creator: "@edwarzio",
     title: "Tynkerlab.ai — AI Image, Video & Speech Generator",
     description: "Generate stunning AI images, videos, and lifelike speech with 56+ models. Start free — no credit card required.",
     images: ["/og-image.png"],
