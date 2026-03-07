@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic'
 import { StatsCard } from '@/components/admin/stats-card'
 import { ActivityFeed, type ActivityItem } from '@/components/admin/activity-feed'
 import { ChartWrapper } from '@/components/admin/chart-wrapper'
-import { Users, CreditCard, DollarSign, Image, Coins, Activity, Wallet } from 'lucide-react'
+import { Users, CreditCard, DollarSign, Image, Coins, Activity, Wallet, Eye } from 'lucide-react'
 
 const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false })
 const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false })
@@ -32,6 +32,7 @@ interface DashboardData {
     totalGenerations: number
     creditsUsed: number
     apiCalls: number
+    pageViews24h: number
     usersChange: number
     subsChange: number
     revenueChange: number
@@ -83,7 +84,7 @@ export default function AdminDashboard() {
 
   const stats = data?.stats || {
     totalUsers: 0, activeSubscriptions: 0, monthlyRevenue: 0,
-    totalGenerations: 0, creditsUsed: 0, apiCalls: 0,
+    totalGenerations: 0, creditsUsed: 0, apiCalls: 0, pageViews24h: 0,
     usersChange: 0, subsChange: 0, revenueChange: 0, generationsChange: 0,
   }
 
@@ -97,6 +98,7 @@ export default function AdminDashboard() {
         <StatsCard title="Active Subscriptions" value={stats.activeSubscriptions} change={stats.subsChange} changeLabel="vs last month" icon={CreditCard} iconColor="text-accent-400" />
         <StatsCard title="Monthly Revenue" value={`$${stats.monthlyRevenue.toLocaleString()}`} change={stats.revenueChange} changeLabel="vs last month" icon={DollarSign} iconColor="text-green-400" />
         <StatsCard title="Total Generations" value={stats.totalGenerations} change={stats.generationsChange} changeLabel="vs last month" icon={Image} />
+        <StatsCard title="Page Views (24h)" value={stats.pageViews24h} icon={Eye} iconColor="text-emerald-400" />
         <StatsCard title="Credits Used" value={stats.creditsUsed} icon={Coins} iconColor="text-yellow-400" />
         <StatsCard title="API Calls (24h)" value={stats.apiCalls} icon={Activity} iconColor="text-orange-400" />
       </div>

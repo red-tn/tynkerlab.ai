@@ -6,9 +6,10 @@ type ProviderHealth = { healthy: boolean; error?: string }
 
 async function fetchTogetherHealth(): Promise<ProviderHealth> {
   try {
-    const res = await fetch('https://api.together.xyz/v1/models', {
+    // Use a lightweight endpoint with longer timeout to reduce false negatives
+    const res = await fetch('https://api.together.xyz/v1/models?limit=1', {
       headers: { Authorization: `Bearer ${process.env.TOGETHER_API_KEY}` },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(15000),
     })
     if (res.ok) return { healthy: true }
     return { healthy: false, error: `API returned ${res.status}` }
