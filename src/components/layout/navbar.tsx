@@ -412,6 +412,19 @@ export function Navbar() {
                   Dashboard
                 </Link>
               )}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg text-sm',
+                    pathname.startsWith('/admin') ? 'text-white bg-white/5' : 'text-gray-400 hover:text-white'
+                  )}
+                >
+                  <Shield className="h-4 w-4 text-red-400" />
+                  Admin Dashboard
+                </Link>
+              )}
             </div>
           </div>
         )}
