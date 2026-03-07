@@ -61,6 +61,10 @@ const CATEGORY_LABELS: Record<ModelCategory, string> = {
 
 const DEFAULT_IMAGE_ASPECT_RATIOS = ['1:1', '3:2', '2:3', '4:3', '3:4', '16:9', '9:16', '4:5', '5:4', '21:9']
 const DEFAULT_VIDEO_ASPECT_RATIOS = ['16:9', '9:16', '1:1']
+// Models that only support landscape/portrait (no square)
+const LANDSCAPE_PORTRAIT_ONLY = ['16:9', '9:16']
+// MiniMax only supports landscape
+const LANDSCAPE_ONLY = ['16:9']
 
 // ---------------------------------------------------------------------------
 // Image Models (32 total)
@@ -570,7 +574,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'Google Veo 3.0 — high quality video generation with text-to-video and image-to-video.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
@@ -593,7 +597,7 @@ const VIDEO_MODELS: AIModel[] = [
     description: 'Veo 3.0 with synchronized audio generation — produces video with matching sound effects and music.',
     badge: 'NEW',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
@@ -614,7 +618,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'Veo 3.0 Fast — speed-optimized video generation for rapid iteration.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
@@ -636,7 +640,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'Veo 3.0 Fast with audio — rapid video generation with synchronized sound.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 8,
@@ -657,7 +661,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'Google Veo 2.0 — premium video generation with cinematic quality.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p'],
     defaultQuality: '720p',
     maxSeconds: 8,
@@ -680,7 +684,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'OpenAI Sora 2 — text-to-video and image-to-video with strong prompt understanding.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p'],
     defaultQuality: '720p',
     maxSeconds: 10,
@@ -701,7 +705,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'Sora 2 Pro — premium video generation from OpenAI with enhanced detail.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p'],
     defaultQuality: '720p',
     maxSeconds: 10,
@@ -724,7 +728,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'MiniMax Director — affordable video generation with camera control capabilities.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_ONLY,
     videoQualities: ['720p'],
     defaultQuality: '720p',
     maxSeconds: 5,
@@ -744,7 +748,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'Hailuo 02 — MiniMax video model producing longer 10-second clips.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_ONLY,
     videoQualities: ['720p', '1080p'],
     defaultQuality: '720p',
     maxSeconds: 10,
@@ -960,7 +964,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: false,
     description: 'Wan 2.2 Text-to-Video — text-to-video only model from Wan-AI with 14B parameters.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p'],
     defaultQuality: '720p',
     maxSeconds: 5,
@@ -978,7 +982,7 @@ const VIDEO_MODELS: AIModel[] = [
     supportsFrameImages: true,
     description: 'Wan 2.2 Image-to-Video — image-to-video only model from Wan-AI with 14B parameters.',
     enabled: true,
-    aspectRatios: DEFAULT_VIDEO_ASPECT_RATIOS,
+    aspectRatios: LANDSCAPE_PORTRAIT_ONLY,
     videoQualities: ['720p'],
     defaultQuality: '720p',
     maxSeconds: 5,
@@ -1181,8 +1185,8 @@ const VIDEO_4K: ResolutionMap = {
 }
 
 const VIDEO_768P: ResolutionMap = {
-  '16:9': { w: 1360, h: 768 },
-  '9:16': { w: 768, h: 1360 },
+  '16:9': { w: 1366, h: 768 },
+  '9:16': { w: 768, h: 1366 },
   '1:1':  { w: 768, h: 768 },
 }
 

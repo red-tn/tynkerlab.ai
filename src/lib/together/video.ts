@@ -24,8 +24,9 @@ export async function createVideoJob(params: VideoGenerationParams): Promise<Vid
   if (params.cameraMotion) requestParams.camera_movement = params.cameraMotion
 
   if (params.frameImages && params.frameImages.length > 0) {
-    requestParams.frame_images = params.frameImages.map(url => ({
+    requestParams.frame_images = params.frameImages.map((url, i) => ({
       input_image: url,
+      frame: i,
     }))
   }
 
