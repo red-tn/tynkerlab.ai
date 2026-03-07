@@ -10,7 +10,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
-import { Image as ImageIcon, Video, Download, ChevronLeft, ChevronRight, BookOpen, Send, Trash2, Info } from 'lucide-react'
+import { Image as ImageIcon, Video, Download, ChevronLeft, ChevronRight, BookOpen, Send, Trash2, Info, Wand2 } from 'lucide-react'
+import { EmptyState } from '@/components/ui/empty-state'
 import { cn, formatDate } from '@/lib/utils'
 import { downloadFile } from '@/lib/download'
 import { adminFetch } from '@/lib/admin-fetch'
@@ -235,14 +236,18 @@ export default function GalleryPage() {
           ))}
         </div>
       ) : generations.length === 0 ? (
-        <div className="text-center py-20">
-          <ImageIcon className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-400">No generations yet</h3>
-          <p className="text-sm text-gray-600 mt-2">Start creating in the Studio</p>
-          <Button variant="secondary" onClick={() => window.location.href = '/studio/text-to-image'} className="mt-4">
-            Go to Studio
-          </Button>
-        </div>
+        <EmptyState
+          icon={Wand2}
+          title="No generations yet"
+          description={
+            filter === 'all'
+              ? 'Your creations will appear here. Head to the Studio to generate your first image or video.'
+              : `No ${filter} generations found. Try a different filter or create something new.`
+          }
+          actionLabel="Go to Studio"
+          actionHref="/studio/text-to-image"
+          variant="gallery"
+        />
       ) : (
         <>
           <div className="columns-2 md:columns-3 lg:columns-4 gap-4 [column-fill:_balance]">

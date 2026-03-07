@@ -21,8 +21,9 @@ import { SeedInput } from '@/components/studio/seed-input'
 import { CameraMotionPicker } from '@/components/studio/camera-motion-picker'
 import { CreditCostDisplay } from '@/components/studio/credit-cost-display'
 import { GenerationResult } from '@/components/studio/generation-result'
+import { CollapsibleSection } from '@/components/studio/collapsible-section'
 import { Button } from '@/components/ui/button'
-import { Sparkles, Monitor } from 'lucide-react'
+import { Sparkles, Monitor, Cpu, Ratio, Settings2, ImageIcon } from 'lucide-react'
 
 export default function ImageToVideoPage() {
   const { user } = useAuth()
@@ -107,23 +108,27 @@ export default function ImageToVideoPage() {
         <p className="text-sm text-gray-400 mt-1">Animate images into videos using AI</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-32 lg:pb-0">
         {/* Controls */}
-        <div className="space-y-5">
-          <ModelSelector
-            capability="image-to-video"
-            selectedModel={model}
-            onModelSelect={setModel}
-            disabled={isGenerating}
-          />
+        <div className="space-y-4">
+          <CollapsibleSection title="AI Model" icon={<Cpu className="h-4 w-4" />}>
+            <ModelSelector
+              capability="image-to-video"
+              selectedModel={model}
+              onModelSelect={setModel}
+              disabled={isGenerating}
+            />
+          </CollapsibleSection>
 
-          <ImageUpload
-            onUpload={setImageUrl}
-            currentImage={imageUrl}
-            onClear={() => setImageUrl(null)}
-            disabled={isGenerating}
-            onAspectRatioDetected={setAspectRatio}
-          />
+          <CollapsibleSection title="Source Image" icon={<ImageIcon className="h-4 w-4" />}>
+            <ImageUpload
+              onUpload={setImageUrl}
+              currentImage={imageUrl}
+              onClear={() => setImageUrl(null)}
+              disabled={isGenerating}
+              onAspectRatioDetected={setAspectRatio}
+            />
+          </CollapsibleSection>
 
           <PromptInput
             prompt={prompt}
@@ -136,75 +141,83 @@ export default function ImageToVideoPage() {
             showNegativePrompt={modelData?.supportsNegativePrompt ?? false}
           />
 
-          <AspectRatioPicker
-            value={aspectRatio}
-            onChange={setAspectRatio}
-            disabled={isGenerating}
-            allowedRatios={modelData?.aspectRatios}
-          />
+          <CollapsibleSection title="Aspect Ratio & Quality" icon={<Ratio className="h-4 w-4" />}>
+            <AspectRatioPicker
+              value={aspectRatio}
+              onChange={setAspectRatio}
+              disabled={isGenerating}
+              allowedRatios={modelData?.aspectRatios}
+            />
 
-          <VideoQualityPicker
-            value={quality}
-            onChange={setQuality}
-            options={qualityOptions}
-            modelId={model}
-            disabled={isGenerating}
-            duration={parseInt(duration)}
-          />
+            <VideoQualityPicker
+              value={quality}
+              onChange={setQuality}
+              options={qualityOptions}
+              modelId={model}
+              disabled={isGenerating}
+              duration={parseInt(duration)}
+            />
 
-          <DurationPicker
-            value={duration}
-            onChange={setDuration}
-            disabled={isGenerating}
-            options={durationOptions}
-          />
+            <DurationPicker
+              value={duration}
+              onChange={setDuration}
+              disabled={isGenerating}
+              options={durationOptions}
+            />
 
-          {cameraOptions && (
-            <CameraMotionPicker
-              value={cameraMotion}
-              onChange={setCameraMotion}
-              options={cameraOptions}
+            {/* Resolution display */}
+            {model && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-nyx-bg/50 border border-nyx-border/50">
+                <Monitor className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-400">Resolution</span>
+                <span className="text-sm font-mono text-white ml-auto">{resolution.w} × {resolution.h}</span>
+              </div>
+            )}
+          </CollapsibleSection>
+
+          <CollapsibleSection title="Advanced Settings" icon={<Settings2 className="h-4 w-4" />} defaultOpen={false}>
+            {cameraOptions && (
+              <CameraMotionPicker
+                value={cameraMotion}
+                onChange={setCameraMotion}
+                options={cameraOptions}
+                disabled={isGenerating}
+              />
+            )}
+
+            <SeedInput
+              value={seed}
+              onChange={setSeed}
               disabled={isGenerating}
             />
-          )}
+          </CollapsibleSection>
 
-          <SeedInput
-            value={seed}
-            onChange={setSeed}
-            disabled={isGenerating}
-          />
+          {/* Desktop-only: inline credit cost + generate */}
+          <div className="hidden lg:block space-y-4">
+            {model && (
+              <CreditCostDisplay cost={cost} balance={balance} />
+            )}
 
-          {/* Resolution display */}
-          {model && (
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Monitor className="h-3.5 w-3.5" />
-              <span className="font-mono">{resolution.w} × {resolution.h}</span>
-            </div>
-          )}
+            <Button
+              onClick={handleGenerate}
+              disabled={!model || !prompt.trim() || !imageUrl || isGenerating || balance < cost}
+              loading={isGenerating}
+              className="w-full"
+              size="lg"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Animate Image
+            </Button>
 
-          {model && (
-            <CreditCostDisplay cost={cost} balance={balance} />
-          )}
-
-          <Button
-            onClick={handleGenerate}
-            disabled={!model || !prompt.trim() || !imageUrl || isGenerating || balance < cost}
-            loading={isGenerating}
-            className="w-full"
-            size="lg"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Animate Image
-          </Button>
-
-          {isGenerating && (
-            <div className="rounded-lg bg-primary-500/5 border border-primary-500/20 p-3">
-              <p className="text-xs text-gray-400">
-                Video generation typically takes 2–5 minutes. Premium models (Veo 3.0, Sora 2 Pro) may take longer.
-                You can stay on this page — the result will appear automatically.
-              </p>
-            </div>
-          )}
+            {isGenerating && (
+              <div className="rounded-lg bg-primary-500/5 border border-primary-500/20 p-3">
+                <p className="text-xs text-gray-400">
+                  Video generation typically takes 2-5 minutes. Premium models (Veo 3.0, Sora 2 Pro) may take longer.
+                  You can stay on this page -- the result will appear automatically.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Result */}
@@ -219,6 +232,25 @@ export default function ImageToVideoPage() {
             onRetry={handleGenerate}
             onCancel={cancel}
           />
+        </div>
+      </div>
+
+      {/* Mobile sticky generate bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden backdrop-blur-xl bg-[#0a0a0f]/80 border-t border-nyx-border">
+        <div className="max-w-7xl mx-auto px-4 py-3 space-y-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          {model && (
+            <CreditCostDisplay cost={cost} balance={balance} />
+          )}
+          <Button
+            onClick={handleGenerate}
+            disabled={!model || !prompt.trim() || !imageUrl || isGenerating || balance < cost}
+            loading={isGenerating}
+            className="w-full"
+            size="lg"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Animate Image
+          </Button>
         </div>
       </div>
     </div>

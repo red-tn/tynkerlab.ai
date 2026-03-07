@@ -3,11 +3,54 @@
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
-import { ChevronDown, Search, Coins } from 'lucide-react'
-import type { ModelCapability, ModelCategory } from '@/lib/together/models'
+import { ChevronDown, Search, Coins, Zap, Scale, Crown } from 'lucide-react'
+import type { ModelCapability, ModelCategory, AIModel } from '@/lib/together/models'
 import { getModelsForCapability } from '@/lib/together/models'
 import { ModelCategoryIcon } from '@/components/studio/model-icons'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
+
+type QualityTier = 'fast' | 'balanced' | 'premium'
+
+function getQualityTier(model: AIModel, allModels: AIModel[]): QualityTier {
+  const credits = allModels.map(m => m.credits).sort((a, b) => a - b)
+  const p33 = credits[Math.floor(credits.length / 3)] ?? 5
+  const p66 = credits[Math.floor((credits.length * 2) / 3)] ?? 15
+  if (model.credits <= p33) return 'fast'
+  if (model.credits <= p66) return 'balanced'
+  return 'premium'
+}
+
+const tierConfig: Record<QualityTier, { label: string; className: string; icon: typeof Zap }> = {
+  fast: {
+    label: 'Fast',
+    className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+    icon: Zap,
+  },
+  balanced: {
+    label: 'Balanced',
+    className: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
+    icon: Scale,
+  },
+  premium: {
+    label: 'Premium',
+    className: 'bg-violet-500/15 text-violet-400 border-violet-500/25',
+    icon: Crown,
+  },
+}
+
+function QualityBadge({ tier }: { tier: QualityTier }) {
+  const config = tierConfig[tier]
+  const Icon = config.icon
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium border shrink-0',
+      config.className
+    )}>
+      <Icon className="h-2.5 w-2.5" />
+      {config.label}
+    </span>
+  )
+}
 
 interface ModelSelectorProps {
   capability: ModelCapability
@@ -78,6 +121,7 @@ export function ModelSelector({ capability, selectedModel, onModelSelect, disabl
                 <span className="text-xs text-primary-400">{selectedModelData.credits}</span>
               </div>
               {selectedModelData.badge && <Badge variant="default" className="text-[10px] shrink-0">{selectedModelData.badge}</Badge>}
+              <QualityBadge tier={getQualityTier(selectedModelData, models)} />
             </>
           ) : (
             <span className="text-gray-500">Select a model...</span>
@@ -118,10 +162,11 @@ export function ModelSelector({ capability, selectedModel, onModelSelect, disabl
                     )}
                   >
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <ModelCategoryIcon category={model.category} className="h-4 w-4 shrink-0" />
                         <span className="truncate">{model.displayName}</span>
                         {model.badge && <Badge variant="default" className="text-[10px]">{model.badge}</Badge>}
+                        <QualityBadge tier={getQualityTier(model, models)} />
                       </div>
                       <p className="text-xs text-gray-600 truncate mt-0.5">{model.description}</p>
                     </div>

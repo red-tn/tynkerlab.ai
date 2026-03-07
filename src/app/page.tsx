@@ -9,7 +9,7 @@ import { TextToImageIcon, ImageToImageIcon, TextToVideoIcon, ImageToVideoIcon, U
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { SupportedModelsSection } from '@/components/landing/supported-models-section'
-import { Sparkles, Zap, Shield, ArrowRight, Star, Palette, Film, Wand2, Layers, Globe, Heart, Code, ImageIcon, Video, Copy, Volume2, LayoutTemplate } from 'lucide-react'
+import { Sparkles, Zap, Shield, ArrowRight, Star, Palette, Film, Wand2, Layers, Globe, Heart, Code, ImageIcon, Video, Copy, Volume2, LayoutTemplate, Cpu, Wrench, Monitor } from 'lucide-react'
 import type { Prompt } from '@/types/database'
 
 const TOOLS = [
@@ -90,24 +90,168 @@ export default function HomePage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary-500/10 via-transparent to-transparent" />
-        <div className="relative max-w-6xl mx-auto px-4 py-24 md:py-36 text-center">
-          <Badge variant="default" className="mb-6 gradient-primary text-white px-4 py-1.5">
+      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
+        {/* Animated gradient mesh background */}
+        <style>{`
+          @keyframes blob1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -50px) scale(1.1); }
+            50% { transform: translate(-20px, 20px) scale(0.9); }
+            75% { transform: translate(20px, 40px) scale(1.05); }
+          }
+          @keyframes blob2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(-40px, 30px) scale(1.15); }
+            50% { transform: translate(30px, -30px) scale(0.95); }
+            75% { transform: translate(-20px, -40px) scale(1.1); }
+          }
+          @keyframes blob3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(40px, 30px) scale(1.08); }
+            66% { transform: translate(-30px, -20px) scale(0.92); }
+          }
+          @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) rotate(-6deg); }
+            25% { transform: translate(10px, -20px) rotate(-2deg); }
+            50% { transform: translate(-5px, -35px) rotate(-8deg); }
+            75% { transform: translate(15px, -15px) rotate(-4deg); }
+          }
+          @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) rotate(4deg); }
+            25% { transform: translate(-15px, -25px) rotate(8deg); }
+            50% { transform: translate(10px, -10px) rotate(2deg); }
+            75% { transform: translate(-10px, -30px) rotate(6deg); }
+          }
+          @keyframes float3 {
+            0%, 100% { transform: translate(0, 0) rotate(-3deg); }
+            33% { transform: translate(20px, -15px) rotate(2deg); }
+            66% { transform: translate(-15px, -28px) rotate(-6deg); }
+          }
+          @keyframes float4 {
+            0%, 100% { transform: translate(0, 0) rotate(6deg); }
+            25% { transform: translate(-20px, -10px) rotate(2deg); }
+            50% { transform: translate(15px, -30px) rotate(8deg); }
+            75% { transform: translate(-5px, -20px) rotate(4deg); }
+          }
+          @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+          }
+          @keyframes blink {
+            0%, 100% { border-color: transparent; }
+            50% { border-color: rgba(139, 92, 246, 0.8); }
+          }
+          @keyframes ctaGlow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+          }
+          .hero-typewriter {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid rgba(139, 92, 246, 0.8);
+            animation: typing 3.5s steps(72, end) forwards, blink 0.75s step-end infinite;
+            max-width: 100%;
+          }
+          @media (max-width: 768px) {
+            .hero-typewriter {
+              white-space: normal;
+              overflow: visible;
+              border-right: none;
+              animation: none;
+              width: auto !important;
+            }
+          }
+        `}</style>
+
+        {/* Gradient mesh blobs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full opacity-20 blur-[120px]"
+            style={{
+              background: 'radial-gradient(circle, #7c3aed 0%, transparent 70%)',
+              animation: 'blob1 20s ease-in-out infinite',
+            }}
+          />
+          <div
+            className="absolute top-1/3 right-1/4 w-[400px] h-[400px] rounded-full opacity-15 blur-[100px]"
+            style={{
+              background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)',
+              animation: 'blob2 25s ease-in-out infinite',
+            }}
+          />
+          <div
+            className="absolute bottom-1/4 left-1/3 w-[450px] h-[450px] rounded-full opacity-10 blur-[110px]"
+            style={{
+              background: 'radial-gradient(circle, #ec4899 0%, transparent 70%)',
+              animation: 'blob3 22s ease-in-out infinite',
+            }}
+          />
+          {/* Subtle grid overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+              backgroundSize: '60px 60px',
+            }}
+          />
+        </div>
+
+        {/* Floating sample image thumbnails */}
+        <div className="absolute inset-0 pointer-events-none hidden md:block">
+          {/* Thumbnail 1 — top left area */}
+          <div
+            className="absolute top-[15%] left-[8%] w-24 h-24 rounded-2xl shadow-2xl shadow-violet-500/20 border border-white/10 overflow-hidden"
+            style={{ animation: 'float1 12s ease-in-out infinite' }}
+          >
+            <div className="w-full h-full bg-gradient-to-br from-violet-600 via-purple-500 to-fuchsia-500" />
+          </div>
+          {/* Thumbnail 2 — top right area */}
+          <div
+            className="absolute top-[12%] right-[10%] w-28 h-20 rounded-2xl shadow-2xl shadow-cyan-500/20 border border-white/10 overflow-hidden"
+            style={{ animation: 'float2 14s ease-in-out infinite' }}
+          >
+            <div className="w-full h-full bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-600" />
+          </div>
+          {/* Thumbnail 3 — bottom left area */}
+          <div
+            className="absolute bottom-[20%] left-[5%] w-20 h-28 rounded-2xl shadow-2xl shadow-pink-500/20 border border-white/10 overflow-hidden"
+            style={{ animation: 'float3 16s ease-in-out infinite' }}
+          >
+            <div className="w-full h-full bg-gradient-to-br from-pink-500 via-rose-500 to-orange-400" />
+          </div>
+          {/* Thumbnail 4 — bottom right area */}
+          <div
+            className="absolute bottom-[18%] right-[7%] w-24 h-24 rounded-2xl shadow-2xl shadow-violet-500/20 border border-white/10 overflow-hidden"
+            style={{ animation: 'float4 13s ease-in-out infinite' }}
+          >
+            <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-400" />
+          </div>
+        </div>
+
+        {/* Hero content */}
+        <div className="relative max-w-6xl mx-auto px-4 py-28 md:py-40 text-center z-10">
+          <Badge variant="default" className="mb-6 gradient-primary text-white px-4 py-1.5 shadow-lg shadow-violet-500/20">
             <Sparkles className="h-3 w-3 mr-1.5" />
             54+ AI Models Available
           </Badge>
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-[1.1] tracking-tight">
             Create Anything with
-            <span className="gradient-text block">AI Generation</span>
+            <span className="gradient-text block mt-2">AI Generation</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10">
-            Generate stunning images, videos, and lifelike speech using the world&apos;s most powerful AI models.
-            From Google Imagen to FLUX, Sora to Kling — all in one platform.
-          </p>
+          <div className="max-w-2xl mx-auto mb-12">
+            <p className="hero-typewriter text-base md:text-lg text-gray-400 leading-relaxed">
+              Generate stunning images, videos, and lifelike speech using the world&apos;s most powerful AI models.
+            </p>
+          </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="px-8 text-base">
+            <Link href="/signup" className="relative group">
+              {/* Glow pulse behind CTA */}
+              <div
+                className="absolute -inset-1.5 rounded-xl bg-gradient-to-r from-violet-600 via-primary-500 to-cyan-500 blur-lg"
+                style={{ animation: 'ctaGlow 3s ease-in-out infinite' }}
+              />
+              <Button size="lg" className="relative px-8 text-base">
                 Start Creating Free
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
@@ -118,7 +262,31 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="flex items-center justify-center gap-8 mt-12 text-sm text-gray-500">
+
+          {/* Trust badges */}
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 mt-14">
+            <div className="flex items-center gap-2.5 text-sm text-gray-400">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                <Cpu className="h-4 w-4 text-violet-400" />
+              </div>
+              <span className="font-medium">54 AI Models</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-sm text-gray-400">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                <Wrench className="h-4 w-4 text-cyan-400" />
+              </div>
+              <span className="font-medium">8 Creative Tools</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-sm text-gray-400">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20">
+                <Monitor className="h-4 w-4 text-pink-400" />
+              </div>
+              <span className="font-medium">HD &amp; 4K Output</span>
+            </div>
+          </div>
+
+          {/* Existing sub-badges */}
+          <div className="flex items-center justify-center gap-8 mt-6 text-sm text-gray-500">
             <div className="flex items-center gap-2"><Zap className="h-4 w-4 text-primary-400" /> Free daily credits</div>
             <div className="flex items-center gap-2"><Shield className="h-4 w-4 text-primary-400" /> No credit card required</div>
           </div>

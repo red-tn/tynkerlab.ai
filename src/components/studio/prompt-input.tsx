@@ -225,8 +225,15 @@ export function PromptInput({
               'transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           />
-          <span className="absolute bottom-2 right-3 text-xs text-gray-600">
-            {prompt.length}/{maxLength}
+          <span className={cn(
+            'absolute bottom-2 right-3 text-xs font-mono transition-colors duration-200',
+            prompt.length / maxLength < 0.7
+              ? 'text-gray-600'
+              : prompt.length / maxLength < 0.9
+                ? 'text-amber-500'
+                : 'text-red-400'
+          )}>
+            {prompt.length} / {maxLength}
           </span>
         </div>
 

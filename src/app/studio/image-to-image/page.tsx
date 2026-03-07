@@ -14,7 +14,8 @@ import { CreditCostDisplay } from '@/components/studio/credit-cost-display'
 import { GenerationResult } from '@/components/studio/generation-result'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Sparkles, Settings2, ChevronDown, ChevronUp, Monitor } from 'lucide-react'
+import { CollapsibleSection } from '@/components/studio/collapsible-section'
+import { Sparkles, Settings2, Ratio, Monitor, Cpu, ImageIcon } from 'lucide-react'
 import { InfoTooltip } from '@/components/ui/info-tooltip'
 
 export default function ImageToImagePage() {
@@ -42,7 +43,6 @@ export default function ImageToImagePage() {
   const [negativePrompt, setNegativePrompt] = useState('')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('1:1')
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [steps, setSteps] = useState('')
   const [seed, setSeed] = useState('')
 
@@ -76,23 +76,27 @@ export default function ImageToImagePage() {
         <p className="text-sm text-gray-400 mt-1">Transform existing images with AI-powered modifications</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-32 lg:pb-0">
         {/* Controls */}
-        <div className="space-y-5">
-          <ModelSelector
-            capability="image-to-image"
-            selectedModel={model}
-            onModelSelect={setModel}
-            disabled={isGenerating}
-          />
+        <div className="space-y-4">
+          <CollapsibleSection title="AI Model" icon={<Cpu className="h-4 w-4" />}>
+            <ModelSelector
+              capability="image-to-image"
+              selectedModel={model}
+              onModelSelect={setModel}
+              disabled={isGenerating}
+            />
+          </CollapsibleSection>
 
-          <ImageUpload
-            onUpload={setImageUrl}
-            currentImage={imageUrl}
-            onClear={() => setImageUrl(null)}
-            disabled={isGenerating}
-            onAspectRatioDetected={setAspectRatio}
-          />
+          <CollapsibleSection title="Source Image" icon={<ImageIcon className="h-4 w-4" />}>
+            <ImageUpload
+              onUpload={setImageUrl}
+              currentImage={imageUrl}
+              onClear={() => setImageUrl(null)}
+              disabled={isGenerating}
+              onAspectRatioDetected={setAspectRatio}
+            />
+          </CollapsibleSection>
 
           <PromptInput
             prompt={prompt}
@@ -104,69 +108,61 @@ export default function ImageToImagePage() {
             showNegativePrompt={modelData?.supportsNegativePrompt ?? false}
           />
 
-          <AspectRatioPicker
-            value={aspectRatio}
-            onChange={setAspectRatio}
-            disabled={isGenerating}
-          />
+          <CollapsibleSection title="Aspect Ratio" icon={<Ratio className="h-4 w-4" />}>
+            <AspectRatioPicker
+              value={aspectRatio}
+              onChange={setAspectRatio}
+              disabled={isGenerating}
+            />
 
-          {/* Auto-selected resolution display */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-nyx-surface border border-nyx-border">
-            <Monitor className="h-4 w-4 text-gray-500" />
-            <span className="text-sm text-gray-400">Resolution</span>
-            <span className="text-sm font-mono text-white ml-auto">{resolution.w} × {resolution.h}</span>
-          </div>
-
-          {/* Advanced Settings */}
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300 transition-colors"
-          >
-            <Settings2 className="h-4 w-4" />
-            Advanced Settings
-            {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-
-          {showAdvanced && (
-            <div className="space-y-4 animate-slide-down">
-              <Input
-                label="Steps"
-                labelExtra={<InfoTooltip text="Number of refinement passes. Higher = more detail but slower. Leave on Auto for the model's recommended value." />}
-                type="number"
-                value={steps}
-                onChange={(e) => setSteps(e.target.value)}
-                placeholder={modelData?.defaultSteps?.toString() || 'Auto'}
-                helperText="Number of inference steps (higher = more detail, slower)"
-                disabled={isGenerating}
-              />
-              <Input
-                label="Seed"
-                labelExtra={<InfoTooltip text="A number that makes generation reproducible. Same seed + same settings = same output. Leave blank for random." />}
-                type="number"
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
-                placeholder="Random"
-                helperText="Use a specific seed for reproducible results"
-                disabled={isGenerating}
-              />
+            {/* Auto-selected resolution display */}
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-nyx-bg/50 border border-nyx-border/50">
+              <Monitor className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-400">Resolution</span>
+              <span className="text-sm font-mono text-white ml-auto">{resolution.w} × {resolution.h}</span>
             </div>
-          )}
+          </CollapsibleSection>
 
-          {model && (
-            <CreditCostDisplay cost={cost} balance={balance} />
-          )}
+          <CollapsibleSection title="Advanced Settings" icon={<Settings2 className="h-4 w-4" />} defaultOpen={false}>
+            <Input
+              label="Steps"
+              labelExtra={<InfoTooltip text="Number of refinement passes. Higher = more detail but slower. Leave on Auto for the model's recommended value." />}
+              type="number"
+              value={steps}
+              onChange={(e) => setSteps(e.target.value)}
+              placeholder={modelData?.defaultSteps?.toString() || 'Auto'}
+              helperText="Number of inference steps (higher = more detail, slower)"
+              disabled={isGenerating}
+            />
+            <Input
+              label="Seed"
+              labelExtra={<InfoTooltip text="A number that makes generation reproducible. Same seed + same settings = same output. Leave blank for random." />}
+              type="number"
+              value={seed}
+              onChange={(e) => setSeed(e.target.value)}
+              placeholder="Random"
+              helperText="Use a specific seed for reproducible results"
+              disabled={isGenerating}
+            />
+          </CollapsibleSection>
 
-          <Button
-            onClick={handleGenerate}
-            disabled={!model || !prompt.trim() || !imageUrl || isGenerating || balance < cost}
-            loading={isGenerating}
-            className="w-full"
-            size="lg"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Transform Image
-          </Button>
+          {/* Desktop-only: inline credit cost + generate */}
+          <div className="hidden lg:block space-y-4">
+            {model && (
+              <CreditCostDisplay cost={cost} balance={balance} />
+            )}
+
+            <Button
+              onClick={handleGenerate}
+              disabled={!model || !prompt.trim() || !imageUrl || isGenerating || balance < cost}
+              loading={isGenerating}
+              className="w-full"
+              size="lg"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Transform Image
+            </Button>
+          </div>
         </div>
 
         {/* Result */}
@@ -178,6 +174,25 @@ export default function ImageToImagePage() {
             progress={progress}
             onRetry={handleGenerate}
           />
+        </div>
+      </div>
+
+      {/* Mobile sticky generate bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden backdrop-blur-xl bg-[#0a0a0f]/80 border-t border-nyx-border">
+        <div className="max-w-7xl mx-auto px-4 py-3 space-y-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          {model && (
+            <CreditCostDisplay cost={cost} balance={balance} />
+          )}
+          <Button
+            onClick={handleGenerate}
+            disabled={!model || !prompt.trim() || !imageUrl || isGenerating || balance < cost}
+            loading={isGenerating}
+            className="w-full"
+            size="lg"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Transform Image
+          </Button>
         </div>
       </div>
     </div>
