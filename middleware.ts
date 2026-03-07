@@ -54,8 +54,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Track page views asynchronously (fire-and-forget, never block)
-  // Skip admin pages — don't pollute analytics with admin traffic
-  if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/admin')) {
+  // Skip: admin pages, prefetch requests (Next.js <Link> hover/viewport), RSC data fetches
+  const isPrefetch = request.headers.get('next-router-prefetch') === '1'
+    || request.headers.get('purpose') === 'prefetch'
+  const isRSC = request.headers.get('rsc') === '1'
+  if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/admin') && !isPrefetch && !isRSC) {
     try {
       const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
         || request.headers.get('x-real-ip')
