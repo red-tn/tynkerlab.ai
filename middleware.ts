@@ -4,12 +4,27 @@ import { updateSession } from '@/lib/supabase/middleware'
 
 const AFFILIATE_COOKIE = 'tynk_affiliate_ref'
 const AFFILIATE_COOKIE_DAYS = 30
+const SESSION_COOKIE = 'nyx_session_id'
+const SESSION_COOKIE_DAYS = 365
 
 export async function middleware(request: NextRequest) {
   // Refresh Supabase auth session (rotates cookies)
   const response = await updateSession(request)
 
   const { pathname, searchParams } = request.nextUrl
+
+  // Generate session ID cookie if one doesn't exist (anonymous visitor tracking)
+  let sessionId = request.cookies.get(SESSION_COOKIE)?.value
+  if (!sessionId) {
+    sessionId = crypto.randomUUID()
+    response.cookies.set(SESSION_COOKIE, sessionId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: SESSION_COOKIE_DAYS * 24 * 60 * 60,
+      path: '/',
+    })
+  }
 
   // Affiliate ref cookie capture (first-click attribution)
   const refCode = searchParams.get('ref')
@@ -42,9 +57,10 @@ export async function middleware(request: NextRequest) {
   // Skip admin pages — don't pollute analytics with admin traffic
   if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/admin')) {
     try {
-      const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
+      const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || request.headers.get('x-real-ip')
+        || ''
       const referrer = request.headers.get('referer') || ''
-      const sessionId = request.cookies.get('nyx_session_id')?.value
 
       const analyticsUrl = new URL('/api/analytics/pageview', request.url)
       fetch(analyticsUrl.toString(), {

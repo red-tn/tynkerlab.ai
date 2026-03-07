@@ -189,6 +189,9 @@ CREATE TABLE IF NOT EXISTS page_views (
 );
 
 CREATE INDEX IF NOT EXISTS idx_page_views_created_at ON page_views(created_at);
+CREATE INDEX IF NOT EXISTS idx_page_views_path ON page_views(path);
+CREATE INDEX IF NOT EXISTS idx_page_views_ip_hash ON page_views(ip_hash);
+CREATE INDEX IF NOT EXISTS idx_page_views_path_created_at ON page_views(path, created_at);
 
 -- api_usage_log
 CREATE TABLE IF NOT EXISTS api_usage_log (
@@ -273,7 +276,7 @@ CREATE INDEX IF NOT EXISTS idx_affiliate_events_affiliate_id ON affiliate_events
 CREATE INDEX IF NOT EXISTS idx_affiliate_events_created_at ON affiliate_events(created_at);
 
 -- ---------------------------------------------------------------------------
--- 3. Atomic credit deduction function
+-- 3. Atomic credit functions (service_role ONLY — never expose to anon/authenticated)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION deduct_credits(
   p_user_id text,
@@ -286,7 +289,6 @@ DECLARE
   v_profile profiles%ROWTYPE;
   v_new_balance int;
 BEGIN
-  -- Lock the row to prevent concurrent deductions
   SELECT * INTO v_profile
   FROM profiles
   WHERE user_id = p_user_id
@@ -313,6 +315,54 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+REVOKE ALL ON FUNCTION deduct_credits(text, int, text, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION deduct_credits(text, int, text, text) FROM anon;
+REVOKE ALL ON FUNCTION deduct_credits(text, int, text, text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION deduct_credits(text, int, text, text) TO service_role;
+
+CREATE OR REPLACE FUNCTION add_credits(
+  p_user_id text,
+  p_amount integer,
+  p_description text,
+  p_reference_id text DEFAULT NULL,
+  p_type text DEFAULT 'admin_adjustment'
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+  v_profile_id text;
+  v_current_balance integer;
+  v_new_balance integer;
+BEGIN
+  SELECT id, credits_balance INTO v_profile_id, v_current_balance
+  FROM profiles
+  WHERE user_id = p_user_id
+  FOR UPDATE;
+
+  IF v_profile_id IS NULL THEN
+    RETURN false;
+  END IF;
+
+  v_new_balance := v_current_balance + p_amount;
+
+  UPDATE profiles
+  SET credits_balance = v_new_balance
+  WHERE id = v_profile_id;
+
+  INSERT INTO credit_transactions (user_id, amount, type, description, reference_id, balance_after)
+  VALUES (p_user_id, p_amount, p_type, p_description, p_reference_id, v_new_balance);
+
+  RETURN true;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION add_credits(text, integer, text, text, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION add_credits(text, integer, text, text, text) FROM anon;
+REVOKE ALL ON FUNCTION add_credits(text, integer, text, text, text) FROM authenticated;
+GRANT EXECUTE ON FUNCTION add_credits(text, integer, text, text, text) TO service_role;
+
 -- ---------------------------------------------------------------------------
 -- 4. Row Level Security (RLS)
 -- ---------------------------------------------------------------------------
@@ -333,12 +383,17 @@ ALTER TABLE affiliate_events ENABLE ROW LEVEL SECURITY;
 
 -- Service role bypasses RLS automatically.
 -- Authenticated users can read/write their own rows.
+-- Tables without explicit policies (page_views, api_usage_log, admin_activity_log,
+-- affiliates, affiliate_events, subscriptions, credit_pack_purchases) are
+-- intentionally server-only — all access goes through service_role API routes.
 
--- profiles: users can read/update their own profile
+-- profiles: users can read/update/insert their own profile
 CREATE POLICY profiles_select ON profiles FOR SELECT TO authenticated
   USING (user_id = auth.uid()::text);
 CREATE POLICY profiles_update ON profiles FOR UPDATE TO authenticated
   USING (user_id = auth.uid()::text);
+CREATE POLICY profiles_insert ON profiles FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid()::text);
 
 -- generations: users can read their own generations
 CREATE POLICY generations_select ON generations FOR SELECT TO authenticated
@@ -352,8 +407,8 @@ CREATE POLICY credit_transactions_select ON credit_transactions FOR SELECT TO au
 CREATE POLICY prompts_select_published ON prompts FOR SELECT TO anon, authenticated
   USING (is_published = true);
 
--- site_settings: public read
-CREATE POLICY site_settings_select ON site_settings FOR SELECT TO anon, authenticated
+-- site_settings: authenticated read only (not anon — prevent unauthenticated scraping)
+CREATE POLICY site_settings_select ON site_settings FOR SELECT TO authenticated
   USING (true);
 
 -- Service role (used by API routes) bypasses all RLS, so no additional
@@ -428,7 +483,7 @@ CREATE TRIGGER templates_updated_at
   BEFORE UPDATE ON templates
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
-CREATE INDEX IF NOT EXISTS idx_templates_slug ON templates (slug);
+-- slug index omitted — the UNIQUE constraint on slug already creates one
 CREATE INDEX IF NOT EXISTS idx_templates_category ON templates (category);
 CREATE INDEX IF NOT EXISTS idx_templates_published ON templates (is_published);
 

@@ -174,17 +174,20 @@ export async function GET(request: Request) {
       .slice(0, 15)
       .map(([path, views]) => ({ path, views }))
 
-    // Unique visitors (30d) by ip_hash
-    const uniqueIps30d = new Set(pageViewsRaw.filter(pv => pv.ip_hash).map(pv => pv.ip_hash))
-    const uniqueIps7d = new Set(
+    // Unique visitors (30d) by ip_hash, falling back to session_id
+    const visitorKey = (pv: any) => pv.ip_hash || pv.session_id || null
+    const uniqueVisitors30d = new Set(pageViewsRaw.map(visitorKey).filter(Boolean))
+    const uniqueVisitors7d = new Set(
       pageViewsRaw
-        .filter(pv => pv.ip_hash && new Date(pv.created_at) >= sevenDaysAgo)
-        .map(pv => pv.ip_hash)
+        .filter(pv => new Date(pv.created_at) >= sevenDaysAgo)
+        .map(visitorKey)
+        .filter(Boolean)
     )
-    const uniqueIps24h = new Set(
+    const uniqueVisitors24h = new Set(
       pageViewsRaw
-        .filter(pv => pv.ip_hash && new Date(pv.created_at) >= twentyFourHoursAgo)
-        .map(pv => pv.ip_hash)
+        .filter(pv => new Date(pv.created_at) >= twentyFourHoursAgo)
+        .map(visitorKey)
+        .filter(Boolean)
     )
 
     return NextResponse.json({
@@ -203,9 +206,9 @@ export async function GET(request: Request) {
         pageViews24h: pageViews24hResult.count ?? 0,
         pageViews7d: pageViews7dResult.count ?? 0,
         pageViews30d: pageViews30dResult.count ?? 0,
-        uniqueVisitors24h: uniqueIps24h.size,
-        uniqueVisitors7d: uniqueIps7d.size,
-        uniqueVisitors30d: uniqueIps30d.size,
+        uniqueVisitors24h: uniqueVisitors24h.size,
+        uniqueVisitors7d: uniqueVisitors7d.size,
+        uniqueVisitors30d: uniqueVisitors30d.size,
       },
       revenueChart: generationsChart.map(d => ({ date: d.date, revenue: (d.images * 2 + d.videos * 10) })),
       generationsChart,
