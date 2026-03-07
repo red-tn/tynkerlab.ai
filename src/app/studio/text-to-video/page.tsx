@@ -220,9 +220,9 @@ export default function TextToVideoPage() {
         </div>
       </div>
 
-      {/* Mobile sticky generate bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden backdrop-blur-xl bg-[#0a0a0f]/80 border-t border-nyx-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 space-y-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      {/* Mobile sticky generate bar — sits above MobileStudioNav */}
+      <div className="fixed bottom-[3.75rem] left-0 right-0 z-50 lg:hidden backdrop-blur-xl bg-[#0a0a0f]/90 border-t border-nyx-border">
+        <div className="max-w-7xl mx-auto px-4 py-3 space-y-2">
           {model && (
             <CreditCostDisplay cost={cost} balance={balance} />
           )}
