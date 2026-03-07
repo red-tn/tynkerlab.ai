@@ -10,20 +10,25 @@ interface AdminGuardProps {
 }
 
 export function AdminGuard({ children }: AdminGuardProps) {
-  const { isAuthenticated, isAdmin, isLoading } = useAuth()
+  const { isAuthenticated, isAdmin, isLoading, profile } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push('/login')
-      } else if (!isAdmin) {
-        router.push('/dashboard')
-      }
-    }
-  }, [isLoading, isAuthenticated, isAdmin, router])
+  // Wait for both auth AND profile to fully resolve before redirecting.
+  // Without this, there's a brief window where isAuthenticated=true but
+  // isAdmin=false (profile still loading), triggering a spurious redirect
+  // to /dashboard which pollutes analytics.
+  const fullyResolved = !isLoading && (isAuthenticated ? profile !== null : true)
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!fullyResolved) return
+    if (!isAuthenticated) {
+      router.replace('/login')
+    } else if (!isAdmin) {
+      router.replace('/dashboard')
+    }
+  }, [fullyResolved, isAuthenticated, isAdmin, router])
+
+  if (!fullyResolved) {
     return (
       <div className="min-h-screen relative z-[1] flex items-center justify-center">
         <div className="space-y-4 w-full max-w-md">
