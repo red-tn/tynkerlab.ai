@@ -23,6 +23,20 @@ function isContentModerationError(msg: string): boolean {
     lower.includes('responsible ai')
 }
 
+/** Detect transient provider errors (Together.ai routing issues, upstream timeouts, etc.) */
+function isProviderTransientError(msg: string): boolean {
+  const lower = msg.toLowerCase()
+  return lower.includes('provider returned') ||
+    lower.includes('responded with an error') ||
+    lower.includes('upstream') ||
+    lower.includes('gateway') ||
+    lower.includes('service unavailable') ||
+    lower.includes('internal server error') ||
+    lower.includes('timeout') ||
+    lower.includes('network error') ||
+    lower.includes('rate limit')
+}
+
 export async function POST(request: Request) {
   try {
     const { userId } = await requireUser(request)
@@ -165,7 +179,9 @@ export async function POST(request: Request) {
       await refundCredits(userId, creditsToCharge, `Refund: video failed`, generationId)
       let errorMsg = genError.message || 'Video generation failed'
       if (isContentModerationError(errorMsg)) {
-        errorMsg = 'Invalid content detected. The generated content was flagged and rejected by the model\'s content moderation system. Try rephrasing your prompt or using a different model.'
+        errorMsg = 'Your prompt was flagged by the model\'s content filter. Try rephrasing your prompt or using a different model.'
+      } else if (isProviderTransientError(errorMsg)) {
+        errorMsg = `The AI provider encountered a temporary error. Your credits have been refunded. Please try again — or switch to a different model (Kling, Seedance, and PixVerse tend to be most reliable).`
       }
       await supabase.from('generations').update({
         status: 'failed', error_message: errorMsg.slice(0, 1500),
@@ -250,7 +266,9 @@ export async function GET(request: Request) {
     if (status.status === 'failed') {
       let errorMsg = status.error || 'Video generation failed'
       if (isContentModerationError(errorMsg)) {
-        errorMsg = 'Invalid content detected. The generated content was flagged and rejected by the model\'s content moderation system. Try rephrasing your prompt or using a different model.'
+        errorMsg = 'Your prompt was flagged by the model\'s content filter. Try rephrasing your prompt or using a different model.'
+      } else if (isProviderTransientError(errorMsg)) {
+        errorMsg = 'The AI provider encountered a temporary error. Your credits have been refunded. Please try again — or switch to a different model (Kling, Seedance, and PixVerse tend to be most reliable).'
       }
       if (gen) {
         await refundCredits(gen.user_id, gen.credits_used, 'Refund: video generation failed', gen.id)

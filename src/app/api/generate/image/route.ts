@@ -145,10 +145,12 @@ export async function POST(request: Request) {
     } catch (genError: any) {
       await refundCredits(userId, modelData.credits, `Refund: ${type || 'text-to-image'} failed`, generationId)
 
-      // Detect Together.ai image_url rejection and give a clearer message
+      // Give clearer error messages for common API failures
       let errorMsg = genError.message || 'Generation failed'
       if (errorMsg.includes('image_url') && errorMsg.includes('not supported')) {
         errorMsg = `${modelData.displayName} does not support image-to-image on this provider. Try a Kontext, SeedEdit, or Qwen Image Edit model instead.`
+      } else if (errorMsg.toLowerCase().includes('provider returned') || errorMsg.toLowerCase().includes('responded with an error')) {
+        errorMsg = 'The AI provider encountered a temporary error. Your credits have been refunded. Please try again or switch to a different model.'
       }
 
       await supabase.from('generations').update({
