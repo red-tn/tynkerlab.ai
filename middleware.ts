@@ -58,6 +58,7 @@ export async function middleware(request: NextRequest) {
   const isPrefetch = request.headers.get('next-router-prefetch') === '1'
     || request.headers.get('purpose') === 'prefetch'
   const isRSC = request.headers.get('rsc') === '1'
+    || searchParams.has('_rsc')
   if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/admin') && !isPrefetch && !isRSC) {
     try {
       const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
