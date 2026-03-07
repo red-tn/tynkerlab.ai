@@ -1,9 +1,17 @@
+import type { Metadata } from 'next'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 
-export const metadata = {
-  title: 'Terms of Service | Tynkerlab.ai',
-  description: 'Terms and conditions for using the Tynkerlab.ai AI generation platform.',
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description: 'Terms and conditions for using the Tynkerlab.ai AI generation platform. Read about permitted use, credits, payments, and content policies.',
+  alternates: {
+    canonical: 'https://tynkerlab.ai/terms',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function TermsOfServicePage() {

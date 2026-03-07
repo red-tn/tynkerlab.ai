@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { JsonLd } from '@/components/seo/json-ld'
 import { ArrowLeft, Calendar, Clock, User } from 'lucide-react'
 import Image from 'next/image'
 import { getPostBySlugFromDb, getAllPostsFromDb } from '@/lib/blog/posts'
@@ -21,9 +22,32 @@ export async function generateMetadata({ params }: Props) {
   const { slug } = await params
   const post = await getPostBySlugFromDb(slug)
   if (!post) return { title: 'Not Found' }
+
+  const ogImage = post.coverImage
+    ? { url: post.coverImage, width: 1200, height: 630, alt: post.title }
+    : { url: '/og-image.png', width: 1200, height: 630, alt: post.title }
+
   return {
-    title: `${post.title} | Tynkerlab.ai Blog`,
+    title: post.title,
     description: post.excerpt,
+    alternates: {
+      canonical: `https://tynkerlab.ai/blog/${slug}`,
+    },
+    openGraph: {
+      type: 'article' as const,
+      title: post.title,
+      description: post.excerpt,
+      url: `https://tynkerlab.ai/blog/${slug}`,
+      publishedTime: post.date,
+      authors: [post.author?.name ?? 'Tynkerlab.ai'],
+      images: [ogImage],
+    },
+    twitter: {
+      card: 'summary_large_image' as const,
+      title: post.title,
+      description: post.excerpt,
+      images: [ogImage.url],
+    },
   }
 }
 
@@ -177,8 +201,62 @@ export default async function BlogPostPage({ params }: Props) {
   const currentIdx = allPosts.findIndex(p => p.slug === slug)
   const relatedPosts = allPosts.filter((_, i) => i !== currentIdx).slice(0, 2)
 
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.excerpt,
+    author: {
+      '@type': 'Person',
+      name: post.author?.name ?? 'Tynkerlab.ai',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Tynkerlab.ai',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://tynkerlab.ai/icon.png',
+      },
+    },
+    datePublished: post.date,
+    dateModified: post.date,
+    url: `https://tynkerlab.ai/blog/${post.slug}`,
+    ...(post.coverImage ? { image: post.coverImage } : {}),
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://tynkerlab.ai/blog/${post.slug}`,
+    },
+  }
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://tynkerlab.ai',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Blog',
+        item: 'https://tynkerlab.ai/blog',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: post.title,
+        item: `https://tynkerlab.ai/blog/${post.slug}`,
+      },
+    ],
+  }
+
   return (
     <div className="min-h-screen relative z-[1]">
+      <JsonLd data={articleSchema} />
+      <JsonLd data={breadcrumbSchema} />
       <Navbar />
 
       {/* Cover */}

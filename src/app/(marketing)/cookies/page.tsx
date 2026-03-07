@@ -1,9 +1,17 @@
+import type { Metadata } from 'next'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 
-export const metadata = {
-  title: 'Cookie Policy | Tynkerlab.ai',
-  description: 'How Tynkerlab.ai uses cookies and similar technologies.',
+export const metadata: Metadata = {
+  title: 'Cookie Policy',
+  description: 'How Tynkerlab.ai uses cookies and similar technologies to provide authentication, analytics, and a better user experience.',
+  alternates: {
+    canonical: 'https://tynkerlab.ai/cookies',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 const COOKIE_TABLE = [

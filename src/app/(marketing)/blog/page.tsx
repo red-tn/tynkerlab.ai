@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Navbar } from '@/components/layout/navbar'
@@ -6,9 +7,30 @@ import { Badge } from '@/components/ui/badge'
 import { Calendar, ArrowRight, Clock } from 'lucide-react'
 import { getAllPostsFromDb } from '@/lib/blog/posts'
 
-export const metadata = {
-  title: 'Blog | Tynkerlab.ai',
-  description: 'News, tutorials, and insights from the Tynkerlab.ai team on AI image and video generation.',
+export const metadata: Metadata = {
+  title: 'Blog — AI Image & Video Generation Tutorials and News',
+  description: 'Tutorials, product updates, model comparisons, and creative tips from the Tynkerlab.ai team. Learn to generate better AI images and videos.',
+  alternates: {
+    canonical: 'https://tynkerlab.ai/blog',
+  },
+  openGraph: {
+    title: 'Tynkerlab.ai Blog — AI Generation Tutorials and News',
+    description: 'Tutorials, product updates, model comparisons, and creative tips from the Tynkerlab.ai team.',
+    url: 'https://tynkerlab.ai/blog',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Tynkerlab.ai Blog',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Tynkerlab.ai Blog — AI Generation Tutorials and News',
+    description: 'Tutorials, product updates, model comparisons, and creative tips from the Tynkerlab.ai team.',
+  },
 }
 
 function formatDate(dateStr: string) {

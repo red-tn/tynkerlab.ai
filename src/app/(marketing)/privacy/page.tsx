@@ -1,10 +1,18 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 
-export const metadata = {
-  title: 'Privacy Policy | Tynkerlab.ai',
-  description: 'How Tynkerlab.ai collects, uses, and protects your personal information.',
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'How Tynkerlab.ai collects, uses, and protects your personal information when you use our AI generation platform.',
+  alternates: {
+    canonical: 'https://tynkerlab.ai/privacy',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function PrivacyPolicyPage() {

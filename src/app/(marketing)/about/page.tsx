@@ -1,10 +1,32 @@
+import type { Metadata } from 'next'
 import { Navbar } from '@/components/layout/navbar'
 import { Footer } from '@/components/layout/footer'
 import { Zap, Shield, Globe, Heart, Users, Target } from 'lucide-react'
 
-export const metadata = {
-  title: 'About | Tynkerlab.ai',
-  description: 'Learn about Tynkerlab.ai — the AI-powered creative platform for image and video generation.',
+export const metadata: Metadata = {
+  title: 'About Tynkerlab.ai — AI-Powered Creative Platform',
+  description: 'Learn about Tynkerlab.ai — democratizing AI-powered creativity with 56+ image, video, and speech generation models accessible to every creator.',
+  alternates: {
+    canonical: 'https://tynkerlab.ai/about',
+  },
+  openGraph: {
+    title: 'About Tynkerlab.ai — AI-Powered Creative Platform',
+    description: 'Learn about Tynkerlab.ai — democratizing AI-powered creativity with 56+ image, video, and speech generation models accessible to every creator.',
+    url: 'https://tynkerlab.ai/about',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'About Tynkerlab.ai',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About Tynkerlab.ai — AI-Powered Creative Platform',
+    description: 'Learn about Tynkerlab.ai — democratizing AI-powered creativity with 56+ image, video, and speech generation models.',
+  },
 }
 
 const VALUES = [
