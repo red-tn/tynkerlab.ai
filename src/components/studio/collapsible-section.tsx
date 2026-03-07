@@ -20,6 +20,7 @@ export function CollapsibleSection({
   className,
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
+  const [settled, setSettled] = useState(defaultOpen)
   const contentRef = useRef<HTMLDivElement>(null)
   const [contentHeight, setContentHeight] = useState<number | undefined>(undefined)
 
@@ -34,6 +35,16 @@ export function CollapsibleSection({
       return () => resizeObserver.disconnect()
     }
   }, [])
+
+  // After opening transition ends, allow overflow so dropdowns aren't clipped
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setSettled(true), 300)
+      return () => clearTimeout(timer)
+    } else {
+      setSettled(false)
+    }
+  }, [isOpen])
 
   return (
     <div className={cn('rounded-lg border border-nyx-border bg-nyx-surface/50', className)}>
@@ -59,9 +70,12 @@ export function CollapsibleSection({
       </button>
 
       <div
-        className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+        className={cn(
+          'transition-[max-height] duration-300 ease-in-out',
+          settled ? 'overflow-visible' : 'overflow-hidden'
+        )}
         style={{
-          maxHeight: isOpen ? (contentHeight !== undefined ? contentHeight + 32 : 2000) : 0,
+          maxHeight: isOpen ? (settled ? 'none' : (contentHeight !== undefined ? contentHeight + 32 : 2000)) : 0,
         }}
       >
         <div ref={contentRef} className="px-3.5 py-3 space-y-4">
