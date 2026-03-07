@@ -54,18 +54,22 @@ export async function GET(request: Request) {
         .gt('created_at', twentyFourHoursAgo.toISOString()),
       supabase.from('generations').select('*').order('created_at', { ascending: false }).limit(10),
       supabase.from('profiles').select('*').order('created_at', { ascending: false }).limit(5),
-      // Page views: 30d count
+      // Page views: 30d count (exclude admin pages)
       supabase.from('page_views').select('*', { count: 'exact', head: true })
-        .gt('created_at', thirtyDaysAgo.toISOString()),
+        .gt('created_at', thirtyDaysAgo.toISOString())
+        .not('path', 'like', '/admin%'),
       // Page views: 7d count
       supabase.from('page_views').select('*', { count: 'exact', head: true })
-        .gt('created_at', sevenDaysAgo.toISOString()),
+        .gt('created_at', sevenDaysAgo.toISOString())
+        .not('path', 'like', '/admin%'),
       // Page views: 24h count
       supabase.from('page_views').select('*', { count: 'exact', head: true })
-        .gt('created_at', twentyFourHoursAgo.toISOString()),
-      // Page views: raw data for charts (30d, limited fields)
+        .gt('created_at', twentyFourHoursAgo.toISOString())
+        .not('path', 'like', '/admin%'),
+      // Page views: raw data for charts (30d, limited fields, exclude admin pages)
       supabase.from('page_views').select('path, ip_hash, session_id, created_at')
         .gt('created_at', thirtyDaysAgo.toISOString())
+        .not('path', 'like', '/admin%')
         .order('created_at', { ascending: true })
         .limit(10000),
     ])
@@ -213,6 +217,32 @@ export async function GET(request: Request) {
   } catch (error: any) {
     if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     console.error('Admin analytics error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+/** DELETE — purge page_views by ip_hash (admin only) */
+export async function DELETE(request: Request) {
+  try {
+    await requireAdmin(request)
+    const { ipHash } = await request.json()
+    if (!ipHash || typeof ipHash !== 'string') {
+      return NextResponse.json({ error: 'ipHash is required' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
+    const { count, error } = await supabase
+      .from('page_views')
+      .delete({ count: 'exact' })
+      .eq('ip_hash', ipHash)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ deleted: count ?? 0 })
+  } catch (error: any) {
+    if (error instanceof AdminAuthError) return NextResponse.json({ error: error.message }, { status: error.status })
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

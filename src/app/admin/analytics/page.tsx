@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { StatsCard } from '@/components/admin/stats-card'
 import { ChartWrapper } from '@/components/admin/chart-wrapper'
 import { adminFetch } from '@/lib/admin-fetch'
-import { Eye, Users, Calendar, Clock, TrendingUp } from 'lucide-react'
+import { Eye, Users, Calendar, Clock, TrendingUp, Trash2 } from 'lucide-react'
 
 const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart), { ssr: false })
 const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false })
@@ -40,6 +40,9 @@ export default function AdminAnalyticsPage() {
   const [pageViewsChart, setPageViewsChart] = useState<{ date: string; views: number; unique: number }[]>([])
   const [topPages, setTopPages] = useState<TopPage[]>([])
   const [period, setPeriod] = useState<'24h' | '7d' | '30d'>('30d')
+  const [purgeIp, setPurgeIp] = useState('')
+  const [purging, setPurging] = useState(false)
+  const [purgeResult, setPurgeResult] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,6 +69,37 @@ export default function AdminAnalyticsPage() {
     }
     fetchData()
   }, [])
+
+  const handlePurgeIp = async () => {
+    if (!purgeIp.trim()) return
+    setPurging(true)
+    setPurgeResult(null)
+    try {
+      // Hash the IP the same way the server does (sha256 + slice 0..16)
+      const enc = new TextEncoder().encode(purgeIp.trim() + 'tynkerlab')
+      const hashBuf = await crypto.subtle.digest('SHA-256', enc)
+      const ipHash = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16)
+
+      const res = await adminFetch('/api/admin/analytics', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ipHash }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPurgeResult(`Deleted ${data.deleted} page view(s) for IP hash ${ipHash}`)
+        setPurgeIp('')
+        // Refresh data
+        window.location.reload()
+      } else {
+        setPurgeResult(`Error: ${data.error}`)
+      }
+    } catch (err: any) {
+      setPurgeResult(`Error: ${err.message}`)
+    } finally {
+      setPurging(false)
+    }
+  }
 
   const periodViews = period === '24h' ? stats.pageViews24h : period === '7d' ? stats.pageViews7d : stats.pageViews30d
   const periodUnique = period === '24h' ? stats.uniqueVisitors24h : period === '7d' ? stats.uniqueVisitors7d : stats.uniqueVisitors30d
@@ -204,6 +238,34 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
       )}
+
+      {/* IP Purge tool */}
+      <div className="rounded-xl border border-nyx-border bg-nyx-surface p-4">
+        <h3 className="text-sm font-semibold text-white mb-3">Exclude IP from Analytics</h3>
+        <p className="text-xs text-gray-500 mb-3">Remove all page views from a specific IP address. The IP is hashed before deletion.</p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="e.g. 66.128.248.30"
+            value={purgeIp}
+            onChange={(e) => setPurgeIp(e.target.value)}
+            className="flex-1 px-3 py-2 rounded-lg bg-nyx-dark border border-nyx-border text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-primary-500"
+          />
+          <button
+            onClick={handlePurgeIp}
+            disabled={purging || !purgeIp.trim()}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 disabled:opacity-40 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" />
+            {purging ? 'Purging...' : 'Purge'}
+          </button>
+        </div>
+        {purgeResult && (
+          <p className={`text-xs mt-2 ${purgeResult.startsWith('Error') ? 'text-red-400' : 'text-emerald-400'}`}>
+            {purgeResult}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

@@ -39,7 +39,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Track page views asynchronously (fire-and-forget, never block)
-  if (!pathname.startsWith('/api') && !pathname.startsWith('/_next')) {
+  // Skip admin pages — don't pollute analytics with admin traffic
+  if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/admin')) {
     try {
       const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
       const referrer = request.headers.get('referer') || ''
