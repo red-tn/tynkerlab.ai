@@ -1,7 +1,7 @@
 -- Atomic add_credits function (mirrors deduct_credits pattern)
 -- Prevents race conditions by using SELECT ... FOR UPDATE row locking
 CREATE OR REPLACE FUNCTION add_credits(
-  p_user_id UUID,
+  p_user_id TEXT,
   p_amount INTEGER,
   p_description TEXT,
   p_reference_id TEXT DEFAULT NULL,
@@ -12,7 +12,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_profile_id UUID;
+  v_profile_id TEXT;
   v_current_balance INTEGER;
   v_new_balance INTEGER;
 BEGIN
