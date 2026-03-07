@@ -37,7 +37,7 @@ export function Dialog({ open, onClose, title, description, children, className,
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
+    <div role="dialog" aria-modal="true" aria-label={title || 'Dialog'} className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4">
       <div
         ref={overlayRef}
         className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
@@ -62,6 +62,7 @@ export function Dialog({ open, onClose, title, description, children, className,
           </div>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5"
           >
             <X className="h-5 w-5" />

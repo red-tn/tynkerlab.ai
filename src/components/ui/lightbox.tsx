@@ -48,6 +48,9 @@ export function Lightbox({ url, type, alt, onClose, onPrev, onNext }: LightboxPr
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={alt || 'Media viewer'}
       className="fixed inset-0 z-[60] flex items-center justify-center"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -58,6 +61,7 @@ export function Lightbox({ url, type, alt, onClose, onPrev, onNext }: LightboxPr
       {/* Close button */}
       <button
         onClick={onClose}
+        aria-label="Close lightbox"
         className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
       >
         <X className="h-6 w-6 text-white" />
@@ -67,6 +71,7 @@ export function Lightbox({ url, type, alt, onClose, onPrev, onNext }: LightboxPr
       {onPrev && (
         <button
           onClick={(e) => { e.stopPropagation(); onPrev() }}
+          aria-label="Previous"
           className="absolute left-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
         >
           <ChevronLeft className="h-6 w-6 text-white" />
@@ -77,6 +82,7 @@ export function Lightbox({ url, type, alt, onClose, onPrev, onNext }: LightboxPr
       {onNext && (
         <button
           onClick={(e) => { e.stopPropagation(); onNext() }}
+          aria-label="Next"
           className="absolute right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
         >
           <ChevronRight className="h-6 w-6 text-white" />

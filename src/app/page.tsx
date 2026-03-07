@@ -197,7 +197,7 @@ export default function HomePage() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Eight Powerful Tools</h2>
           <p className="text-gray-400 max-w-xl mx-auto">Everything you need to bring your creative vision to life</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 md:gap-5">
           {TOOLS.map(({ key, Icon, title, desc, href }) => {
             const toolData = toolImages[key]
             const hasImage = !!toolData?.imageUrl

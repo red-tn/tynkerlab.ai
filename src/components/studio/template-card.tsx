@@ -65,7 +65,7 @@ export function TemplateCard({ template, onClick }: TemplateCardProps) {
         {template.platform_presets.length > 0 && (
           <div className="flex gap-1 mt-2 flex-wrap">
             {template.platform_presets.map((p) => (
-              <span key={p.platform} className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400">
+              <span key={p.platform} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400">
                 {p.label}
               </span>
             ))}

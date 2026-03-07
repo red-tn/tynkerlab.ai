@@ -28,7 +28,7 @@ export function GenerationResult({ state, result, error, progress, progressPerce
       <div className="flex flex-col items-center justify-center h-full min-h-[300px] rounded-xl border-2 border-dashed border-nyx-border text-center p-8">
         <Sparkles className="h-12 w-12 text-gray-600 mb-4" />
         <h3 className="text-lg font-medium text-gray-400">Ready to Create</h3>
-        <p className="text-sm text-gray-600 mt-2 max-w-sm">Select a model, enter your prompt, and click Generate to create your masterpiece</p>
+        <p className="text-sm text-gray-500 mt-2 max-w-sm">Select a model, enter your prompt, and click Generate to create your masterpiece</p>
       </div>
     )
   }

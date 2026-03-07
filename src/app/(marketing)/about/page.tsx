@@ -57,7 +57,7 @@ export default function AboutPage() {
 
       {/* Stats */}
       <section className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {STATS.map((stat) => (
             <div key={stat.label} className="text-center p-6 bg-nyx-surface border border-nyx-border rounded-xl">
               <div className="text-3xl font-bold gradient-text mb-1">{stat.value}</div>
