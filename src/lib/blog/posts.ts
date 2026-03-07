@@ -28,7 +28,7 @@ export const BLOG_POSTS: BlogPost[] = [
 
 The AI generation landscape is fragmented. Google has Imagen, Black Forest Labs has FLUX, OpenAI has Sora, and dozens of other companies are releasing incredible models every month. As a creator, keeping up with all of these platforms — each with its own account, pricing, and interface — is exhausting.
 
-**Tynkerlab.ai solves this.** We've brought 54 of the world's best AI models together in a single, beautifully designed platform. One account, one credit system, one interface.
+**Tynkerlab.ai solves this.** We've brought 56 of the world's best AI models together in a single, beautifully designed platform. One account, one credit system, one interface.
 
 ## What You Can Do
 
@@ -36,7 +36,7 @@ The AI generation landscape is fragmented. Google has Imagen, Black Forest Labs 
 Choose from 32 image models spanning Google Imagen 4.0, FLUX.2 Pro, Stable Diffusion, Ideogram, and more. Whether you need photorealistic product shots, stylized illustrations, or abstract art, there's a model optimized for your use case.
 
 ### Video Generation
-Access 22 video models including Google Veo 3.0, OpenAI Sora 2, Kling 2.1, and MiniMax Director. Generate cinematic clips from text prompts or animate existing images — some models even generate synchronized audio.
+Access 24 video models including Google Veo 3.0, OpenAI Sora 2, Kling 2.1, and MiniMax Director. Generate cinematic clips from text prompts or animate existing images — some models even generate synchronized audio.
 
 ### Image-to-Image
 Transform existing images with AI. Upload a reference photo and describe what you want changed. Great for style transfer, editing, and creative exploration.
@@ -155,7 +155,7 @@ Happy generating!
     content: `
 ## The State of AI Video
 
-AI video generation has reached a tipping point. Models like Google Veo 3.0, OpenAI Sora 2, and Kling 2.1 can now produce clips that rival professional stock footage. On Tynkerlab.ai, you have access to 22 video models — here's how to get the most out of them.
+AI video generation has reached a tipping point. Models like Google Veo 3.0, OpenAI Sora 2, and Kling 2.1 can now produce clips that rival professional stock footage. On Tynkerlab.ai, you have access to 24 video models — here's how to get the most out of them.
 
 ## Tip 1: Think in Camera Movements
 

@@ -11,6 +11,8 @@ const footerLinks = {
     { href: '/studio/image-to-video', label: 'Image to Video' },
     { href: '/studio/ugc-avatar', label: 'UGC Avatar' },
     { href: '/studio/templates', label: 'Templates' },
+    { href: '/studio/prompt-maker', label: 'Prompt Maker' },
+    { href: '/studio/text-to-speech', label: 'Text to Speech' },
   ],
   resources: [
     { href: '/pricing', label: 'Pricing' },

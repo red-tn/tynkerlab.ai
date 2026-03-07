@@ -44,7 +44,7 @@ const COMPARISON_FEATURES: { label: string; free: boolean | string; pro: boolean
   { label: 'Monthly credits', free: '50', pro: '2,000', enterprise: '15,000' },
   { label: 'Daily check-in credits', free: '3', pro: '3', enterprise: '3' },
   { label: 'All 32 image models', free: true, pro: true, enterprise: true },
-  { label: 'All 22 video models', free: false, pro: true, enterprise: true },
+  { label: 'All 24 video models', free: false, pro: true, enterprise: true },
   { label: 'Max resolution output', free: false, pro: true, enterprise: true },
   { label: 'Text-to-Speech (Kokoro)', free: true, pro: true, enterprise: true },
   { label: 'Premium TTS voices', free: false, pro: true, enterprise: true },
@@ -587,7 +587,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What can free users access?',
-    a: 'Free users can generate images with all 32 image models, use Templates, and use Kokoro TTS. Outputs include a small watermark. Video generation, premium TTS voices, and UGC Avatars require a Creator or Pro Creator plan. Free users earn 3 credits daily via check-in.',
+    a: 'Free users can generate images with all 32 image models, use Templates, and use Kokoro TTS. Outputs include a small watermark. Video generation (24 models), premium TTS voices, and UGC Avatars require a Creator or Pro Creator plan. Free users earn 3 credits daily via check-in.',
   },
   {
     q: 'Do unused credits roll over?',

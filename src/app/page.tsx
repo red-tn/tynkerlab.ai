@@ -233,7 +233,7 @@ export default function HomePage() {
         <div className="relative max-w-6xl mx-auto px-4 py-28 md:py-40 text-center z-10">
           <Badge variant="default" className="mb-6 gradient-primary text-white px-4 py-1.5 shadow-lg shadow-violet-500/20">
             <Sparkles className="h-3 w-3 mr-1.5" />
-            54+ AI Models Available
+            56+ AI Models Available
           </Badge>
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-8 leading-[1.1] tracking-tight">
             Create Anything with
@@ -269,7 +269,7 @@ export default function HomePage() {
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20">
                 <Cpu className="h-4 w-4 text-violet-400" />
               </div>
-              <span className="font-medium">54 AI Models</span>
+              <span className="font-medium">56 AI Models</span>
             </div>
             <div className="flex items-center gap-2.5 text-sm text-gray-400">
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20">

@@ -49,7 +49,7 @@ const SECTIONS = [
       },
       {
         question: 'What AI models can I use?',
-        answer: 'We offer 54+ AI models including Google Imagen 4.0, FLUX.2 Pro/Schnell, Stable Diffusion XL, Sora, Kling, Minimax, and more. Each model has different strengths — some excel at photorealism, others at artistic styles.',
+        answer: 'We offer 56+ AI models including Google Imagen 4.0, FLUX.2 Pro, FLUX.1 Schnell, Stable Diffusion 3, Sora, Kling, Minimax, and more. Each model has different strengths — some excel at photorealism, others at artistic styles.',
       },
       {
         question: 'How does the AI Prompt Enhancement work?',

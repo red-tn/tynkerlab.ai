@@ -85,7 +85,7 @@ const tools = [
 const tips = [
   { icon: Lightbulb, text: 'Try a prompt in the studio' },
   { icon: LayoutTemplate, text: 'Browse templates for inspiration' },
-  { icon: Compass, text: 'Explore 54 AI models' },
+  { icon: Compass, text: 'Explore 56 AI models' },
 ] as const
 
 // ---------------------------------------------------------------------------
